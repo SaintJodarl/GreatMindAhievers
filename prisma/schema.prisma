@@ -1,0 +1,92 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("User")
+  status        String    @default("PENDING")
+  referralCode  String?   @unique
+  uplineId      String?
+  position      String?
+  accounts      Account[]
+  sessions      Session[]
+  kycSubmission KYCSubmission?
+  usedRegCode   AdminCode?  @relation("RegCodeUser")
+  usedKycCode   AdminCode?  @relation("KycCodeUser")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model AdminCode {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  type        String
+  status      String   @default("UNUSED")
+  usedById    String?  @unique
+  usedByKycId String?  @unique
+  regUser     User?    @relation("RegCodeUser", fields: [usedById], references: [id])
+  kycUser     User?    @relation("KycCodeUser", fields: [usedByKycId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KYCSubmission {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  fullName    String
+  phone       String
+  address     String
+  idType      String
+  idNumber    String
+  status      String   @default("SUBMITTED")
+  adminNote   String?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

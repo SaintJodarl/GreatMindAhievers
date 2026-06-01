@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 
-export default function AuthPageClient() {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+export default function AuthPageClient({ defaultMode = 'login' }: { defaultMode?: 'login' | 'register' }) {
+  const [mode, setMode] = useState<'login' | 'register'>(defaultMode);
 
   return (
     <div className="min-h-screen flex" style={{ background: 'var(--background)' }}>
@@ -106,14 +106,14 @@ export default function AuthPageClient() {
               className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
               style={{ background: 'linear-gradient(135deg, #6C47FF 0%, #10D9A0 100%)' }}
             >
-              R
+              O
             </div>
             <div>
               <p className="text-xs font-semibold" style={{ color: 'var(--foreground)' }}>
-                Riya Sharma
+                Oluwaseun Adebisi
               </p>
               <p className="text-xs" style={{ color: 'var(--accent)' }}>
-                Diamond Member · Mumbai
+                Diamond Member · Lagos
               </p>
             </div>
           </div>

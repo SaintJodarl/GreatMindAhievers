@@ -15,22 +15,22 @@ interface User {
   kycStatus: 'Approved' | 'Under Review' | 'Rejected' | 'Not Submitted';
   accountStatus: 'Active' | 'Pending KYC' | 'Suspended';
   joinDate: string;
-  country: string;
+  state: string;
 }
 
 const users: User[] = [
-  { id: 'usr-001', name: 'Adebayo Okafor', email: 'adebayo.okafor@gma.network', memberId: 'GMA-00142', sponsorId: 'GMA-00001', position: 'Left', rank: 'Silver', leftVol: 14820, rightVol: 12480, walletBalance: 3847500, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Jan 12, 2026', country: 'Nigeria' },
-  { id: 'usr-002', name: 'Chidinma Obi', email: 'chidinma.obi@email.com', memberId: 'GMA-00218', sponsorId: 'GMA-00142', position: 'Left', rank: 'Bronze', leftVol: 4200, rightVol: 4220, walletBalance: 1240000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Feb 3, 2026', country: 'Nigeria' },
-  { id: 'usr-003', name: 'Tunde Bakare', email: 'tunde.bakare@email.com', memberId: 'GMA-00267', sponsorId: 'GMA-00142', position: 'Right', rank: 'Bronze', leftVol: 3100, rightVol: 3080, walletBalance: 980000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Feb 18, 2026', country: 'Nigeria' },
-  { id: 'usr-004', name: 'Amaka Eze', email: 'amaka.eze@email.com', memberId: 'GMA-00389', sponsorId: 'GMA-00218', position: 'Right', rank: 'Entry', leftVol: 0, rightVol: 0, walletBalance: 0, kycStatus: 'Under Review', accountStatus: 'Pending KYC', joinDate: 'Apr 2, 2026', country: 'Nigeria' },
-  { id: 'usr-005', name: 'Emeka Nwosu', email: 'emeka.nwosu@email.com', memberId: 'GMA-00341', sponsorId: 'GMA-00218', position: 'Left', rank: 'Entry', leftVol: 1050, rightVol: 1050, walletBalance: 210000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Mar 15, 2026', country: 'Nigeria' },
-  { id: 'usr-006', name: 'Ngozi Adeyemi', email: 'ngozi.adeyemi@email.com', memberId: 'GMA-00412', sponsorId: 'GMA-00267', position: 'Left', rank: 'Entry', leftVol: 825, rightVol: 825, walletBalance: 165000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Mar 28, 2026', country: 'Nigeria' },
-  { id: 'usr-007', name: 'Kelechi Eze', email: 'kelechi.eze@email.com', memberId: 'GMA-00445', sponsorId: 'GMA-00267', position: 'Right', rank: 'Entry', leftVol: 490, rightVol: 490, walletBalance: 98000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Apr 10, 2026', country: 'Nigeria' },
-  { id: 'usr-008', name: 'Segun Oladele', email: 'segun.oladele@email.com', memberId: 'GMA-00502', sponsorId: 'GMA-00142', position: 'Right', rank: 'Entry', leftVol: 0, rightVol: 0, walletBalance: 0, kycStatus: 'Not Submitted', accountStatus: 'Pending KYC', joinDate: 'Apr 28, 2026', country: 'Nigeria' },
-  { id: 'usr-009', name: 'Funmi Adesanya', email: 'funmi.adesanya@email.com', memberId: 'GMA-00488', sponsorId: 'GMA-00341', position: 'Left', rank: 'Entry', leftVol: 210, rightVol: 210, walletBalance: 42000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Apr 22, 2026', country: 'Nigeria' },
-  { id: 'usr-010', name: 'Biodun Lawal', email: 'biodun.lawal@email.com', memberId: 'GMA-00311', sponsorId: 'GMA-00001', position: 'Right', rank: 'Bronze', leftVol: 2800, rightVol: 2100, walletBalance: 560000, kycStatus: 'Rejected', accountStatus: 'Suspended', joinDate: 'Mar 1, 2026', country: 'Nigeria' },
-  { id: 'usr-011', name: 'Ifeanyi Chukwu', email: 'ifeanyi.chukwu@email.com', memberId: 'GMA-00356', sponsorId: 'GMA-00218', position: 'Right', rank: 'Entry', leftVol: 630, rightVol: 630, walletBalance: 126000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Mar 22, 2026', country: 'Nigeria' },
-  { id: 'usr-012', name: 'Yetunde Balogun', email: 'yetunde.b@email.com', memberId: 'GMA-00378', sponsorId: 'GMA-00142', position: 'Left', rank: 'Entry', leftVol: 1050, rightVol: 1050, walletBalance: 210000, kycStatus: 'Under Review', accountStatus: 'Pending KYC', joinDate: 'Mar 19, 2026', country: 'Nigeria' },
+  { id: 'usr-001', name: 'Adebayo Okafor', email: 'adebayo.okafor@gma.network', memberId: 'GMA-00142', sponsorId: 'GMA-00001', position: 'Left', rank: 'Silver', leftVol: 14820, rightVol: 12480, walletBalance: 3847500, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Jan 12, 2026', state: 'Lagos' },
+  { id: 'usr-002', name: 'Chidinma Obi', email: 'chidinma.obi@email.com', memberId: 'GMA-00218', sponsorId: 'GMA-00142', position: 'Left', rank: 'Bronze', leftVol: 4200, rightVol: 4220, walletBalance: 1240000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Feb 3, 2026', state: 'Abuja' },
+  { id: 'usr-003', name: 'Tunde Bakare', email: 'tunde.bakare@email.com', memberId: 'GMA-00267', sponsorId: 'GMA-00142', position: 'Right', rank: 'Bronze', leftVol: 3100, rightVol: 3080, walletBalance: 980000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Feb 18, 2026', state: 'Oyo' },
+  { id: 'usr-004', name: 'Amaka Eze', email: 'amaka.eze@email.com', memberId: 'GMA-00389', sponsorId: 'GMA-00218', position: 'Right', rank: 'Entry', leftVol: 0, rightVol: 0, walletBalance: 0, kycStatus: 'Under Review', accountStatus: 'Pending KYC', joinDate: 'Apr 2, 2026', state: 'Enugu' },
+  { id: 'usr-005', name: 'Emeka Nwosu', email: 'emeka.nwosu@email.com', memberId: 'GMA-00341', sponsorId: 'GMA-00218', position: 'Left', rank: 'Entry', leftVol: 1050, rightVol: 1050, walletBalance: 210000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Mar 15, 2026', state: 'Rivers' },
+  { id: 'usr-006', name: 'Ngozi Adeyemi', email: 'ngozi.adeyemi@email.com', memberId: 'GMA-00412', sponsorId: 'GMA-00267', position: 'Left', rank: 'Entry', leftVol: 825, rightVol: 825, walletBalance: 165000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Mar 28, 2026', state: 'Kano' },
+  { id: 'usr-007', name: 'Kelechi Eze', email: 'kelechi.eze@email.com', memberId: 'GMA-00445', sponsorId: 'GMA-00267', position: 'Right', rank: 'Entry', leftVol: 490, rightVol: 490, walletBalance: 98000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Apr 10, 2026', state: 'Edo' },
+  { id: 'usr-008', name: 'Segun Oladele', email: 'segun.oladele@email.com', memberId: 'GMA-00502', sponsorId: 'GMA-00142', position: 'Right', rank: 'Entry', leftVol: 0, rightVol: 0, walletBalance: 0, kycStatus: 'Not Submitted', accountStatus: 'Pending KYC', joinDate: 'Apr 28, 2026', state: 'Ogun' },
+  { id: 'usr-009', name: 'Funmi Adesanya', email: 'funmi.adesanya@email.com', memberId: 'GMA-00488', sponsorId: 'GMA-00341', position: 'Left', rank: 'Entry', leftVol: 210, rightVol: 210, walletBalance: 42000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Apr 22, 2026', state: 'Delta' },
+  { id: 'usr-010', name: 'Biodun Lawal', email: 'biodun.lawal@email.com', memberId: 'GMA-00311', sponsorId: 'GMA-00001', position: 'Right', rank: 'Bronze', leftVol: 2800, rightVol: 2100, walletBalance: 560000, kycStatus: 'Rejected', accountStatus: 'Suspended', joinDate: 'Mar 1, 2026', state: 'Kaduna' },
+  { id: 'usr-011', name: 'Ifeanyi Chukwu', email: 'ifeanyi.chukwu@email.com', memberId: 'GMA-00356', sponsorId: 'GMA-00218', position: 'Right', rank: 'Entry', leftVol: 630, rightVol: 630, walletBalance: 126000, kycStatus: 'Approved', accountStatus: 'Active', joinDate: 'Mar 22, 2026', state: 'Anambra' },
+  { id: 'usr-012', name: 'Yetunde Balogun', email: 'yetunde.b@email.com', memberId: 'GMA-00378', sponsorId: 'GMA-00142', position: 'Left', rank: 'Entry', leftVol: 1050, rightVol: 1050, walletBalance: 210000, kycStatus: 'Under Review', accountStatus: 'Pending KYC', joinDate: 'Mar 19, 2026', state: 'Lagos' },
 ];
 
 type ActionModal = { type: 'activate' | 'suspend' | 'view'; user: User } | null;
@@ -153,7 +153,7 @@ export default function AdminUserTable() {
                   style={{ accentColor: 'var(--primary)' }}
                 />
               </th>
-              {['Member', 'Member ID', 'Sponsor', 'Position', 'Left Vol', 'Right Vol', 'Wallet', 'KYC', 'Status', 'Country', 'Actions'].map((h) => (
+              {['Member', 'Member ID', 'Sponsor', 'Position', 'Left Vol', 'Right Vol', 'Wallet', 'KYC', 'Status', 'State', 'Actions'].map((h) => (
                 <th
                   key={`ath-${h}`}
                   className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider"
@@ -245,7 +245,7 @@ export default function AdminUserTable() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-xs" style={{ color: 'var(--muted-foreground)' }}>
-                  {user.country}
+                  {user.state}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -352,7 +352,7 @@ function AdminActionModal({ modal, onClose }: { modal: NonNullable<ActionModal>;
                 ['Member ID', modal.user.memberId],
                 ['Full Name', modal.user.name],
                 ['Email', modal.user.email],
-                ['Country', modal.user.country],
+                ['State', modal.user.state],
                 ['Sponsor', modal.user.sponsorId],
                 ['Position', modal.user.position + ' Leg'],
                 ['Rank', modal.user.rank],

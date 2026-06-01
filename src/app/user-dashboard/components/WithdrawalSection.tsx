@@ -12,12 +12,12 @@ interface WithdrawalFormData {
 }
 
 const withdrawalHistory = [
-  { id: 'wd-001', date: 'Apr 28, 2026', amount: 500000, method: 'Bank Transfer', account: '****4821', status: 'Pending', note: '' },
-  { id: 'wd-002', date: 'Apr 15, 2026', amount: 1200000, method: 'Bank Transfer', account: '****4821', status: 'Approved', note: '' },
-  { id: 'wd-003', date: 'Apr 2, 2026', amount: 800000, method: 'Bank Transfer', account: '****7734', status: 'Approved', note: '' },
-  { id: 'wd-004', date: 'Mar 20, 2026', amount: 350000, method: 'Bank Transfer', account: '****4821', status: 'Rejected', note: 'Account name mismatch. Please update your bank details.' },
-  { id: 'wd-005', date: 'Mar 8, 2026', amount: 600000, method: 'Bank Transfer', account: '****4821', status: 'Approved', note: '' },
-  { id: 'wd-006', date: 'Feb 22, 2026', amount: 450000, method: 'Bank Transfer', account: '****2291', status: 'Approved', note: '' },
+  { id: 'wd-001', date: 'Apr 28, 2026', amount: 500000, method: 'GTBank', account: '****4821', status: 'Pending', note: '' },
+  { id: 'wd-002', date: 'Apr 15, 2026', amount: 1200000, method: 'Zenith Bank', account: '****4821', status: 'Approved', note: '' },
+  { id: 'wd-003', date: 'Apr 2, 2026', amount: 800000, method: 'OPay', account: '****7734', status: 'Approved', note: '' },
+  { id: 'wd-004', date: 'Mar 20, 2026', amount: 350000, method: 'GTBank', account: '****4821', status: 'Rejected', note: 'Account name mismatch. Please update your bank details.' },
+  { id: 'wd-005', date: 'Mar 8, 2026', amount: 600000, method: 'Access Bank', account: '****4821', status: 'Approved', note: '' },
+  { id: 'wd-006', date: 'Feb 22, 2026', amount: 450000, method: 'PalmPay', account: '****2291', status: 'Approved', note: '' },
 ];
 
 export default function WithdrawalSection() {

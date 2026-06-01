@@ -7,7 +7,7 @@ interface KYCApplication {
   memberId: string;
   name: string;
   email: string;
-  country: string;
+  state: string;
   submitDate: string;
   documents: { type: string; fileName: string; flagged: boolean }[];
   status: 'Under Review' | 'Approved' | 'Rejected';
@@ -15,13 +15,13 @@ interface KYCApplication {
 }
 
 const kycApplications: KYCApplication[] = [
-  { id: 'kyc-001', memberId: 'GMA-00389', name: 'Amaka Eze', email: 'amaka.eze@email.com', country: 'Nigeria', submitDate: 'Apr 28, 2026', documents: [{ type: 'Government ID', fileName: 'amaka_nin.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'amaka_utility.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'amaka_selfie.jpg', flagged: true }], status: 'Under Review', adminNote: '' },
-  { id: 'kyc-002', memberId: 'GMA-00378', name: 'Yetunde Balogun', email: 'yetunde.b@email.com', country: 'Nigeria', submitDate: 'Apr 27, 2026', documents: [{ type: 'Government ID', fileName: 'yetunde_id.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'yetunde_bank.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'yetunde_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
-  { id: 'kyc-003', memberId: 'GMA-00521', name: 'Chukwuemeka Ibe', email: 'chukwuemeka.i@email.com', country: 'Nigeria', submitDate: 'Apr 26, 2026', documents: [{ type: 'Government ID', fileName: 'chukwuemeka_nin.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'chukwuemeka_bill.jpg', flagged: true }, { type: 'Selfie with ID', fileName: 'chukwuemeka_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
-  { id: 'kyc-004', memberId: 'GMA-00534', name: 'Oluwaseun Adebisi', email: 'oluwaseun.a@email.com', country: 'Nigeria', submitDate: 'Apr 25, 2026', documents: [{ type: 'Government ID', fileName: 'oluwaseun_id.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'oluwaseun_utility.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'oluwaseun_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
-  { id: 'kyc-005', memberId: 'GMA-00548', name: 'Blessing Okeke', email: 'blessing.okeke@email.com', country: 'Nigeria', submitDate: 'Apr 24, 2026', documents: [{ type: 'Government ID', fileName: 'blessing_id.jpg', flagged: true }, { type: 'Proof of Address', fileName: 'blessing_bill.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'blessing_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
-  { id: 'kyc-006', memberId: 'GMA-00556', name: 'Chidi Okonkwo', email: 'chidi.okonkwo@email.com', country: 'Nigeria', submitDate: 'Apr 23, 2026', documents: [{ type: 'Government ID', fileName: 'chidi_passport.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'chidi_bank.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'chidi_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
-  { id: 'kyc-007', memberId: 'GMA-00562', name: 'Adaeze Nwachukwu', email: 'adaeze.n@email.com', country: 'Nigeria', submitDate: 'Apr 22, 2026', documents: [{ type: 'Government ID', fileName: 'adaeze_id.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'adaeze_utility.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'adaeze_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
+  { id: 'kyc-001', memberId: 'GMA-00389', name: 'Amaka Eze', email: 'amaka.eze@email.com', state: 'Enugu', submitDate: 'Apr 28, 2026', documents: [{ type: 'National ID (NIN)', fileName: 'amaka_nin.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'amaka_utility.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'amaka_selfie.jpg', flagged: true }], status: 'Under Review', adminNote: '' },
+  { id: 'kyc-002', memberId: 'GMA-00378', name: 'Yetunde Balogun', email: 'yetunde.b@email.com', state: 'Lagos', submitDate: 'Apr 27, 2026', documents: [{ type: 'Voter\'s Card (PVC)', fileName: 'yetunde_pvc.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'yetunde_bank.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'yetunde_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
+  { id: 'kyc-003', memberId: 'GMA-00521', name: 'Chukwuemeka Ibe', email: 'chukwuemeka.i@email.com', state: 'Abuja', submitDate: 'Apr 26, 2026', documents: [{ type: 'National ID (NIN)', fileName: 'chukwuemeka_nin.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'chukwuemeka_bill.jpg', flagged: true }, { type: 'Selfie with ID', fileName: 'chukwuemeka_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
+  { id: 'kyc-004', memberId: 'GMA-00534', name: 'Oluwaseun Adebisi', email: 'oluwaseun.a@email.com', state: 'Oyo', submitDate: 'Apr 25, 2026', documents: [{ type: 'Driver\'s License', fileName: 'oluwaseun_license.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'oluwaseun_utility.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'oluwaseun_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
+  { id: 'kyc-005', memberId: 'GMA-00548', name: 'Blessing Okeke', email: 'blessing.okeke@email.com', state: 'Anambra', submitDate: 'Apr 24, 2026', documents: [{ type: 'Voter\'s Card (PVC)', fileName: 'blessing_pvc.jpg', flagged: true }, { type: 'Proof of Address', fileName: 'blessing_bill.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'blessing_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
+  { id: 'kyc-006', memberId: 'GMA-00556', name: 'Chidi Okonkwo', email: 'chidi.okonkwo@email.com', state: 'Rivers', submitDate: 'Apr 23, 2026', documents: [{ type: 'International Passport', fileName: 'chidi_passport.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'chidi_bank.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'chidi_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
+  { id: 'kyc-007', memberId: 'GMA-00562', name: 'Adaeze Nwachukwu', email: 'adaeze.n@email.com', state: 'Imo', submitDate: 'Apr 22, 2026', documents: [{ type: 'National ID (NIN)', fileName: 'adaeze_nin.jpg', flagged: false }, { type: 'Proof of Address', fileName: 'adaeze_utility.jpg', flagged: false }, { type: 'Selfie with ID', fileName: 'adaeze_selfie.jpg', flagged: false }], status: 'Under Review', adminNote: '' },
 ];
 
 interface ReviewFormData {
@@ -117,7 +117,7 @@ export default function AdminKYCQueue() {
                     )}
                   </div>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{app.country}</span>
+                    <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{app.state} State</span>
                     <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{app.submitDate}</span>
                   </div>
                 </div>
@@ -153,7 +153,7 @@ export default function AdminKYCQueue() {
                   Reviewing: {selectedKYC.name}
                 </h3>
                 <p className="text-xs font-mono-nums mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
-                  {selectedKYC.memberId} · {selectedKYC.country} · Submitted {selectedKYC.submitDate}
+                  {selectedKYC.memberId} · {selectedKYC.state} State · Submitted {selectedKYC.submitDate}
                 </p>
               </div>
               <button
