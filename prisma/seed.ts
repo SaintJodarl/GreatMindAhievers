@@ -8,7 +8,7 @@ async function main() {
   const adminPassword = await bcrypt.hash('Admin@2026', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@gma.network' },
-    update: {},
+    update: { password: adminPassword },
     create: {
       email: 'admin@gma.network',
       name: 'System Admin',
@@ -16,6 +16,21 @@ async function main() {
       role: 'Admin',
       status: 'ACTIVE',
       referralCode: 'GMA-ADMIN',
+    },
+  });
+
+  // Create member user
+  const memberPassword = await bcrypt.hash('Member@2026', 10);
+  const member = await prisma.user.upsert({
+    where: { email: 'adebayo.okafor@gma.network' },
+    update: { password: memberPassword },
+    create: {
+      email: 'adebayo.okafor@gma.network',
+      name: 'Adebayo Okafor',
+      password: memberPassword,
+      role: 'Member',
+      status: 'ACTIVE',
+      referralCode: 'GMA-MBR1',
     },
   });
 
@@ -38,6 +53,7 @@ async function main() {
   }
 
   console.log('Seed complete. Admin:', admin.email);
+  console.log('Seed complete. Member:', member.email);
   console.log('Sample codes created:', codes.map(c => c.code).join(', '));
 }
 

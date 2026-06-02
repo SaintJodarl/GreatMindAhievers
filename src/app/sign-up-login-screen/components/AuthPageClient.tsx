@@ -36,12 +36,11 @@ export default function AuthPageClient({ defaultMode = 'login' }: { defaultMode?
         {/* Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-8">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg text-white"
-              style={{ background: 'linear-gradient(135deg, #6C47FF 0%, #10D9A0 100%)' }}
-            >
-              G
-            </div>
+            <img
+              src="/assets/images/app_logo.png"
+              alt="GMA Logo"
+              className="w-10 h-10 object-contain rounded-xl"
+            />
             <div>
               <div className="font-bold text-base" style={{ color: 'var(--foreground)' }}>
                 GREAT MIND ACHIEVERS
@@ -69,10 +68,10 @@ export default function AuthPageClient({ defaultMode = 'login' }: { defaultMode?
         {/* Stats */}
         <div className="relative z-10 grid grid-cols-2 gap-4">
           {[
-            { label: 'Active Members', value: '48,291', icon: '👥' },
-            { label: 'Total Paid Out', value: '₦3.6B+', icon: '💰' },
-            { label: 'Countries', value: '32', icon: '🌍' },
-            { label: 'Avg. Monthly Earn', value: '₦1.8M', icon: '📈' },
+            { label: 'Active Members', value: '420+', icon: '👥' },
+            { label: 'Total Paid Out', value: '₦2.1M+', icon: '💰' },
+            { label: 'Active Coverage', value: '8 States in Nigeria', icon: '🌍' },
+            { label: 'Avg. Monthly Earn', value: '₦45,000 – ₦110,000', icon: '📈' },
           ].map((stat) => (
             <div
               key={`stat-${stat.label}`}
@@ -124,12 +123,11 @@ export default function AuthPageClient({ defaultMode = 'login' }: { defaultMode?
       <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-10 xl:p-14 overflow-y-auto">
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-2 mb-8">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-white"
-            style={{ background: 'linear-gradient(135deg, #6C47FF 0%, #10D9A0 100%)' }}
-          >
-            G
-          </div>
+          <img
+            src="/assets/images/app_logo.png"
+            alt="GMA Logo"
+            className="w-8 h-8 object-contain rounded-lg"
+          />
           <span className="font-bold text-sm" style={{ color: 'var(--foreground)' }}>
             GREAT MIND ACHIEVERS
           </span>
