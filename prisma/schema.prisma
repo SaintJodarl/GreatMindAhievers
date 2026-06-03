@@ -41,16 +41,23 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          String    @default("User")
+  role          String    @default("MEMBER")
   status        String    @default("PENDING")
   referralCode  String?   @unique
   uplineId      String?
-  position      String?
+  position      String? // "LEFT" or "RIGHT"
+  
   accounts      Account[]
   sessions      Session[]
   kycSubmission KYCSubmission?
   usedRegCode   AdminCode?  @relation("RegCodeUser")
   usedKycCode   AdminCode?  @relation("KycCodeUser")
+  
+  wallet        Wallet?
+  withdrawals   Withdrawal[]
+  earnings      Earning[]
+  tickets       Ticket[]
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -58,7 +65,7 @@ model User {
 model AdminCode {
   id          String   @id @default(cuid())
   code        String   @unique
-  type        String
+  type        String // "REGISTRATION" | "KYC"
   status      String   @default("UNUSED")
   usedById    String?  @unique
   usedByKycId String?  @unique
@@ -76,7 +83,7 @@ model KYCSubmission {
   address     String
   idType      String
   idNumber    String
-  status      String   @default("SUBMITTED")
+  status      String   @default("SUBMITTED") // SUBMITTED, APPROVED, REJECTED
   adminNote   String?
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
@@ -89,4 +96,107 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Float    @default(0)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  walletId    String
+  type        String // CREDIT | DEBIT
+  amount      Float
+  description String
+  reference   String?  @unique
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Withdrawal {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Float
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  method      String
+  details     String // e.g. bank details JSON string
+  adminNote   String?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Commission {
+  id          String   @id @default(cuid())
+  type        String // DIRECT, PAIRING, LEADERSHIP
+  percentage  Float?
+  fixedAmount Float?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Earning {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Float
+  type        String // from Commission type
+  description String
+  status      String   @default("PAID") // PENDING, PAID
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  userId      String
+  subject     String
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    TicketMessage[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  senderId  String // can be user or admin
+  message   String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Content {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  body      String
+  isPublished Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WelcomeMessage {
+  id        String   @id @default(cuid())
+  subject   String
+  body      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  adminId     String
+  action      String // e.g., "APPROVED_KYC", "UPDATED_COMMISSION"
+  details     String // JSON representation of changes
+  ipAddress   String?
+  createdAt   DateTime @default(now())
 }

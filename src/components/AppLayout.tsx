@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import MemberSidebar from './dashboard/member-sidebar';
 import Sidebar from './Sidebar';
 
 interface AppLayoutProps {
@@ -12,23 +13,32 @@ export default function AppLayout({ children, role = 'user' }: AppLayoutProps) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--background)' }}>
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       {/* Mobile overlay */}
       {mobileSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden animate-fade-in"
+          className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        mobileOpen={mobileSidebarOpen}
-        onMobileClose={() => setMobileSidebarOpen(false)}
-        role={role}
-      />
+      {role === 'user' ? (
+        <MemberSidebar
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={() => setMobileSidebarOpen(false)}
+        />
+      ) : (
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={() => setMobileSidebarOpen(false)}
+          role={role}
+        />
+      )}
 
       {/* Main content */}
       <div

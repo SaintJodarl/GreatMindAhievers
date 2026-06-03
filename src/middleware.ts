@@ -7,8 +7,14 @@ export default withAuth(
     const path = req.nextUrl.pathname;
 
     if (path.startsWith('/admin-dashboard')) {
-      if (token?.role !== 'Admin') {
+      if (token?.role !== 'ADMIN') {
         return NextResponse.redirect(new URL('/user-dashboard', req.url));
+      }
+    }
+
+    if (path.startsWith('/user-dashboard')) {
+      if (token?.role === 'ADMIN') {
+        return NextResponse.redirect(new URL('/admin-dashboard', req.url));
       }
     }
   },

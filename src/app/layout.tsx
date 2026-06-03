@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata, Viewport } from 'next';
 import { DM_Sans, IBM_Plex_Mono } from 'next/font/google';
 import '../styles/tailwind.css';
+import { Providers } from '@/components/Providers';
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -36,8 +37,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${dmSans.variable} ${ibmPlexMono.variable}`}>
-      <body className={dmSans.className}>{children}
-</body>
+      <body className={dmSans.className}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
