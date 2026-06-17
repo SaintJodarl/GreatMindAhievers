@@ -1,7 +1,3 @@
-Here is a **professional SaaS-grade README.md** you can paste directly into your GitHub repo. It includes **badges, architecture diagram (text-based), structured API docs, and branding with your credit line**.
-
----
-
 # GreatMindAhievers Admin Platform
 
 ![Next.js](https://img.shields.io/badge/Next.js-15-black)
