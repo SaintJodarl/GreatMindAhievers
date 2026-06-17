@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import React from 'react';
 import { Users, Wallet, CreditCard, Activity } from 'lucide-react';
+import AdminOverviewClient from './components/AdminOverviewClient';
 
 export const metadata = {
   title: 'Admin Overview | GMA Network',
@@ -81,17 +82,7 @@ export default async function AdminDashboardOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="space-y-3">
-            <button className="w-full text-left px-4 py-3 rounded-xl bg-gray-50 hover:bg-indigo-50 hover:text-indigo-700 transition-colors border border-gray-100 font-medium text-gray-700">
-              Generate Registration Codes
-            </button>
-            <button className="w-full text-left px-4 py-3 rounded-xl bg-gray-50 hover:bg-emerald-50 hover:text-emerald-700 transition-colors border border-gray-100 font-medium text-gray-700">
-              Review Pending Withdrawals
-            </button>
-            <button className="w-full text-left px-4 py-3 rounded-xl bg-gray-50 hover:bg-purple-50 hover:text-purple-700 transition-colors border border-gray-100 font-medium text-gray-700">
-              Review KYC Submissions
-            </button>
-          </div>
+          <AdminOverviewClient />
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -104,3 +95,4 @@ export default async function AdminDashboardOverview() {
     </div>
   );
 }
+
