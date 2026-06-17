@@ -21,15 +21,27 @@ export default function MemberSidebar({
   onMobileClose,
 }: MemberSidebarProps) {
   const { data: session } = useSession();
-  
-  // Extract user info from session or fallback
-  const userName = session?.user?.name || 'Member User';
-  const userEmail = session?.user?.email || 'Loading...';
-  const accountStatus = (session?.user as any)?.status || 'ACTIVE';
-  
-  // Hardcode KYC status for UI since it's not directly in session yet, 
-  // or default to pending. In a full implementation, you'd fetch this.
-  const kycStatus = 'PENDING'; 
+  const [summary, setSummary] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const res = await fetch('/api/user/dashboard-summary');
+        if (res.ok) {
+          const data = await res.json();
+          setSummary(data);
+        }
+      } catch (err) {
+        console.error('Error fetching sidebar summary:', err);
+      }
+    };
+    fetchSummary();
+  }, []);
+
+  const userName = summary?.name || session?.user?.name || 'Member User';
+  const userEmail = summary?.email || session?.user?.email || 'Loading...';
+  const kycStatus = summary?.kycStatus || 'PENDING';
+  const userRank = summary?.rank || 'Entry';
 
   return (
     <aside
@@ -53,7 +65,7 @@ export default function MemberSidebar({
             </div>
           )}
         </div>
-        
+
         {/* Desktop Collapse Toggle */}
         {!collapsed && (
           <button
@@ -86,7 +98,13 @@ export default function MemberSidebar({
       {/* Navigation Groups */}
       <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-gray-200">
         {memberNavigation.map((group, index) => (
-          <MemberNavGroup key={index} group={group} collapsed={collapsed} />
+          <MemberNavGroup 
+            key={index} 
+            group={group} 
+            collapsed={collapsed} 
+            userStatus={summary?.status}
+            counts={summary ? { openTickets: summary.openTicketsCount || 0, announcements: summary.announcementsCount || 0 } : undefined} 
+          />
         ))}
       </nav>
 
@@ -100,20 +118,23 @@ export default function MemberSidebar({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-gray-900 truncate">{userName}</p>
-                <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+                <p className="text-xs text-gray-500 font-mono truncate">ID: {summary?.referralCode || 'N/A'}</p>
               </div>
             </div>
-            
-            <div className="flex gap-2">
-              <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md ${
-                accountStatus === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-              }`}>
-                {accountStatus}
+
+            <div className="flex flex-wrap gap-1.5">
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-indigo-50 text-indigo-700 rounded-md border border-indigo-200 uppercase">
+                {userRank}
               </span>
-              <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md ${
-                kycStatus === 'APPROVED' ? 'bg-green-100 text-green-700' : 
-                kycStatus === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-              }`}>
+              <span
+                className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-md border ${
+                  kycStatus === 'APPROVED'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : kycStatus === 'REJECTED'
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}
+              >
                 KYC {kycStatus}
               </span>
             </div>

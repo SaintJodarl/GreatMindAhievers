@@ -8,7 +8,7 @@ export const metadata = {
 
 export default async function WelcomeMessagesPage() {
   const messages = await prisma.welcomeMessage.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
 
   return (
@@ -32,7 +32,9 @@ export default async function WelcomeMessagesPage() {
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Subject</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Status</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Last Updated</th>
-                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">Actions</th>
+                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -47,9 +49,11 @@ export default async function WelcomeMessagesPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      msg.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        msg.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
                       {msg.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
@@ -63,7 +67,7 @@ export default async function WelcomeMessagesPage() {
                   </td>
                 </tr>
               ))}
-              
+
               {messages.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-gray-500">

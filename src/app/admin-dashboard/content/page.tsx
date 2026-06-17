@@ -8,7 +8,7 @@ export const metadata = {
 
 export default async function ContentPage() {
   const contents = await prisma.content.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
 
   return (
@@ -26,19 +26,22 @@ export default async function ContentPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {contents.map((content) => (
-          <div key={content.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full hover:shadow-md transition-shadow">
+          <div
+            key={content.id}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full hover:shadow-md transition-shadow"
+          >
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-xl font-bold text-gray-900 line-clamp-1">{content.title}</h2>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                content.isPublished ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-              }`}>
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  content.isPublished ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                }`}
+              >
                 {content.isPublished ? 'Published' : 'Draft'}
               </span>
             </div>
             <p className="text-sm font-mono text-gray-500 mb-4">/{content.slug}</p>
-            <p className="text-sm text-gray-600 line-clamp-3 mb-6">
-              {content.body}
-            </p>
+            <p className="text-sm text-gray-600 line-clamp-3 mb-6">{content.body}</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100">
               <span className="text-xs text-gray-400">
                 Updated {content.updatedAt.toLocaleDateString()}

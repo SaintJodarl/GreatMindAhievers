@@ -111,14 +111,9 @@ export default function AdminKPIGrid() {
             >
               {kpi?.label}
             </p>
-            {kpi?.isAlert && (
-              <span style={{ color: kpi?.color, fontSize: 14 }}>⚠</span>
-            )}
+            {kpi?.isAlert && <span style={{ color: kpi?.color, fontSize: 14 }}>⚠</span>}
           </div>
-          <p
-            className="text-2xl font-bold font-mono-nums mb-1"
-            style={{ color: kpi?.color }}
-          >
+          <p className="text-2xl font-bold font-mono-nums mb-1" style={{ color: kpi?.color }}>
             {kpi?.value}
           </p>
           <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>

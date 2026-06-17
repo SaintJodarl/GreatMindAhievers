@@ -22,11 +22,15 @@ export default function EarningsChartSection() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--primary)' }} />
-            <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Left</span>
+            <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+              Left
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--info)' }} />
-            <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Right</span>
+            <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+              Right
+            </span>
           </div>
         </div>
       </div>

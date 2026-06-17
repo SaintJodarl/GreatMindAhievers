@@ -20,7 +20,7 @@ import {
   History,
   LogOut,
   Menu,
-  X
+  X,
 } from 'lucide-react';
 
 const sidebarLinks = [
@@ -66,7 +66,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         `}
       >
         <div className="p-6 hidden md:flex items-center gap-3 border-b border-indigo-800">
-          <img src="/assets/images/app_logo.png" alt="Logo" className="h-10 w-10 bg-white rounded-lg p-1" />
+          <img
+            src="/assets/images/app_logo.png"
+            alt="Logo"
+            className="h-10 w-10 bg-white rounded-lg p-1"
+          />
           <div>
             <h1 className="font-bold text-lg leading-tight">GMA Network</h1>
             <p className="text-xs text-indigo-300">Admin Panel</p>
@@ -77,7 +81,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <ul className="space-y-1 px-3">
             {sidebarLinks.map((link) => {
               const Icon = link.icon;
-              const isActive = pathname === link.href || (link.href !== '/admin-dashboard' && pathname.startsWith(link.href));
+              const isActive =
+                pathname === link.href ||
+                (link.href !== '/admin-dashboard' && pathname.startsWith(link.href));
               return (
                 <li key={link.href}>
                   <Link
@@ -111,9 +117,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto bg-gray-50/50">
-        <div className="flex-1 p-4 md:p-8">
-          {children}
-        </div>
+        <div className="flex-1 p-4 md:p-8">{children}</div>
       </main>
     </div>
   );

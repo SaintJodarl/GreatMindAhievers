@@ -51,22 +51,74 @@ export default function AdminAnalyticsSection() {
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'KYC Approval Rate', value: '87.4%', color: 'var(--accent)', trend: '+2.1% this week', up: true },
-            { label: 'Avg. Binary Pair Rate', value: '68.2%', color: 'var(--primary)', trend: '+4.8% this week', up: true },
-            { label: 'Withdrawal Rejection Rate', value: '8.3%', color: 'var(--warning)', trend: '-1.2% this week', up: true },
-            { label: 'Avg. Member Tenure', value: '4.2 mo', color: 'var(--info)', trend: '+0.3 mo this month', up: true },
-            { label: 'Daily Active Users', value: '12,840', color: 'var(--accent)', trend: '+340 vs yesterday', up: true },
-            { label: 'Avg. Daily Commission', value: '₦3,094,000', color: 'var(--primary)', trend: '+₦218,000 vs last week', up: true },
-            { label: 'Suspended Accounts', value: '234', color: 'var(--negative)', trend: '+12 this week', up: false },
-            { label: 'Pending KYC Backlog', value: '7', color: 'var(--warning)', trend: '-3 vs yesterday', up: true },
+            {
+              label: 'KYC Approval Rate',
+              value: '87.4%',
+              color: 'var(--accent)',
+              trend: '+2.1% this week',
+              up: true,
+            },
+            {
+              label: 'Avg. Binary Pair Rate',
+              value: '68.2%',
+              color: 'var(--primary)',
+              trend: '+4.8% this week',
+              up: true,
+            },
+            {
+              label: 'Withdrawal Rejection Rate',
+              value: '8.3%',
+              color: 'var(--warning)',
+              trend: '-1.2% this week',
+              up: true,
+            },
+            {
+              label: 'Avg. Member Tenure',
+              value: '4.2 mo',
+              color: 'var(--info)',
+              trend: '+0.3 mo this month',
+              up: true,
+            },
+            {
+              label: 'Daily Active Users',
+              value: '12,840',
+              color: 'var(--accent)',
+              trend: '+340 vs yesterday',
+              up: true,
+            },
+            {
+              label: 'Avg. Daily Commission',
+              value: '₦3,094,000',
+              color: 'var(--primary)',
+              trend: '+₦218,000 vs last week',
+              up: true,
+            },
+            {
+              label: 'Suspended Accounts',
+              value: '234',
+              color: 'var(--negative)',
+              trend: '+12 this week',
+              up: false,
+            },
+            {
+              label: 'Pending KYC Backlog',
+              value: '7',
+              color: 'var(--warning)',
+              trend: '-3 vs yesterday',
+              up: true,
+            },
           ]?.map((m) => (
             <div
               key={`health-${m?.label}`}
               className="p-4 rounded-lg"
               style={{ background: 'var(--muted)', border: '1px solid var(--border)' }}
             >
-              <p className="text-xs mb-1" style={{ color: 'var(--muted-foreground)' }}>{m?.label}</p>
-              <p className="text-xl font-bold font-mono-nums mb-1" style={{ color: m?.color }}>{m?.value}</p>
+              <p className="text-xs mb-1" style={{ color: 'var(--muted-foreground)' }}>
+                {m?.label}
+              </p>
+              <p className="text-xl font-bold font-mono-nums mb-1" style={{ color: m?.color }}>
+                {m?.value}
+              </p>
               <p
                 className="text-xs"
                 style={{ color: m?.up ? 'var(--positive)' : 'var(--negative)' }}

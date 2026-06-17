@@ -3,7 +3,11 @@ import React, { useState } from 'react';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 
-export default function AuthPageClient({ defaultMode = 'login' }: { defaultMode?: 'login' | 'register' }) {
+export default function AuthPageClient({
+  defaultMode = 'login',
+}: {
+  defaultMode?: 'login' | 'register';
+}) {
   const [mode, setMode] = useState<'login' | 'register'>(defaultMode);
 
   return (
@@ -20,7 +24,8 @@ export default function AuthPageClient({ defaultMode = 'login' }: { defaultMode?
         <div
           className="absolute top-0 left-0 w-full h-full pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse at 30% 20%, rgba(108,71,255,0.15) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(16,217,160,0.08) 0%, transparent 50%)',
+            background:
+              'radial-gradient(ellipse at 30% 20%, rgba(108,71,255,0.15) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(16,217,160,0.08) 0%, transparent 50%)',
           }}
         />
 
@@ -28,7 +33,8 @@ export default function AuthPageClient({ defaultMode = 'login' }: { defaultMode?
         <div
           className="absolute inset-0 pointer-events-none opacity-5"
           style={{
-            backgroundImage: 'linear-gradient(rgba(108,71,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(108,71,255,0.5) 1px, transparent 1px)',
+            backgroundImage:
+              'linear-gradient(rgba(108,71,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(108,71,255,0.5) 1px, transparent 1px)',
             backgroundSize: '40px 40px',
           }}
         />
@@ -61,7 +67,8 @@ export default function AuthPageClient({ defaultMode = 'login' }: { defaultMode?
             <span style={{ color: 'var(--accent)' }}>Wealth.</span>
           </h1>
           <p className="text-base leading-relaxed" style={{ color: 'var(--secondary-foreground)' }}>
-            Join thousands of achievers building financial freedom through our proven binary network marketing system.
+            Join thousands of achievers building financial freedom through our proven binary network
+            marketing system.
           </p>
         </div>
 
@@ -76,7 +83,10 @@ export default function AuthPageClient({ defaultMode = 'login' }: { defaultMode?
             <div
               key={`stat-${stat.label}`}
               className="p-4 rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
             >
               <div className="text-xl mb-1">{stat.icon}</div>
               <div
@@ -97,8 +107,12 @@ export default function AuthPageClient({ defaultMode = 'login' }: { defaultMode?
           className="relative z-10 p-4 rounded-xl"
           style={{ background: 'rgba(108,71,255,0.1)', border: '1px solid rgba(108,71,255,0.2)' }}
         >
-          <p className="text-sm italic leading-relaxed mb-3" style={{ color: 'var(--secondary-foreground)' }}>
-            "Within 6 months, my binary team grew to 340 members and I hit Diamond rank. GMA's system is transparent and the payouts are always on time."
+          <p
+            className="text-sm italic leading-relaxed mb-3"
+            style={{ color: 'var(--secondary-foreground)' }}
+          >
+            "Within 6 months, my binary team grew to 340 members and I hit Diamond rank. GMA's
+            system is transparent and the payouts are always on time."
           </p>
           <div className="flex items-center gap-2">
             <div
@@ -135,10 +149,7 @@ export default function AuthPageClient({ defaultMode = 'login' }: { defaultMode?
 
         <div className="w-full max-w-md">
           {/* Tab switcher */}
-          <div
-            className="flex rounded-xl p-1 mb-8"
-            style={{ background: 'var(--muted)' }}
-          >
+          <div className="flex rounded-xl p-1 mb-8" style={{ background: 'var(--muted)' }}>
             {(['login', 'register'] as const).map((tab) => (
               <button
                 key={`auth-tab-${tab}`}

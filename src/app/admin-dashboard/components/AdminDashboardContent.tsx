@@ -14,7 +14,7 @@ const tabs = [
   { id: 'analytics', label: 'Analytics', icon: '📈' },
 ] as const;
 
-type TabId = typeof tabs[number]['id'];
+type TabId = (typeof tabs)[number]['id'];
 
 export default function AdminDashboardContent() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
@@ -34,7 +34,11 @@ export default function AdminDashboardContent() {
         <div className="flex items-center gap-3">
           <div
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs"
-            style={{ background: 'rgba(16,217,160,0.08)', border: '1px solid rgba(16,217,160,0.2)', color: 'var(--accent)' }}
+            style={{
+              background: 'rgba(16,217,160,0.08)',
+              border: '1px solid rgba(16,217,160,0.2)',
+              color: 'var(--accent)',
+            }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
             Platform Live
@@ -59,7 +63,10 @@ export default function AdminDashboardContent() {
             }`}
             style={
               activeTab === tab.id
-                ? { background: 'linear-gradient(135deg, #6C47FF 0%, #8B6FFF 100%)', boxShadow: '0 2px 8px rgba(108,71,255,0.3)' }
+                ? {
+                    background: 'linear-gradient(135deg, #6C47FF 0%, #8B6FFF 100%)',
+                    boxShadow: '0 2px 8px rgba(108,71,255,0.3)',
+                  }
                 : { color: 'var(--muted-foreground)' }
             }
           >

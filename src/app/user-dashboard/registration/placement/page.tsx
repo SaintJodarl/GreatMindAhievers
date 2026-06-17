@@ -19,7 +19,8 @@ export default function PlacementManagerPage() {
         </div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">Placement Settings</h2>
         <p className="text-gray-500 max-w-md text-center mb-6">
-          Placement manager is being updated. Soon you will be able to set auto-placement to Left, Right, or Auto-Balance.
+          Placement manager is being updated. Soon you will be able to set auto-placement to Left,
+          Right, or Auto-Balance.
         </p>
       </div>
     </div>

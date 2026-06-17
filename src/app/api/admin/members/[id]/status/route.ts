@@ -1,0 +1,71 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { verifyAdminPermission } from '@/lib/auth/admin-guard';
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = await verifyAdminPermission('member:write');
+    if (!auth.authorized) {
+      return NextResponse.json({ message: auth.message }, { status: auth.status });
+    }
+
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      return NextResponse.json({ message: 'Member not found' }, { status: 404 });
+    }
+
+    const body = await req.json();
+    const { status } = body; // ACTIVE, INACTIVE, SUSPENDED
+
+    if (
+      !status ||
+      ![
+        'ACTIVE',
+        'INACTIVE',
+        'SUSPENDED',
+        'PENDING',
+        'PENDING_PROFILE_COMPLETION',
+        'PENDING_KYC_REVIEW',
+        'PENDING_ACTIVATION',
+      ].includes(status)
+    ) {
+      return NextResponse.json({ message: 'Invalid status value' }, { status: 400 });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id },
+      data: { status },
+    });
+
+    // Log to Audit logs
+    await prisma.auditLog.create({
+      data: {
+        adminId: auth.user!.id,
+        action: 'TOGGLE_MEMBER_STATUS',
+        targetType: 'User',
+        targetId: id,
+        details: `Toggled status of user ${user.email} to ${status}`,
+      },
+    });
+
+    return NextResponse.json({
+      message: `Member status successfully updated to ${status}`,
+      user: updated,
+    });
+  } catch (error: any) {
+    console.error('Toggle member status error:', error);
+    return NextResponse.json(
+      { message: error.message || 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

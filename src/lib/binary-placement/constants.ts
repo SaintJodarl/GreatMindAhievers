@@ -1,0 +1,10 @@
+export const PLACEMENT_CONSTANTS = {
+  MAX_DEPTH: 40,
+  SOFT_WARNING_DEPTH_MIN: 25,
+  SOFT_WARNING_DEPTH_MAX: 30,
+  DEFAULT_PREFERRED_POSITION: 'LEFT' as BinaryPosition,
+  SPILLOVER_PREFERRED_POSITION: 'LEFT' as BinaryPosition,
+  ROOT_PATH_PREFIX: 'ROOT',
+} as const;
+
+export type BinaryPosition = 'LEFT' | 'RIGHT';

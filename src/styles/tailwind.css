@@ -3,32 +3,32 @@
 @tailwind utilities;
 
 :root {
-  --background: #0D0F1A;
-  --foreground: #E8EAFF;
-  --primary: #6C47FF;
-  --primary-foreground: #FFFFFF;
-  --secondary: #1A1D2E;
-  --secondary-foreground: #A0A8C8;
-  --accent: #10D9A0;
-  --accent-foreground: #0D0F1A;
-  --muted: #1E2235;
-  --muted-foreground: #6B7280;
+  --background: #0d0f1a;
+  --foreground: #e8eaff;
+  --primary: #6c47ff;
+  --primary-foreground: #ffffff;
+  --secondary: #1a1d2e;
+  --secondary-foreground: #a0a8c8;
+  --accent: #10d9a0;
+  --accent-foreground: #0d0f1a;
+  --muted: #1e2235;
+  --muted-foreground: #6b7280;
   --card: #141728;
-  --card-foreground: #E8EAFF;
+  --card-foreground: #e8eaff;
   --border: #252840;
-  --input: #1E2235;
-  --ring: #6C47FF;
+  --input: #1e2235;
+  --ring: #6c47ff;
   --radius: 10px;
   --font-sans: 'DM Sans', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 
-  --positive: #10D9A0;
+  --positive: #10d9a0;
   --positive-bg: rgba(16, 217, 160, 0.08);
-  --negative: #FF4D6A;
+  --negative: #ff4d6a;
   --negative-bg: rgba(255, 77, 106, 0.08);
-  --warning: #F59E0B;
+  --warning: #f59e0b;
   --warning-bg: rgba(245, 158, 11, 0.08);
-  --info: #38BDF8;
+  --info: #38bdf8;
   --info-bg: rgba(56, 189, 248, 0.08);
 }
 
@@ -50,12 +50,18 @@
     scroll-behavior: smooth;
   }
 
-  h1, h2, h3, h4, h5, h6, p {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p {
     margin: 0;
   }
 
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
@@ -107,11 +113,11 @@
   }
 
   .gradient-primary {
-    background: linear-gradient(135deg, #6C47FF 0%, #9B7AFF 100%);
+    background: linear-gradient(135deg, #6c47ff 0%, #9b7aff 100%);
   }
 
   .gradient-accent {
-    background: linear-gradient(135deg, #10D9A0 0%, #3DFFC4 100%);
+    background: linear-gradient(135deg, #10d9a0 0%, #3dffc4 100%);
   }
 
   .text-balance {
@@ -134,7 +140,7 @@
 @layer components {
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm text-white transition-all duration-150 active:scale-95;
-    background: linear-gradient(135deg, #6C47FF 0%, #8B6FFF 100%);
+    background: linear-gradient(135deg, #6c47ff 0%, #8b6fff 100%);
     box-shadow: 0 2px 12px rgba(108, 71, 255, 0.35);
   }
 
@@ -168,8 +174,8 @@
 
   .btn-accent {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-150 active:scale-95;
-    background: linear-gradient(135deg, #10D9A0 0%, #3DFFC4 100%);
-    color: #0D0F1A;
+    background: linear-gradient(135deg, #10d9a0 0%, #3dffc4 100%);
+    color: #0d0f1a;
     box-shadow: 0 2px 12px rgba(16, 217, 160, 0.3);
   }
 
@@ -230,7 +236,7 @@
 
   .badge-suspended {
     background-color: rgba(107, 114, 128, 0.1);
-    color: #6B7280;
+    color: #6b7280;
     border: 1px solid rgba(107, 114, 128, 0.2);
   }
 
@@ -242,28 +248,53 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(108, 71, 255, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(108, 71, 255, 0.6); }
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(108, 71, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(108, 71, 255, 0.6);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .skeleton {

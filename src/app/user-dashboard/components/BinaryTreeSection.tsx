@@ -94,7 +94,8 @@ function TreeNodeCard({ node, isRoot = false }: { node: TreeNode; isRoot?: boole
           style={
             isRoot
               ? {
-                  background: 'linear-gradient(135deg, rgba(108,71,255,0.25) 0%, rgba(108,71,255,0.1) 100%)',
+                  background:
+                    'linear-gradient(135deg, rgba(108,71,255,0.25) 0%, rgba(108,71,255,0.1) 100%)',
                   border: '1px solid rgba(108,71,255,0.5)',
                   boxShadow: '0 0 16px rgba(108,71,255,0.2)',
                 }
@@ -110,7 +111,10 @@ function TreeNodeCard({ node, isRoot = false }: { node: TreeNode; isRoot?: boole
           >
             {node.name.split(' ')[0][0]}
           </div>
-          <p className="text-xs font-semibold leading-tight mb-0.5" style={{ color: 'var(--foreground)' }}>
+          <p
+            className="text-xs font-semibold leading-tight mb-0.5"
+            style={{ color: 'var(--foreground)' }}
+          >
             {node.name.length > 16 ? node.name.slice(0, 14) + '…' : node.name}
           </p>
           <p className="text-xs font-mono-nums" style={{ color: 'var(--muted-foreground)' }}>
@@ -166,26 +170,22 @@ function TreeNodeCard({ node, isRoot = false }: { node: TreeNode; isRoot?: boole
             />
             {/* Left child */}
             <div className="flex flex-col items-center">
+              <div className="w-0.5 h-4 mb-0 -mt-2" style={{ background: 'var(--border)' }} />
               <div
-                className="w-0.5 h-4 mb-0 -mt-2"
-                style={{ background: 'var(--border)' }}
-              />
-              <div className="text-xs font-semibold mb-2 px-2 py-0.5 rounded" style={{ background: 'rgba(108,71,255,0.1)', color: 'var(--primary)' }}>
+                className="text-xs font-semibold mb-2 px-2 py-0.5 rounded"
+                style={{ background: 'rgba(108,71,255,0.1)', color: 'var(--primary)' }}
+              >
                 L
               </div>
-              {node.leftChild ? (
-                <TreeNodeCard node={node.leftChild} />
-              ) : (
-                <EmptySlot side="Left" />
-              )}
+              {node.leftChild ? <TreeNodeCard node={node.leftChild} /> : <EmptySlot side="Left" />}
             </div>
             {/* Right child */}
             <div className="flex flex-col items-center">
+              <div className="w-0.5 h-4 mb-0 -mt-2" style={{ background: 'var(--border)' }} />
               <div
-                className="w-0.5 h-4 mb-0 -mt-2"
-                style={{ background: 'var(--border)' }}
-              />
-              <div className="text-xs font-semibold mb-2 px-2 py-0.5 rounded" style={{ background: 'rgba(56,189,248,0.1)', color: 'var(--info)' }}>
+                className="text-xs font-semibold mb-2 px-2 py-0.5 rounded"
+                style={{ background: 'rgba(56,189,248,0.1)', color: 'var(--info)' }}
+              >
                 R
               </div>
               {node.rightChild ? (
@@ -214,7 +214,13 @@ function EmptySlot({ side }: { side: string }) {
         className="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1.5"
         style={{ background: 'var(--muted)' }}
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: 'var(--muted-foreground)' }}>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          style={{ color: 'var(--muted-foreground)' }}
+        >
           <path d="M7 3v8M3 7h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       </div>
@@ -244,7 +250,10 @@ export default function BinaryTreeSection() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--muted-foreground)' }}>
+          <div
+            className="flex items-center gap-3 text-xs"
+            style={{ color: 'var(--muted-foreground)' }}
+          >
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full" style={{ background: 'var(--primary)' }} />
               Left: 14,820 PV
@@ -265,12 +274,19 @@ export default function BinaryTreeSection() {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-        <p className="text-xs font-semibold" style={{ color: 'var(--muted-foreground)' }}>Rank:</p>
+      <div
+        className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t"
+        style={{ borderColor: 'var(--border)' }}
+      >
+        <p className="text-xs font-semibold" style={{ color: 'var(--muted-foreground)' }}>
+          Rank:
+        </p>
         {Object.entries(rankColors).map(([rank, color]) => (
           <div key={`legend-${rank}`} className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
-            <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{rank}</span>
+            <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+              {rank}
+            </span>
           </div>
         ))}
       </div>

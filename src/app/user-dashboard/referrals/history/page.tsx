@@ -1,11 +1,20 @@
 import React from 'react';
-import { History } from 'lucide-react';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/options';
+import { redirect } from 'next/navigation';
+import ReferralHistoryTable from './ReferralHistoryTable';
 
 export const metadata = {
-  title: 'Invitation History | Referral Center',
+  title: 'Invitation History | GMA Network',
 };
 
-export default function InvitationHistoryPage() {
+export default async function ReferralHistoryPage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    redirect('/sign-up-login-screen');
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -13,12 +22,7 @@ export default function InvitationHistoryPage() {
         <p className="text-gray-500 mt-1">Track the status of your sent invitations.</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center min-h-[400px]">
-        <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-4">
-          <History size={32} />
-        </div>
-        <p className="text-gray-500 font-medium">No invitations sent yet.</p>
-      </div>
+      <ReferralHistoryTable />
     </div>
   );
 }

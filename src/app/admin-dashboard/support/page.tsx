@@ -12,9 +12,9 @@ export default async function SupportPage() {
     include: {
       user: true,
       _count: {
-        select: { messages: true }
-      }
-    }
+        select: { messages: true },
+      },
+    },
   });
 
   return (
@@ -49,7 +49,10 @@ export default async function SupportPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {tickets.map((ticket) => (
-                <tr key={ticket.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer">
+                <tr
+                  key={ticket.id}
+                  className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                >
                   <td className="px-6 py-4 text-sm font-mono text-indigo-600">
                     #{ticket.id.slice(0, 8)}
                   </td>
@@ -61,10 +64,15 @@ export default async function SupportPage() {
                     {ticket.subject}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      ticket.status === 'OPEN' ? 'bg-green-100 text-green-800' :
-                      ticket.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        ticket.status === 'OPEN'
+                          ? 'bg-green-100 text-green-800'
+                          : ticket.status === 'IN_PROGRESS'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
                       {ticket.status}
                     </span>
                   </td>
@@ -82,7 +90,7 @@ export default async function SupportPage() {
                   </td>
                 </tr>
               ))}
-              
+
               {tickets.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-gray-500">

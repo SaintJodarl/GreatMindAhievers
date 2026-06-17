@@ -10,8 +10,8 @@ export default async function WithdrawalsPage() {
   const withdrawals = await prisma.withdrawal.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
-      user: true
-    }
+      user: true,
+    },
   });
 
   return (
@@ -33,7 +33,9 @@ export default async function WithdrawalsPage() {
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Amount (₦)</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Method & Details</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Status</th>
-                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">Actions</th>
+                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -51,23 +53,36 @@ export default async function WithdrawalsPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     <span className="font-medium">{withdrawal.method}</span>
-                    <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[200px]">{withdrawal.details}</p>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[200px]">
+                      {withdrawal.details}
+                    </p>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      withdrawal.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                      withdrawal.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        withdrawal.status === 'APPROVED'
+                          ? 'bg-green-100 text-green-800'
+                          : withdrawal.status === 'REJECTED'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
                       {withdrawal.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     {withdrawal.status === 'PENDING' && (
                       <div className="flex justify-end gap-2">
-                        <button className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Approve">
+                        <button
+                          className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Approve"
+                        >
                           <CheckCircle size={20} />
                         </button>
-                        <button className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Reject">
+                        <button
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Reject"
+                        >
                           <XCircle size={20} />
                         </button>
                       </div>
@@ -75,7 +90,7 @@ export default async function WithdrawalsPage() {
                   </td>
                 </tr>
               ))}
-              
+
               {withdrawals.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-gray-500">

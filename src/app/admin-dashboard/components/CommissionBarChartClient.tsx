@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,  } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const data = [
   { week: 'Feb W1', binary: 4200, referral: 1400, rank: 800 },
@@ -17,7 +17,11 @@ const data = [
   { week: 'Apr W4', binary: 9800, referral: 3600, rank: 1000 },
 ];
 
-const CustomTooltip = ({ active, payload, label }: {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: {
   active?: boolean;
   payload?: Array<{ name: string; value: number; fill: string }>;
   label?: string;
@@ -25,8 +29,17 @@ const CustomTooltip = ({ active, payload, label }: {
   if (active && payload && payload.length) {
     const total = payload.reduce((s, p) => s + p.value, 0);
     return (
-      <div className="p-3 rounded-lg text-xs" style={{ background: '#1A1D2E', border: '1px solid #252840', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-        <p className="font-semibold mb-2" style={{ color: '#E8EAFF' }}>{label}</p>
+      <div
+        className="p-3 rounded-lg text-xs"
+        style={{
+          background: '#1A1D2E',
+          border: '1px solid #252840',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+        }}
+      >
+        <p className="font-semibold mb-2" style={{ color: '#E8EAFF' }}>
+          {label}
+        </p>
         {payload.map((entry) => (
           <div key={`ctooltip-${entry.name}`} className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-1.5">
@@ -38,9 +51,14 @@ const CustomTooltip = ({ active, payload, label }: {
             </span>
           </div>
         ))}
-        <div className="flex items-center justify-between gap-4 mt-1.5 pt-1.5 border-t" style={{ borderColor: '#252840' }}>
+        <div
+          className="flex items-center justify-between gap-4 mt-1.5 pt-1.5 border-t"
+          style={{ borderColor: '#252840' }}
+        >
           <span style={{ color: '#A0A8C8' }}>Total</span>
-          <span className="font-mono font-bold" style={{ color: '#E8EAFF' }}>₦{total.toLocaleString()}</span>
+          <span className="font-mono font-bold" style={{ color: '#E8EAFF' }}>
+            ₦{total.toLocaleString()}
+          </span>
         </div>
       </div>
     );
@@ -53,10 +71,26 @@ export default function CommissionBarChartClient() {
     <ResponsiveContainer width="100%" height={220}>
       <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={12}>
         <CartesianGrid strokeDasharray="3 3" stroke="#252840" vertical={false} />
-        <XAxis dataKey="week" tick={{ fontSize: 9, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fontSize: 9, fill: '#6B7280' }} axisLine={false} tickLine={false} tickFormatter={(v) => `₦${(v / 1000).toFixed(0)}k`} />
+        <XAxis
+          dataKey="week"
+          tick={{ fontSize: 9, fill: '#6B7280' }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <YAxis
+          tick={{ fontSize: 9, fill: '#6B7280' }}
+          axisLine={false}
+          tickLine={false}
+          tickFormatter={(v) => `₦${(v / 1000).toFixed(0)}k`}
+        />
         <Tooltip content={<CustomTooltip />} />
-        <Bar dataKey="binary" name="Binary Match" stackId="a" fill="#6C47FF" radius={[0, 0, 0, 0]} />
+        <Bar
+          dataKey="binary"
+          name="Binary Match"
+          stackId="a"
+          fill="#6C47FF"
+          radius={[0, 0, 0, 0]}
+        />
         <Bar dataKey="referral" name="Referral Bonus" stackId="a" fill="#10D9A0" />
         <Bar dataKey="rank" name="Rank Reward" stackId="a" fill="#F59E0B" radius={[4, 4, 0, 0]} />
       </BarChart>

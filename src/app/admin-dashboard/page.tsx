@@ -11,14 +11,14 @@ async function getStats() {
     prisma.user.count({ where: { role: 'MEMBER' } }),
     prisma.wallet.aggregate({ _sum: { balance: true } }),
     prisma.withdrawal.count({ where: { status: 'PENDING' } }),
-    prisma.kYCSubmission.count({ where: { status: 'SUBMITTED' } })
+    prisma.kYCSubmission.count({ where: { status: 'SUBMITTED' } }),
   ]);
 
   return {
     totalMembers,
     totalWalletBalance: totalWalletBalance._sum.balance || 0,
     pendingWithdrawals,
-    pendingKyc
+    pendingKyc,
   };
 }
 
@@ -50,7 +50,9 @@ export default async function AdminDashboardOverview() {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">System Balance</p>
-            <p className="text-3xl font-bold text-gray-900">₦{stats.totalWalletBalance.toLocaleString()}</p>
+            <p className="text-3xl font-bold text-gray-900">
+              ₦{stats.totalWalletBalance.toLocaleString()}
+            </p>
           </div>
         </div>
 
@@ -91,7 +93,7 @@ export default async function AdminDashboardOverview() {
             </button>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">System Status</h2>
           <div className="flex items-center justify-center h-48 bg-gray-50 rounded-xl border border-dashed border-gray-200">

@@ -38,13 +38,13 @@ async function main() {
   const adminWallet = await prisma.wallet.upsert({
     where: { userId: admin.id },
     update: {},
-    create: { userId: admin.id, balance: 100000 },
+    create: { id: admin.id, userId: admin.id, balance: 100000 },
   });
 
   const memberWallet = await prisma.wallet.upsert({
     where: { userId: member.id },
     update: {},
-    create: { userId: member.id, balance: 500 },
+    create: { id: member.id, userId: member.id, balance: 500 },
   });
 
   // Create some sample admin codes

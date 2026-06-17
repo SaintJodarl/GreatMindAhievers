@@ -22,16 +22,16 @@ export default async function ReportsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center min-h-[300px]">
-           <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-4">
-             <BarChart3 size={32} />
-           </div>
-           <p className="text-gray-500 font-medium">Growth Chart Data Processing...</p>
+          <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-4">
+            <BarChart3 size={32} />
+          </div>
+          <p className="text-gray-500 font-medium">Growth Chart Data Processing...</p>
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center min-h-[300px]">
-           <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-4">
-             <BarChart3 size={32} />
-           </div>
-           <p className="text-gray-500 font-medium">Financial Flow Processing...</p>
+          <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-4">
+            <BarChart3 size={32} />
+          </div>
+          <p className="text-gray-500 font-medium">Financial Flow Processing...</p>
         </div>
       </div>
     </div>

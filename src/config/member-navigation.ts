@@ -18,7 +18,7 @@ import {
   User,
   Settings,
   LogOut,
-  UserCheck
+  UserCheck,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -35,9 +35,7 @@ export interface NavGroup {
 export const memberNavigation: NavGroup[] = [
   {
     title: 'Dashboard',
-    items: [
-      { label: 'Overview', href: '/user-dashboard', icon: LayoutDashboard },
-    ],
+    items: [{ label: 'Overview', href: '/user-dashboard', icon: LayoutDashboard }],
   },
   {
     title: 'My Network',
@@ -52,8 +50,16 @@ export const memberNavigation: NavGroup[] = [
     title: 'Member Registration',
     items: [
       { label: 'Register Member', href: '/user-dashboard/registration/new', icon: UserPlus },
-      { label: 'Placement Manager', href: '/user-dashboard/registration/placement', icon: GitMerge },
-      { label: 'Registration History', href: '/user-dashboard/registration/history', icon: History },
+      {
+        label: 'Placement Manager',
+        href: '/user-dashboard/registration/placement',
+        icon: GitMerge,
+      },
+      {
+        label: 'Registration History',
+        href: '/user-dashboard/registration/history',
+        icon: History,
+      },
     ],
   },
   {
@@ -77,7 +83,11 @@ export const memberNavigation: NavGroup[] = [
     items: [
       { label: 'Company News', href: '/user-dashboard/announcements/news', icon: Megaphone },
       { label: 'Welcome Messages', href: '/user-dashboard/announcements/welcome', icon: Mail },
-      { label: 'Training Resources', href: '/user-dashboard/announcements/training', icon: GraduationCap },
+      {
+        label: 'Training Resources',
+        href: '/user-dashboard/announcements/training',
+        icon: GraduationCap,
+      },
     ],
   },
   {

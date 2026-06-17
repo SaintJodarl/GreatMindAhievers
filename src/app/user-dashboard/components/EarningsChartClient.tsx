@@ -28,7 +28,11 @@ const data = [
   { day: 'Apr 29', left: 1420, right: 1240 },
 ];
 
-const CustomTooltip = ({ active, payload, label }: {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: {
   active?: boolean;
   payload?: Array<{ name: string; value: number; color: string }>;
   label?: string;
@@ -43,7 +47,9 @@ const CustomTooltip = ({ active, payload, label }: {
           boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
         }}
       >
-        <p className="font-semibold mb-2" style={{ color: '#E8EAFF' }}>{label}</p>
+        <p className="font-semibold mb-2" style={{ color: '#E8EAFF' }}>
+          {label}
+        </p>
         {payload.map((entry) => (
           <div key={`tooltip-${entry.name}`} className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-1.5">

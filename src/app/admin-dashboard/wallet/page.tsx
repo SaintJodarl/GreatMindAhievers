@@ -7,14 +7,14 @@ export const metadata = {
 };
 
 export default async function WalletPage() {
-  const transactions = await prisma.transaction.findMany({
+  const transactions = await prisma.walletTransaction.findMany({
     orderBy: { createdAt: 'desc' },
     take: 50,
     include: {
       wallet: {
-        include: { user: true }
-      }
-    }
+        include: { user: true },
+      },
+    },
   });
 
   return (
@@ -46,7 +46,9 @@ export default async function WalletPage() {
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Member</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Type</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Description</th>
-                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">Amount (₦)</th>
+                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">
+                  Amount (₦)
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -60,24 +62,30 @@ export default async function WalletPage() {
                     <p className="text-xs text-gray-500">{tx.wallet.user.email}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <div className={`flex items-center gap-1.5 text-sm font-medium ${
-                      tx.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {tx.type === 'CREDIT' ? <ArrowDownRight size={16} /> : <ArrowUpRight size={16} />}
+                    <div
+                      className={`flex items-center gap-1.5 text-sm font-medium ${
+                        tx.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {tx.type === 'CREDIT' ? (
+                        <ArrowDownRight size={16} />
+                      ) : (
+                        <ArrowUpRight size={16} />
+                      )}
                       {tx.type}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {tx.description}
-                  </td>
-                  <td className={`px-6 py-4 text-right font-bold ${
-                    tx.type === 'CREDIT' ? 'text-green-600' : 'text-gray-900'
-                  }`}>
+                  <td className="px-6 py-4 text-sm text-gray-600">{tx.description}</td>
+                  <td
+                    className={`px-6 py-4 text-right font-bold ${
+                      tx.type === 'CREDIT' ? 'text-green-600' : 'text-gray-900'
+                    }`}
+                  >
                     {tx.type === 'CREDIT' ? '+' : '-'} {tx.amount.toLocaleString()}
                   </td>
                 </tr>
               ))}
-              
+
               {transactions.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-500">

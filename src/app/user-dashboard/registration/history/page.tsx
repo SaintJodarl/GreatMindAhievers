@@ -1,11 +1,20 @@
 import React from 'react';
-import { History } from 'lucide-react';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/options';
+import { redirect } from 'next/navigation';
+import RegistrationHistoryTable from './RegistrationHistoryTable';
 
 export const metadata = {
-  title: 'Registration History | Registration',
+  title: 'Registration History | GMA Network',
 };
 
-export default function RegistrationHistoryPage() {
+export default async function RegistrationHistoryPage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    redirect('/sign-up-login-screen');
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -13,12 +22,7 @@ export default function RegistrationHistoryPage() {
         <p className="text-gray-500 mt-1">View history of members you manually registered.</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center min-h-[400px]">
-        <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-4">
-          <History size={32} />
-        </div>
-        <p className="text-gray-500 font-medium">No manual registrations found.</p>
-      </div>
+      <RegistrationHistoryTable />
     </div>
   );
 }

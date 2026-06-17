@@ -2,16 +2,126 @@
 import React, { useState } from 'react';
 
 const commissions = [
-  { id: 'comm-001', date: 'Apr 30, 2026', type: 'Binary Match', leftVol: 1420, rightVol: 1240, matchVol: 1240, rate: '10%', amount: 124.00, status: 'Credited', fromMember: 'Chidinma Obi' },
-  { id: 'comm-002', date: 'Apr 29, 2026', type: 'Referral Bonus', leftVol: 0, rightVol: 0, matchVol: 0, rate: 'Flat', amount: 50.00, status: 'Credited', fromMember: 'Emeka Nwosu' },
-  { id: 'comm-003', date: 'Apr 28, 2026', type: 'Binary Match', leftVol: 1180, rightVol: 920, matchVol: 920, rate: '10%', amount: 92.00, status: 'Credited', fromMember: 'Multiple' },
-  { id: 'comm-004', date: 'Apr 27, 2026', type: 'Level Bonus', leftVol: 0, rightVol: 0, matchVol: 0, rate: '5%', amount: 38.50, status: 'Credited', fromMember: 'Ngozi Adeyemi' },
-  { id: 'comm-005', date: 'Apr 26, 2026', type: 'Binary Match', leftVol: 980, rightVol: 760, matchVol: 760, rate: '10%', amount: 76.00, status: 'Credited', fromMember: 'Multiple' },
-  { id: 'comm-006', date: 'Apr 25, 2026', type: 'Referral Bonus', leftVol: 0, rightVol: 0, matchVol: 0, rate: 'Flat', amount: 50.00, status: 'Credited', fromMember: 'Tunde Bakare' },
-  { id: 'comm-007', date: 'Apr 24, 2026', type: 'Binary Match', leftVol: 1240, rightVol: 1050, matchVol: 1050, rate: '10%', amount: 105.00, status: 'Pending', fromMember: 'Multiple' },
-  { id: 'comm-008', date: 'Apr 23, 2026', type: 'Rank Bonus', leftVol: 0, rightVol: 0, matchVol: 0, rate: 'Fixed', amount: 200.00, status: 'Credited', fromMember: 'System' },
-  { id: 'comm-009', date: 'Apr 22, 2026', type: 'Binary Match', leftVol: 840, rightVol: 620, matchVol: 620, rate: '10%', amount: 62.00, status: 'Credited', fromMember: 'Multiple' },
-  { id: 'comm-010', date: 'Apr 21, 2026', type: 'Level Bonus', leftVol: 0, rightVol: 0, matchVol: 0, rate: '5%', amount: 22.75, status: 'Credited', fromMember: 'Kelechi Eze' },
+  {
+    id: 'comm-001',
+    date: 'Apr 30, 2026',
+    type: 'Binary Match',
+    leftVol: 1420,
+    rightVol: 1240,
+    matchVol: 1240,
+    rate: '10%',
+    amount: 124.0,
+    status: 'Credited',
+    fromMember: 'Chidinma Obi',
+  },
+  {
+    id: 'comm-002',
+    date: 'Apr 29, 2026',
+    type: 'Referral Bonus',
+    leftVol: 0,
+    rightVol: 0,
+    matchVol: 0,
+    rate: 'Flat',
+    amount: 50.0,
+    status: 'Credited',
+    fromMember: 'Emeka Nwosu',
+  },
+  {
+    id: 'comm-003',
+    date: 'Apr 28, 2026',
+    type: 'Binary Match',
+    leftVol: 1180,
+    rightVol: 920,
+    matchVol: 920,
+    rate: '10%',
+    amount: 92.0,
+    status: 'Credited',
+    fromMember: 'Multiple',
+  },
+  {
+    id: 'comm-004',
+    date: 'Apr 27, 2026',
+    type: 'Level Bonus',
+    leftVol: 0,
+    rightVol: 0,
+    matchVol: 0,
+    rate: '5%',
+    amount: 38.5,
+    status: 'Credited',
+    fromMember: 'Ngozi Adeyemi',
+  },
+  {
+    id: 'comm-005',
+    date: 'Apr 26, 2026',
+    type: 'Binary Match',
+    leftVol: 980,
+    rightVol: 760,
+    matchVol: 760,
+    rate: '10%',
+    amount: 76.0,
+    status: 'Credited',
+    fromMember: 'Multiple',
+  },
+  {
+    id: 'comm-006',
+    date: 'Apr 25, 2026',
+    type: 'Referral Bonus',
+    leftVol: 0,
+    rightVol: 0,
+    matchVol: 0,
+    rate: 'Flat',
+    amount: 50.0,
+    status: 'Credited',
+    fromMember: 'Tunde Bakare',
+  },
+  {
+    id: 'comm-007',
+    date: 'Apr 24, 2026',
+    type: 'Binary Match',
+    leftVol: 1240,
+    rightVol: 1050,
+    matchVol: 1050,
+    rate: '10%',
+    amount: 105.0,
+    status: 'Pending',
+    fromMember: 'Multiple',
+  },
+  {
+    id: 'comm-008',
+    date: 'Apr 23, 2026',
+    type: 'Rank Bonus',
+    leftVol: 0,
+    rightVol: 0,
+    matchVol: 0,
+    rate: 'Fixed',
+    amount: 200.0,
+    status: 'Credited',
+    fromMember: 'System',
+  },
+  {
+    id: 'comm-009',
+    date: 'Apr 22, 2026',
+    type: 'Binary Match',
+    leftVol: 840,
+    rightVol: 620,
+    matchVol: 620,
+    rate: '10%',
+    amount: 62.0,
+    status: 'Credited',
+    fromMember: 'Multiple',
+  },
+  {
+    id: 'comm-010',
+    date: 'Apr 21, 2026',
+    type: 'Level Bonus',
+    leftVol: 0,
+    rightVol: 0,
+    matchVol: 0,
+    rate: '5%',
+    amount: 22.75,
+    status: 'Credited',
+    fromMember: 'Kelechi Eze',
+  },
 ];
 
 const typeColors: Record<string, { bg: string; color: string }> = {
@@ -40,7 +150,10 @@ export default function CommissionHistoryTable() {
       className="rounded-xl overflow-hidden"
       style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
     >
-      <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b" style={{ borderColor: 'var(--border)' }}>
+      <div
+        className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b"
+        style={{ borderColor: 'var(--border)' }}
+      >
         <div>
           <h3 className="text-base font-semibold" style={{ color: 'var(--foreground)' }}>
             Commission History
@@ -54,9 +167,19 @@ export default function CommissionHistoryTable() {
             className="input-field pl-8 pr-3 py-2 text-xs w-48"
             placeholder="Search transactions..."
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
           />
-          <svg className="absolute left-2.5 top-1/2 -translate-y-1/2" width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ color: 'var(--muted-foreground)' }}>
+          <svg
+            className="absolute left-2.5 top-1/2 -translate-y-1/2"
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            style={{ color: 'var(--muted-foreground)' }}
+          >
             <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.3" />
             <path d="M10 10L8 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
           </svg>
@@ -88,7 +211,10 @@ export default function CommissionHistoryTable() {
                   background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
                 }}
               >
-                <td className="px-4 py-3 text-xs font-mono-nums" style={{ color: 'var(--secondary-foreground)' }}>
+                <td
+                  className="px-4 py-3 text-xs font-mono-nums"
+                  style={{ color: 'var(--secondary-foreground)' }}
+                >
                   {row.date}
                 </td>
                 <td className="px-4 py-3">
@@ -102,20 +228,31 @@ export default function CommissionHistoryTable() {
                     {row.type}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-xs font-mono-nums" style={{ color: 'var(--foreground)' }}>
+                <td
+                  className="px-4 py-3 text-xs font-mono-nums"
+                  style={{ color: 'var(--foreground)' }}
+                >
                   {row.matchVol > 0 ? `${row.matchVol.toLocaleString()} PV` : '—'}
                 </td>
-                <td className="px-4 py-3 text-xs font-mono-nums" style={{ color: 'var(--secondary-foreground)' }}>
+                <td
+                  className="px-4 py-3 text-xs font-mono-nums"
+                  style={{ color: 'var(--secondary-foreground)' }}
+                >
                   {row.rate}
                 </td>
-                <td className="px-4 py-3 text-sm font-bold font-mono-nums" style={{ color: 'var(--accent)' }}>
+                <td
+                  className="px-4 py-3 text-sm font-bold font-mono-nums"
+                  style={{ color: 'var(--accent)' }}
+                >
                   +₦{row.amount.toFixed(2)}
                 </td>
                 <td className="px-4 py-3 text-xs" style={{ color: 'var(--secondary-foreground)' }}>
                   {row.fromMember}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`badge ${row.status === 'Credited' ? 'badge-active' : 'badge-pending'}`}>
+                  <span
+                    className={`badge ${row.status === 'Credited' ? 'badge-active' : 'badge-pending'}`}
+                  >
                     {row.status === 'Credited' ? '✓' : '⏳'} {row.status}
                   </span>
                 </td>
@@ -134,9 +271,13 @@ export default function CommissionHistoryTable() {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between p-4 border-t" style={{ borderColor: 'var(--border)' }}>
+      <div
+        className="flex items-center justify-between p-4 border-t"
+        style={{ borderColor: 'var(--border)' }}
+      >
         <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-          Showing {Math.min((page - 1) * perPage + 1, filtered.length)}–{Math.min(page * perPage, filtered.length)} of {filtered.length}
+          Showing {Math.min((page - 1) * perPage + 1, filtered.length)}–
+          {Math.min(page * perPage, filtered.length)} of {filtered.length}
         </p>
         <div className="flex items-center gap-1">
           <button

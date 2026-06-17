@@ -9,7 +9,7 @@ export const metadata = {
 export default async function AuditPage() {
   const logs = await prisma.auditLog.findMany({
     orderBy: { createdAt: 'desc' },
-    take: 100
+    take: 100,
   });
 
   return (
@@ -47,9 +47,7 @@ export default async function AuditPage() {
                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                     {log.createdAt.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 font-mono text-xs text-gray-600">
-                    {log.adminId}
-                  </td>
+                  <td className="px-6 py-4 font-mono text-xs text-gray-600">{log.adminId}</td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                       {log.action}
@@ -63,7 +61,7 @@ export default async function AuditPage() {
                   </td>
                 </tr>
               ))}
-              
+
               {logs.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
