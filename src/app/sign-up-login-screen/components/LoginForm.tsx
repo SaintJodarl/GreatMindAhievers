@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { signIn } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 interface LoginFormData {
@@ -17,6 +17,7 @@ interface LoginFormProps {
 export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
 
   const [authError, setAuthError] = useState('');
   const router = useRouter();
@@ -30,24 +31,14 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   });
 
   const onSubmit = async (data: LoginFormData) => {
+    if (isLoading) return;
     setIsLoading(true);
     setAuthError('');
 
     try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email: data.email,
-        password: data.password,
-      });
-
-      if (result?.error) {
-        setAuthError('Invalid email or password');
-      } else {
-        router.push('/user-dashboard');
-      }
-    } catch (error) {
-      setAuthError('An error occurred during sign in');
-    } finally {
+      await login(data.email, data.password);
+    } catch (error: any) {
+      setAuthError(error.message || 'Invalid email or password');
       setIsLoading(false);
     }
   };

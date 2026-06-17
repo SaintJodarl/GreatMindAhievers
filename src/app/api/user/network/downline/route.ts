@@ -1,6 +1,7 @@
+import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+
+
 import { prisma } from '@/lib/prisma';
 
 function determineRank(leftVolume: number, rightVolume: number): string {
@@ -14,13 +15,13 @@ function determineRank(leftVolume: number, rightVolume: number): string {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const currentUser = await getCurrentUser();
 
-    if (!session?.user?.id) {
+    if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const loggedInUserId = (session.user as any).id;
+    const loggedInUserId = currentUser.id;
     const { searchParams } = new URL(req.url);
 
     const limit = parseInt(searchParams.get('limit') || '10');

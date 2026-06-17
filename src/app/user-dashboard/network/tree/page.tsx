@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
+import { api } from '@/lib/api-client';
 import Link from 'next/link';
 import { ArrowLeft, RefreshCw, UserPlus, ShieldAlert } from 'lucide-react';
 
@@ -27,8 +28,8 @@ const rankColors: Record<string, string> = {
 };
 
 export default function BinaryTreePage() {
-  const { data: session } = useSession();
-  const loggedInUserId = (session?.user as any)?.id;
+  const { user } = useAuth();
+  const loggedInUserId = user?.id;
 
   const [rootId, setRootId] = useState<string | null>(null);
   const [treeData, setTreeData] = useState<TreeNode | null>(null);
@@ -45,7 +46,7 @@ export default function BinaryTreePage() {
         url += `?rootId=${rootId}`;
       }
 
-      const res = await fetch(url);
+      const res = await api(url);
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to fetch tree data');
@@ -62,10 +63,10 @@ export default function BinaryTreePage() {
   }, [rootId]);
 
   useEffect(() => {
-    if (session?.user) {
+    if (user) {
       fetchTree();
     }
-  }, [session, fetchTree]);
+  }, [user, fetchTree]);
 
   const handleNodeClick = (nodeId: string) => {
     setRootId(nodeId);

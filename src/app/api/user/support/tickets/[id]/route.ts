@@ -1,6 +1,7 @@
+import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+
+
 import { prisma } from '@/lib/prisma';
 
 interface RouteContext {
@@ -12,13 +13,13 @@ interface RouteContext {
 // GET support ticket messages
 export async function GET(req: NextRequest, context: RouteContext) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await context.params;
-    const userId = session.user.id;
+    const userId = currentUser.id;
 
     // Verify ticket ownership
     const ticket = await prisma.ticket.findUnique({
@@ -51,13 +52,13 @@ export async function GET(req: NextRequest, context: RouteContext) {
 // POST Add reply to ticket
 export async function POST(req: NextRequest, context: RouteContext) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await context.params;
-    const userId = session.user.id;
+    const userId = currentUser.id;
     const body = await req.json();
     const { message } = body;
 

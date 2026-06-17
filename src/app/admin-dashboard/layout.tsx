@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard,
   Users,
@@ -42,6 +42,7 @@ const sidebarLinks = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { logout } = useAuth();
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
@@ -106,7 +107,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <div className="p-4 border-t border-indigo-800">
           <button
-            onClick={() => signOut({ callbackUrl: '/' })}
+            onClick={() => logout()}
             className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-colors"
           >
             <LogOut size={18} />

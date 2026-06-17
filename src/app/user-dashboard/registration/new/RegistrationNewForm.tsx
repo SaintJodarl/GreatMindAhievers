@@ -56,7 +56,6 @@ export default function RegistrationNewForm({ sponsorCode }: RegistrationNewForm
     password: '',
     phone: '',
     state: 'Lagos',
-    preferredPosition: 'LEFT',
     registrationCode: '',
   });
 
@@ -129,7 +128,6 @@ export default function RegistrationNewForm({ sponsorCode }: RegistrationNewForm
           password: formData.password,
           phone: formData.phone,
           state: formData.state,
-          preferredPosition: formData.preferredPosition,
           registrationCode: formData.registrationCode,
           sponsorCode: sponsorCode,
         }),
@@ -149,7 +147,6 @@ export default function RegistrationNewForm({ sponsorCode }: RegistrationNewForm
         password: '',
         phone: '',
         state: 'Lagos',
-        preferredPosition: 'LEFT',
         registrationCode: '',
       });
     } catch (err: any) {
@@ -312,24 +309,19 @@ export default function RegistrationNewForm({ sponsorCode }: RegistrationNewForm
             </select>
           </div>
 
-          {/* Preferred Position */}
+          {/* Placement Position Information */}
           <div>
-            <label
-              htmlFor="preferredPosition"
-              className="block text-sm font-semibold text-gray-700 mb-1.5"
-            >
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Placement Position
             </label>
-            <select
-              id="preferredPosition"
-              name="preferredPosition"
-              value={formData.preferredPosition}
-              onChange={handleChange}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-            >
-              <option value="LEFT">Left Leg</option>
-              <option value="RIGHT">Right Leg</option>
-            </select>
+            <input
+              type="text"
+              value="System-Controlled Auto Placement"
+              readOnly
+              disabled
+              className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-sm text-gray-500 cursor-not-allowed"
+            />
+            <p className="text-xs text-gray-400 mt-1">Automatic placement based on your sponsor profile rules.</p>
           </div>
 
           {/* Sponsor Code (Read Only) */}

@@ -1,6 +1,7 @@
+import { getCurrentUser } from '@/lib/auth/session';
 import React from 'react';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+
+
 import { redirect } from 'next/navigation';
 import ReferralHistoryTable from './ReferralHistoryTable';
 
@@ -9,9 +10,9 @@ export const metadata = {
 };
 
 export default async function ReferralHistoryPage() {
-  const session = await getServerSession(authOptions);
+  const currentUser = await getCurrentUser();
 
-  if (!session?.user?.id) {
+  if (!currentUser) {
     redirect('/sign-up-login-screen');
   }
 

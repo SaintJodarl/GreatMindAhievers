@@ -1,17 +1,18 @@
+import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+
+
 import { prisma } from '@/lib/prisma';
 
 // GET Profile Details
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = currentUser.id;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -52,12 +53,12 @@ export async function GET(req: NextRequest) {
 // POST Update Profile
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = currentUser.id;
     const body = await req.json();
     const { name, phone, bankName, accountNumber, accountName, notifyEmail, notifySms } = body;
 

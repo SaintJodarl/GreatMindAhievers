@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
+import { api } from '@/lib/api-client';
 import Link from 'next/link';
 import {
   Users,
@@ -29,7 +30,7 @@ interface Referral {
 }
 
 export default function DirectReferralsPage() {
-  const { data: session } = useSession();
+  const { user } = useAuth();
 
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +57,7 @@ export default function DirectReferralsPage() {
         url += `&status=${encodeURIComponent(status)}`;
       }
 
-      const res = await fetch(url);
+      const res = await api(url);
       if (!res.ok) {
         throw new Error('Failed to fetch referrals');
       }
@@ -74,10 +75,10 @@ export default function DirectReferralsPage() {
   }, [page, limit, search, status]);
 
   useEffect(() => {
-    if (session?.user) {
+    if (user) {
       fetchReferrals();
     }
-  }, [session, fetchReferrals]);
+  }, [user, fetchReferrals]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

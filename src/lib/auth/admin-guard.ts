@@ -1,7 +1,5 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
 import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth/session';
 
 export interface VerifyAdminResult {
   authorized: boolean;
@@ -20,27 +18,45 @@ export interface VerifyAdminResult {
 export async function verifyAdminPermission(
   requiredPermission?: string
 ): Promise<VerifyAdminResult> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.id) {
     return { authorized: false, status: 401, message: 'Unauthorized' };
   }
 
-  const userRole = session.user.role;
-  const adminRoleName = session.user.adminRole;
-
-  if (userRole !== 'ADMIN') {
+  if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
     return { authorized: false, status: 403, message: 'Forbidden: Admin access only' };
+  }
+
+  // Fetch the fresh user details and permissions context from DB
+  const dbUser = await prisma.user.findUnique({
+    where: { id: currentUser.id },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      status: true,
+      adminRole: true,
+    },
+  });
+
+  if (!dbUser) {
+    return { authorized: false, status: 401, message: 'Unauthorized: User not found' };
+  }
+
+  if (dbUser.status === 'SUSPENDED') {
+    return { authorized: false, status: 403, message: 'Forbidden: Account suspended' };
   }
 
   // If no specific permission is required, general admin role is enough
   if (!requiredPermission) {
-    return { authorized: true, user: session.user as any };
+    return { authorized: true, user: dbUser as any };
   }
 
   // If user has adminRole, fetch its permissions from database
-  if (adminRoleName) {
+  if (dbUser.adminRole) {
     const roleRecord = await prisma.adminRole.findUnique({
-      where: { name: adminRoleName },
+      where: { name: dbUser.adminRole },
     });
 
     if (!roleRecord) {
@@ -54,11 +70,11 @@ export async function verifyAdminPermission(
     const permissions: string[] = JSON.parse(roleRecord.permissions);
 
     if (permissions.includes('*') || permissions.includes(requiredPermission)) {
-      return { authorized: true, user: session.user as any };
+      return { authorized: true, user: dbUser as any };
     }
   } else {
     // If no adminRole name, but user is ADMIN (legacy/default), give full access
-    return { authorized: true, user: session.user as any };
+    return { authorized: true, user: dbUser as any };
   }
 
   return {

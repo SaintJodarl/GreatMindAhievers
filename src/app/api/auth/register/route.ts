@@ -8,34 +8,39 @@ import { BinaryPosition } from '@/lib/binary-placement/constants';
 
 export async function POST(req: NextRequest) {
   try {
-    const {
+    let {
       firstName,
       lastName,
+      name,
       email,
       username,
       password,
       phone,
       sponsorCode,
-      preferredPosition = 'LEFT',
     } = await req.json();
 
-    if (!email || !password || !username || !firstName || !lastName) {
+    // Fallback split name into firstName and lastName if only name is provided
+    if (name && (!firstName || !lastName)) {
+      const parts = name.trim().split(/\s+/);
+      firstName = parts[0] || '';
+      lastName = parts.slice(1).join(' ') || '';
+    }
+
+    if (!email || !password || !firstName || !lastName) {
       return NextResponse.json(
-        { message: 'First name, last name, username, email, and password are required' },
+        { message: 'First name, last name, email, and password are required' },
         { status: 400 }
       );
+    }
+
+    // Fallback username if missing
+    if (!username) {
+      username = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + Math.floor(1000 + Math.random() * 9000);
     }
 
     if (password.length < 8) {
       return NextResponse.json(
         { message: 'Password must be at least 8 characters' },
-        { status: 400 }
-      );
-    }
-
-    if (preferredPosition && !['LEFT', 'RIGHT'].includes(preferredPosition)) {
-      return NextResponse.json(
-        { message: 'preferredPosition must be LEFT or RIGHT' },
         { status: 400 }
       );
     }
@@ -65,12 +70,16 @@ export async function POST(req: NextRequest) {
     }
 
     let sponsorId: string | null = null;
+    let autoCalculatedPosition: 'LEFT' | 'RIGHT' = 'LEFT';
+
     if (sponsorCode) {
       const sponsor = await prisma.user.findUnique({
         where: { referralCode: sponsorCode.toUpperCase().trim() },
       });
       if (sponsor) {
         sponsorId = sponsor.id;
+        // Auto-assign placement position based on sponsor's preference
+        autoCalculatedPosition = sponsor.preferredPosition === 'RIGHT' ? 'RIGHT' : 'LEFT';
       } else {
         return NextResponse.json(
           { message: 'Sponsor / referral code is invalid' },
@@ -83,7 +92,7 @@ export async function POST(req: NextRequest) {
     const referralCode = await generateUniqueReferralCode(prisma);
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Create User
+      // 1. Create User (Active immediately, but incomplete onboarding status)
       const user = await tx.user.create({
         data: {
           name: `${firstName.trim()} ${lastName.trim()}`,
@@ -91,7 +100,9 @@ export async function POST(req: NextRequest) {
           username: username.toLowerCase().trim(),
           password: hashedPassword,
           role: 'MEMBER',
-          status: 'PENDING_PROFILE_COMPLETION',
+          status: 'ACTIVE',
+          onboardingStatus: 'INCOMPLETE',
+          autoPlacement: true,
           referralCode,
           sponsorId,
         },
@@ -103,6 +114,7 @@ export async function POST(req: NextRequest) {
           referralCode: true,
           role: true,
           status: true,
+          onboardingStatus: true,
           createdAt: true,
         },
       });
@@ -117,10 +129,10 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 3. Perform MLM placement
+      // 3. Perform MLM placement automatically
       const placement = await executePlacementWithTx(tx, {
         sponsorId,
-        preferredPosition: preferredPosition as BinaryPosition,
+        preferredPosition: autoCalculatedPosition as BinaryPosition,
         userId: user.id,
       });
 

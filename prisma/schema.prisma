@@ -22,6 +22,8 @@ model User {
   sponsorId     String?
   placementId   String?
   binaryPosition String? // "LEFT" | "RIGHT"
+  onboardingStatus String   @default("INCOMPLETE")
+  autoPlacement    Boolean  @default(true)
 
   kycStatus     String   @default("PENDING")
   kycSubmittedAt DateTime?
@@ -57,6 +59,7 @@ model User {
   kycCode       AdminCode? @relation("KycCode")
   activationCode ActivationCode? @relation("UserActivation")
   profile       MemberProfile?
+  refreshTokens RefreshToken[]
 
   sponsor       User?      @relation("SponsorRelation", fields: [sponsorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sponsored     User[]     @relation("SponsorRelation")
@@ -340,4 +343,20 @@ model MemberProfile {
 
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String   @unique
+  familyId    String
+  expiresAt   DateTime
+  revoked     Boolean  @default(false)
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([familyId])
 }

@@ -1,16 +1,17 @@
+import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+
+
 import { getOrCreateWallet, getWalletBalance } from '@/lib/wallet/service';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const wallet = await getOrCreateWallet(session.user.id);
+    const wallet = await getOrCreateWallet(currentUser.id);
     const balance = await getWalletBalance(wallet.id);
 
     return NextResponse.json({ balance });

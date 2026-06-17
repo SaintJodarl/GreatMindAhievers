@@ -1,6 +1,7 @@
+import { getCurrentUser } from '@/lib/auth/session';
 import React from 'react';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+
+
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import ReferralCodeClient from './ReferralCodeClient';
@@ -10,13 +11,13 @@ export const metadata = {
 };
 
 export default async function ReferralCodePage() {
-  const session = await getServerSession(authOptions);
+  const currentUser = await getCurrentUser();
 
-  if (!session?.user?.id) {
+  if (!currentUser) {
     redirect('/sign-up-login-screen');
   }
 
-  const userId = session.user.id;
+  const userId = currentUser.id;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },

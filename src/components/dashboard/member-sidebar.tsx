@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { useSession, signOut } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { Menu, X, LogOut, ShieldAlert } from 'lucide-react';
 import { memberNavigation } from '@/config/member-navigation';
 import MemberNavGroup from './member-nav-group';
@@ -20,7 +20,7 @@ export default function MemberSidebar({
   mobileOpen,
   onMobileClose,
 }: MemberSidebarProps) {
-  const { data: session } = useSession();
+  const { user, logout } = useAuth();
   const [summary, setSummary] = React.useState<any>(null);
 
   React.useEffect(() => {
@@ -38,8 +38,8 @@ export default function MemberSidebar({
     fetchSummary();
   }, []);
 
-  const userName = summary?.name || session?.user?.name || 'Member User';
-  const userEmail = summary?.email || session?.user?.email || 'Loading...';
+  const userName = summary?.name || user?.name || 'Member User';
+  const userEmail = summary?.email || user?.email || 'Loading...';
   const kycStatus = summary?.kycStatus || 'PENDING';
   const userRank = summary?.rank || 'Entry';
 
@@ -140,7 +140,7 @@ export default function MemberSidebar({
             </div>
 
             <button
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => logout()}
               className="mt-2 w-full flex items-center justify-center gap-2 py-2 px-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors shadow-sm"
             >
               <LogOut size={16} />
@@ -153,7 +153,7 @@ export default function MemberSidebar({
               {userName.charAt(0).toUpperCase()}
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => logout()}
               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
               title="Sign Out"
             >

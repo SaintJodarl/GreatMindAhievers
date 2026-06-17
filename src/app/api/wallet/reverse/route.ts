@@ -1,18 +1,19 @@
+import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+
+
 import { prisma } from '@/lib/prisma';
 import { reverseTransaction } from '@/lib/wallet/service';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user is admin (only admins can reverse transactions)
-    if (session.user.role !== 'ADMIN' && !session.user.adminRole) {
+    if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ message: 'Forbidden: Admin only' }, { status: 403 });
     }
 

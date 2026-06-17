@@ -1,21 +1,48 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import crypto from 'crypto';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const refreshToken = req.cookies.get('refreshToken')?.value;
 
-    if (!session) {
-      return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
+    if (refreshToken) {
+      const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+      // Find token and family in database
+      const tokenRecord = await prisma.refreshToken.findUnique({
+        where: { tokenHash },
+      });
+
+      if (tokenRecord) {
+        // Revoke the entire family tree of refresh tokens to clean up
+        await prisma.refreshToken.updateMany({
+          where: { familyId: tokenRecord.familyId },
+          data: { revoked: true },
+        });
+
+        // Delete expired/revoked tokens for this user to keep DB clean
+        await prisma.refreshToken.deleteMany({
+          where: {
+            userId: tokenRecord.userId,
+            OR: [
+              { revoked: true },
+              { expiresAt: { lt: new Date() } }
+            ]
+          }
+        });
+      }
     }
 
-    return NextResponse.json({ message: 'Logged out successfully' }, { status: 200 });
+    const response = NextResponse.json({ message: 'Logged out successfully' });
+    
+    // Clear cookies
+    response.cookies.delete('refreshToken');
+    response.cookies.delete('accessToken');
+
+    return response;
   } catch (error: any) {
     console.error('Logout error:', error);
-    return NextResponse.json(
-      { message: error.message || 'An error occurred during logout' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

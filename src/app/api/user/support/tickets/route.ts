@@ -1,17 +1,18 @@
+import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+
+
 import { prisma } from '@/lib/prisma';
 
 // GET User tickets (with pagination)
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = currentUser.id;
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '10');
     const page = parseInt(searchParams.get('page') || '1');
@@ -51,12 +52,12 @@ export async function GET(req: NextRequest) {
 // POST Create new support ticket
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = currentUser.id;
     const body = await req.json();
     const { subject, message } = body;
 

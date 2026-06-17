@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
+import { api } from '@/lib/api-client';
 import Link from 'next/link';
 import { GitMerge, ChevronLeft, ChevronRight, RefreshCw, Layers, Award } from 'lucide-react';
 
@@ -21,7 +22,7 @@ interface DownlineMember {
 }
 
 export default function DownlineMembersPage() {
-  const { data: session } = useSession();
+  const { user } = useAuth();
 
   const [downlines, setDownlines] = useState<DownlineMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +39,7 @@ export default function DownlineMembersPage() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(`/api/user/network/downline?page=${page}&limit=${limit}`);
+      const res = await api(`/api/user/network/downline?page=${page}&limit=${limit}`);
       if (!res.ok) {
         throw new Error('Failed to fetch downline members');
       }
@@ -56,10 +57,10 @@ export default function DownlineMembersPage() {
   }, [page, limit]);
 
   useEffect(() => {
-    if (session?.user) {
+    if (user) {
       fetchDownlines();
     }
-  }, [session, fetchDownlines]);
+  }, [user, fetchDownlines]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {

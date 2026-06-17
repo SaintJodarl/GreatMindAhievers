@@ -1,6 +1,7 @@
+import { getCurrentUser } from '@/lib/auth/session';
 import React from 'react';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+
+
 import { prisma } from '@/lib/prisma';
 import { UserCheck, Mail, Calendar, Award, Shield, User as UserIcon } from 'lucide-react';
 import { redirect } from 'next/navigation';
@@ -19,13 +20,13 @@ function determineRank(leftVolume: number, rightVolume: number): string {
 }
 
 export default async function SponsorInfoPage() {
-  const session = await getServerSession(authOptions);
+  const currentUser = await getCurrentUser();
 
-  if (!session?.user?.id) {
+  if (!currentUser) {
     redirect('/sign-up-login-screen');
   }
 
-  const userId = (session.user as any).id;
+  const userId = currentUser.id;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },

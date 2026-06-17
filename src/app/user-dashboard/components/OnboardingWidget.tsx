@@ -74,8 +74,8 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
   });
 
   // Dynamically filter LGAs for the selected State in Step 1
-  const lgas = getLgasForState(formData.state);
-  const statesOfOriginLgas = getLgasForState(formData.stateOfOrigin); // If they choose state of origin
+  const lgas = React.useMemo(() => getLgasForState(formData.state), [formData.state]);
+  const statesOfOriginLgas = React.useMemo(() => getLgasForState(formData.stateOfOrigin), [formData.stateOfOrigin]); // If they choose state of origin
 
   // Prefill details from summary on mount
   useEffect(() => {
@@ -129,7 +129,13 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'state') {
+        updated.lga = ''; // Reset LGA when residential state changes
+      }
+      return updated;
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'idDocument' | 'selfie' | 'proofOfAddress') => {
@@ -483,7 +489,7 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
                   disabled={!formData.state}
                   className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 disabled:opacity-50"
                 >
-                  <option value="">Select LGA</option>
+                  <option value="">{formData.state ? 'Select LGA' : 'Select a state first'}</option>
                   {lgas.map((lg) => (
                     <option key={`lga-opt-${lg}`} value={lg}>{lg}</option>
                   ))}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { signIn } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Loader2, UserCheck, AlertTriangle } from 'lucide-react';
 
@@ -13,7 +13,6 @@ interface RegisterFormData {
   email: string;
   phone: string;
   sponsorCode: string;
-  position: 'left' | 'right' | 'auto';
   password: string;
   confirmPassword: string;
   agreeTerms: boolean;
@@ -29,6 +28,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [authError, setAuthError] = useState('');
+  const { login } = useAuth();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -40,26 +40,23 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     setValue,
     formState: { errors },
   } = useForm<RegisterFormData>({
-    defaultValues: { position: 'auto', sponsorCode: '' },
+    defaultValues: { sponsorCode: '' },
   });
 
   const password = watch('password');
 
-  // Prefill Sponsor and Position from URL query params
+  // Prefill Sponsor from URL query params
   useEffect(() => {
     if (searchParams) {
       const sponsor = searchParams.get('ref') || searchParams.get('sponsor');
-      const pos = searchParams.get('position');
       if (sponsor) {
         setValue('sponsorCode', sponsor.toUpperCase().trim());
-      }
-      if (pos && ['left', 'right', 'auto'].includes(pos.toLowerCase())) {
-        setValue('position', pos.toLowerCase() as 'left' | 'right' | 'auto');
       }
     }
   }, [searchParams, setValue]);
 
   const onSubmit = async (data: RegisterFormData) => {
+    if (isLoading) return;
     setIsLoading(true);
     setAuthError('');
     try {
@@ -73,7 +70,6 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           email: data.email,
           phone: data.phone,
           sponsorCode: data.sponsorCode || null,
-          preferredPosition: data.position === 'right' ? 'RIGHT' : 'LEFT',
           password: data.password,
         }),
       });
@@ -85,17 +81,11 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         return;
       }
 
-      // Autologin on success
-      const loginRes = await signIn('credentials', {
-        redirect: false,
-        email: data.email.toLowerCase().trim(),
-        password: data.password,
-      });
-
-      if (loginRes?.error) {
+      // Autologin on success using useAuth context
+      try {
+        await login(data.email.toLowerCase().trim(), data.password);
+      } catch (loginErr) {
         setSubmitted(true);
-      } else {
-        router.push('/user-dashboard');
       }
     } catch (error) {
       setAuthError('An error occurred during registration. Please try again.');
@@ -218,29 +208,15 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           )}
         </div>
 
-        {/* Optional Sponsor / Placement fields */}
-        <div className="bg-gray-50 border border-gray-150 p-4 rounded-2xl space-y-3">
-          <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Sponsor Code (Optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. GMA-XXXXX"
-              className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 font-mono uppercase tracking-wider"
-              {...register('sponsorCode')}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Binary Position (Optional)</label>
-            <select
-              className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
-              {...register('position')}
-            >
-              <option value="auto">Auto Placement</option>
-              <option value="left">Left Leg</option>
-              <option value="right">Right Leg</option>
-            </select>
-          </div>
+        {/* Optional Sponsor field */}
+        <div className="space-y-1">
+          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Sponsor Code (Optional)</label>
+          <input
+            type="text"
+            placeholder="e.g. GMA-XXXXX"
+            className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 font-mono uppercase tracking-wider"
+            {...register('sponsorCode')}
+          />
         </div>
 
         {/* Passwords */}
