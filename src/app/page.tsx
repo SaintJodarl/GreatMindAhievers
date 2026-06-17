@@ -21,11 +21,12 @@ export default function WelcomePage() {
 
       <div className="relative z-10 w-full max-w-lg px-6 flex flex-col items-center text-center animate-fade-in">
         {/* Logo */}
-        <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-2xl"
-          style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)' }}
-        >
-          <span className="text-2xl font-bold text-white tracking-wider">GM</span>
+        <div className="mb-8 p-3.5 bg-white/5 rounded-2xl border border-white/10 shadow-2xl hover:scale-105 transition-all duration-300">
+          <img
+            src="/assets/images/app_logo.png"
+            alt="GreatMind Achievers Logo"
+            className="w-16 h-16 object-contain"
+          />
         </div>
 
         {/* Application Name & Value Proposition */}
