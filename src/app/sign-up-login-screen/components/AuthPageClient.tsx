@@ -119,11 +119,11 @@ export default function AuthPageClient({
               className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
               style={{ background: 'linear-gradient(135deg, #6C47FF 0%, #10D9A0 100%)' }}
             >
-              O
+              M
             </div>
             <div>
               <p className="text-xs font-semibold" style={{ color: 'var(--foreground)' }}>
-                Oluwaseun Adebisi
+                Michael Umeh
               </p>
               <p className="text-xs" style={{ color: 'var(--accent)' }}>
                 Diamond Member · Lagos
