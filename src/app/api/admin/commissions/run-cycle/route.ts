@@ -10,6 +10,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: auth.message }, { status: auth.status });
     }
 
+    const body = await req.json().catch(() => ({}));
+    const { cycleId: requestCycleId } = body;
+    const cycleId = requestCycleId || `cycle_${Date.now()}`;
+
     // 1. Fetch Pairing commission setting percentage
     const pairingSetting = await prisma.commission.findFirst({
       where: { type: 'PAIRING', isActive: true },
@@ -51,6 +55,9 @@ export async function POST(req: NextRequest) {
         const payout = matchable * (pairingPercentage / 100);
         if (payout <= 0) continue;
 
+        // Construct unique deterministic eventId for this specific user's payout in this cycle run
+        const eventId = `cycle:${cycleId}:${node.userId}`;
+
         // Ensure user has a wallet
         let wallet = node.user.wallet;
         if (!wallet) {
@@ -69,12 +76,13 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // B. Credit wallet matching bonus
+        // B. Credit wallet matching bonus with idempotency reference
         await creditWallet(tx, {
           walletId: wallet.id,
           amount: payout,
           type: 'PAIRING_BONUS',
           description: `Pairing matching bonus cycle payout. Matched volume: ₦${matchable}`,
+          reference: eventId,
         });
 
         totalPayout += payout;
@@ -84,6 +92,7 @@ export async function POST(req: NextRequest) {
       // C. Save cycle run history
       const cycle = await tx.commissionCycle.create({
         data: {
+          id: cycleId,
           startDate,
           endDate: new Date(),
           status: 'COMPLETED',
@@ -98,7 +107,7 @@ export async function POST(req: NextRequest) {
           action: 'RUN_COMMISSION_CYCLE',
           targetType: 'CommissionCycle',
           targetId: cycle.id,
-          details: `Processed pairing matching cycle. Payouts: ${payoutCount} users. Total paid: ₦${totalPayout}`,
+          details: `Processed pairing matching cycle. Payouts: ${payoutCount} users. Total paid: ₦${totalPayout}. Cycle ID: ${cycle.id}`,
         },
       });
 

@@ -21,6 +21,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { userId, amount, commissionType, description, reference, metadata } = body;
 
+    if (!reference || typeof reference !== 'string' || !reference.trim()) {
+      return NextResponse.json({ message: 'reference (eventId) is required for idempotency' }, { status: 400 });
+    }
+
     if (!userId) {
       return NextResponse.json({ message: 'userId is required' }, { status: 400 });
     }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api-client';
 import {
   User,
   Users,
@@ -29,6 +30,16 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [selectedFiles, setSelectedFiles] = useState<{
+    idDocument: File | null;
+    selfie: File | null;
+    proofOfAddress: File | null;
+  }>({
+    idDocument: null,
+    selfie: null,
+    proofOfAddress: null,
+  });
 
   // States list from locations helper
   const statesList = getStates();
@@ -139,18 +150,28 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'idDocument' | 'selfie' | 'proofOfAddress') => {
+    e.preventDefault();
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size exceeds the 5MB limit.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, [field]: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Validate type
+    const validExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    if (!extension || !validExtensions.includes(extension)) {
+      alert('Invalid file type. Only PDF, JPG, and PNG are allowed.');
+      e.target.value = '';
+      return;
     }
+
+    // Validate size (5MB based on UI)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds the 5MB limit.');
+      e.target.value = '';
+      return;
+    }
+
+    setSelectedFiles((prev) => ({ ...prev, [field]: file }));
+    e.target.value = ''; // Reset input to allow re-selecting the same file if needed
   };
 
   const handleSaveProfile = async () => {
@@ -158,7 +179,7 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/user/onboarding/profile', {
+      const res = await api('/api/user/onboarding/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -198,15 +219,47 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/user/kyc/submit', {
+      let idDocumentUrl = formData.idDocument;
+      let selfieUrl = formData.selfie;
+      let proofOfAddressUrl = formData.proofOfAddress;
+
+      const uploadFile = async (file: File) => {
+        const uploadData = new FormData();
+        uploadData.append('file', file);
+        const res = await api('/api/user/kyc/upload', {
+          method: 'POST',
+          body: uploadData,
+        });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.message || 'Upload failed');
+        }
+        const data = await res.json();
+        return data.secure_url;
+      };
+
+      if (selectedFiles.idDocument) {
+        idDocumentUrl = await uploadFile(selectedFiles.idDocument);
+        setFormData((prev) => ({ ...prev, idDocument: idDocumentUrl }));
+      }
+      if (selectedFiles.selfie) {
+        selfieUrl = await uploadFile(selectedFiles.selfie);
+        setFormData((prev) => ({ ...prev, selfie: selfieUrl }));
+      }
+      if (selectedFiles.proofOfAddress) {
+        proofOfAddressUrl = await uploadFile(selectedFiles.proofOfAddress);
+        setFormData((prev) => ({ ...prev, proofOfAddress: proofOfAddressUrl }));
+      }
+
+      const res = await api('/api/user/kyc/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           idType: formData.idType,
           idNumber: formData.idNumber || 'NOT_PROVIDED',
-          idDocument: formData.idDocument,
-          selfie: formData.selfie,
-          proofOfAddress: formData.proofOfAddress,
+          idDocument: idDocumentUrl,
+          selfie: selfieUrl,
+          proofOfAddress: proofOfAddressUrl,
         }),
       });
 
@@ -216,6 +269,7 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
       }
 
       setSuccess('KYC documents submitted successfully for compliance review.');
+      setSelectedFiles({ idDocument: null, selfie: null, proofOfAddress: null });
       onRefresh();
       setTimeout(() => {
         setSuccess(null);
@@ -234,7 +288,7 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
     setError(null);
     setSuccess(null);
     try {
-      const res = await fetch('/api/user/activation/submit', {
+      const res = await api('/api/user/activation/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: formData.code.trim() }),
@@ -278,7 +332,9 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
       return !!(formData.bankName && formData.accountNumber && formData.accountName);
     }
     if (stepNumber === 4) {
-      return !!(formData.idDocument && formData.selfie && formData.proofOfAddress);
+      return !!((formData.idDocument || selectedFiles.idDocument) && 
+                (formData.selfie || selectedFiles.selfie) && 
+                (formData.proofOfAddress || selectedFiles.proofOfAddress));
     }
     return true;
   };
@@ -424,7 +480,6 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
-                  <option value="Other">Other</option>
                 </select>
               </div>
 
@@ -719,18 +774,18 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-gray-700">1. Government Issued ID Scan (Front)</label>
                 <label className={`flex flex-col items-center justify-center border-2 border-dashed p-6 rounded-2xl cursor-pointer hover:bg-gray-50/50 transition-all ${
-                  formData.idDocument ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-200'
+                  (formData.idDocument || selectedFiles.idDocument) ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-200'
                 }`}>
-                  <input type="file" accept="image/*" className="sr-only" onChange={(e) => handleFileChange(e, 'idDocument')} />
-                  {formData.idDocument ? (
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => handleFileChange(e, 'idDocument')} />
+                  {(formData.idDocument || selectedFiles.idDocument) ? (
                     <div className="text-center space-y-1">
                       <CheckCircle2 className="text-emerald-500 mx-auto" size={24} />
-                      <span className="text-xs text-emerald-700 font-bold block">ID Document Attached</span>
+                      <span className="text-xs text-emerald-700 font-bold block">ID Document Attached {selectedFiles.idDocument && `(${selectedFiles.idDocument.name})`}</span>
                     </div>
                   ) : (
                     <div className="text-center space-y-2 text-gray-400">
                       <Upload className="mx-auto" size={24} />
-                      <span className="text-xs font-semibold block">Click to upload file</span>
+                      <span className="text-xs font-semibold block">Click to select file</span>
                     </div>
                   )}
                 </label>
@@ -740,18 +795,18 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-gray-700">2. Selfie Photo holding ID</label>
                 <label className={`flex flex-col items-center justify-center border-2 border-dashed p-6 rounded-2xl cursor-pointer hover:bg-gray-50/50 transition-all ${
-                  formData.selfie ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-200'
+                  (formData.selfie || selectedFiles.selfie) ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-200'
                 }`}>
-                  <input type="file" accept="image/*" className="sr-only" onChange={(e) => handleFileChange(e, 'selfie')} />
-                  {formData.selfie ? (
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => handleFileChange(e, 'selfie')} />
+                  {(formData.selfie || selectedFiles.selfie) ? (
                     <div className="text-center space-y-1">
                       <CheckCircle2 className="text-emerald-500 mx-auto" size={24} />
-                      <span className="text-xs text-emerald-700 font-bold block">Selfie Attached</span>
+                      <span className="text-xs text-emerald-700 font-bold block">Selfie Attached {selectedFiles.selfie && `(${selectedFiles.selfie.name})`}</span>
                     </div>
                   ) : (
                     <div className="text-center space-y-2 text-gray-400">
                       <Upload className="mx-auto" size={24} />
-                      <span className="text-xs font-semibold block">Click to upload selfie</span>
+                      <span className="text-xs font-semibold block">Click to select selfie</span>
                     </div>
                   )}
                 </label>
@@ -761,18 +816,18 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-gray-700">3. Proof of Address Document (Last 3 months utility bill / statement)</label>
                 <label className={`flex flex-col items-center justify-center border-2 border-dashed p-6 rounded-2xl cursor-pointer hover:bg-gray-50/50 transition-all ${
-                  formData.proofOfAddress ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-200'
+                  (formData.proofOfAddress || selectedFiles.proofOfAddress) ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-200'
                 }`}>
-                  <input type="file" accept="image/*" className="sr-only" onChange={(e) => handleFileChange(e, 'proofOfAddress')} />
-                  {formData.proofOfAddress ? (
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => handleFileChange(e, 'proofOfAddress')} />
+                  {(formData.proofOfAddress || selectedFiles.proofOfAddress) ? (
                     <div className="text-center space-y-1">
                       <CheckCircle2 className="text-emerald-500 mx-auto" size={24} />
-                      <span className="text-xs text-emerald-700 font-bold block">Proof of Address Attached</span>
+                      <span className="text-xs text-emerald-700 font-bold block">Proof of Address Attached {selectedFiles.proofOfAddress && `(${selectedFiles.proofOfAddress.name})`}</span>
                     </div>
                   ) : (
                     <div className="text-center space-y-2 text-gray-400">
                       <Upload className="mx-auto" size={24} />
-                      <span className="text-xs font-semibold block">Click to upload document</span>
+                      <span className="text-xs font-semibold block">Click to select document</span>
                     </div>
                   )}
                 </label>

@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: auth.message }, { status: auth.status });
     }
 
-    const settings = await prisma.commission.findMany();
+    const settings = await prisma.commissionSetting.findMany();
     return NextResponse.json({ settings });
   } catch (error: any) {
     console.error('Get commission settings error:', error);
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Setting id is required' }, { status: 400 });
     }
 
-    const setting = await prisma.commission.findUnique({
+    const setting = await prisma.commissionSetting.findUnique({
       where: { id },
     });
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (typeof fixedAmount === 'number') updateData.fixedAmount = fixedAmount;
     if (typeof isActive === 'boolean') updateData.isActive = isActive;
 
-    const updated = await prisma.commission.update({
+    const updated = await prisma.commissionSetting.update({
       where: { id },
       data: updateData,
     });

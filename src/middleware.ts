@@ -59,24 +59,8 @@ export async function middleware(req: NextRequest) {
 
     const onboardingStatus = (payload.onboardingStatus as string) || 'INCOMPLETE';
 
-    // Redirect incomplete users to complete-profile
-    if (onboardingStatus === 'INCOMPLETE') {
-      const isAllowedOnboarding = isOnboardingRoute || 
-                                  path.startsWith('/api/user/onboarding') || 
-                                  path.startsWith('/api/user/kyc/submit') ||
-                                  path.startsWith('/api/auth');
-      if (!isAllowedOnboarding) {
-        if (isApiRequest) {
-          return NextResponse.json({ message: 'Forbidden: Profile completion required' }, { status: 403 });
-        }
-        return NextResponse.redirect(new URL('/complete-profile', req.url));
-      }
-    } else {
-      // Completed users attempting to access onboarding are sent to the dashboard
-      if (isOnboardingRoute) {
-        return NextResponse.redirect(new URL('/user-dashboard', req.url));
-      }
-    }
+    // Users are allowed to access dashboard immediately. No hard-blocking redirect.
+    // If they want to complete onboarding, they can visit /complete-profile voluntarily.
 
     // Role-Based Access Control (RBAC) Checks
     if (isAdminRoute) {

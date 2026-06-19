@@ -112,6 +112,14 @@ export async function POST(req: NextRequest) {
           where: { id: userId },
           data: { status: 'ACTIVE' },
         });
+
+        const { distributeMultiLevelCommission } = await import('@/lib/wallet/service');
+        await distributeMultiLevelCommission(tx, {
+          buyerId: userId,
+          amountPerLevel: [10000, 5000, 3000, 1000, 1000], // 10%, 5%, 3%, 1%, 1% of 100k
+          orderId: dbCode.id,
+          description: `Activation Commission for User ${userId}`
+        });
       }
 
       // Log activation action to AuditLog

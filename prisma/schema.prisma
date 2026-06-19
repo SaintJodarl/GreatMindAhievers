@@ -1,73 +1,70 @@
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 model User {
-  id            String   @id @default(cuid())
-  name          String?
-  email         String?  @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          String   @default("MEMBER")
-  status        String   @default("PENDING")
-  referralCode  String?  @unique
-  username      String?  @unique
-
-  sponsorId     String?
-  placementId   String?
-  binaryPosition String? // "LEFT" | "RIGHT"
-  onboardingStatus String   @default("INCOMPLETE")
-  autoPlacement    Boolean  @default(true)
-
-  kycStatus     String   @default("PENDING")
-  kycSubmittedAt DateTime?
-  kycApprovedAt DateTime?
-  kycRejectedAt DateTime?
+  id                 String    @id @default(cuid())
+  name               String?
+  email              String?   @unique
+  emailVerified      DateTime?
+  image              String?
+  password           String?
+  role               String    @default("MEMBER")
+  status             String    @default("PENDING")
+  referralCode       String?   @unique
+  username           String?   @unique
+  sponsorId          String?
+  placementId        String?
+  binaryPosition     String?
+  onboardingStatus   String    @default("INCOMPLETE")
+  autoPlacement      Boolean   @default(true)
+  kycStatus          String    @default("PENDING")
+  kycSubmittedAt     DateTime?
+  kycApprovedAt      DateTime?
+  kycRejectedAt      DateTime?
   kycRejectionReason String?
+  adminRole          String?
+  preferredPosition  String    @default("LEFT")
+  bankName           String?
+  accountNumber      String?
+  accountName        String?
+  notifyEmail        Boolean   @default(true)
+  notifySms          Boolean   @default(false)
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+  leftLegCount       Int       @default(0)
+  rightLegCount      Int       @default(0)
+  totalDownlines     Int       @default(0)
+  path               String?
+  depth              Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  adminRole     String? // SUPER_ADMIN, FINANCE_ADMIN, SUPPORT_ADMIN, READ_ONLY_ADMIN
-
-  preferredPosition String @default("LEFT") // "LEFT" | "RIGHT"
-  bankName          String?
-  accountNumber     String?
-  accountName       String?
-  notifyEmail       Boolean @default(true)
-  notifySms         Boolean @default(false)
-
-  resetToken    String?
-  resetTokenExpiry DateTime?
-
-  // Cached counters
-  leftLegCount    Int    @default(0)
-  rightLegCount   Int    @default(0)
-  totalDownlines  Int    @default(0)
-
-  wallet        Wallet?
-  transactions  WalletTransaction[]
-  binaryTree    BinaryTree?
-  kycSubmission KYCSubmission?
-  tickets       Ticket[]
-  withdrawals   Withdrawal[]
-
-  regCode       AdminCode? @relation("RegistrationCode")
-  kycCode       AdminCode? @relation("KycCode")
   activationCode ActivationCode? @relation("UserActivation")
-  profile       MemberProfile?
-  refreshTokens RefreshToken[]
+  kycCode        AdminCode?      @relation("KycCode")
+  regCode        AdminCode?      @relation("RegistrationCode")
+  binaryTree     BinaryTree?
+  kycSubmission  KYCSubmission?
+  profile        MemberProfile?
+  refreshTokens  RefreshToken[]
+  tickets        Ticket[]
 
-  sponsor       User?      @relation("SponsorRelation", fields: [sponsorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  sponsored     User[]     @relation("SponsorRelation")
-  placement     User?      @relation("PlacementRelation", fields: [placementId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  placed        User[]     @relation("PlacementRelation")
+  placement User?  @relation("PlacementRelation", fields: [placementId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  placed    User[] @relation("PlacementRelation")
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  sponsor   User?  @relation("SponsorRelation", fields: [sponsorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sponsored User[] @relation("SponsorRelation")
+
+  wallet              Wallet?
+  transactions        WalletTransaction[]
+  withdrawals         Withdrawal[]
+  commissionsReceived CommissionLog[]     @relation("CommissionRecipient")
+  commissionsSent     CommissionLog[]     @relation("CommissionSource")
 
   @@index([role])
   @@index([status])
@@ -75,37 +72,42 @@ model User {
   @@index([sponsorId])
   @@index([placementId])
   @@index([referralCode])
+  @@index([path])
+  @@index([depth])
 }
 
 model Wallet {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  balance       Float    @default(0)
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions  WalletTransaction[]
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
 
   @@index([userId])
 }
 
 model WalletTransaction {
-  id            String   @id @default(cuid())
-  walletId      String
-  type          String   // REFERRAL_BONUS, PAIRING_BONUS, LEADERSHIP_BONUS, WITHDRAWAL, ADJUSTMENT, CREDIT, DEBIT
-  amount        Float
-  balanceAfter  Float
-  description   String
-  reference     String?  @unique
-  metadata      String?  // JSON
-  status        String   @default("COMPLETED") // PENDING, COMPLETED, FAILED, REVERSED
-  wallet        Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  user          User     @relation(fields: [walletId], references: [id])
+  id       String @id @default(cuid())
+  walletId String
+  userId   String
 
-  createdAt     DateTime @default(now())
+  type         String
+  amount       Float
+  balanceAfter Float
+  description  String
+  reference    String?  @unique
+  metadata     String?
+  status       String   @default("COMPLETED")
+  createdAt    DateTime @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([walletId])
+  @@index([userId])
   @@index([type])
   @@index([status])
   @@index([createdAt])
@@ -113,20 +115,20 @@ model WalletTransaction {
 }
 
 model BinaryTree {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  parentId      String?
-  leftChildId   String?  @unique
-  rightChildId  String?  @unique
-  path          String   // e.g., "ROOT/12/44/89"
-  depth         Int      @default(0)
-  leftVolume    Float    @default(0)
-  rightVolume   Float    @default(0)
-  cyclesCompleted Int    @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  parentId        String?
+  leftChildId     String?  @unique
+  rightChildId    String?  @unique
+  path            String
+  depth           Int      @default(0)
+  leftVolume      Float    @default(0)
+  rightVolume     Float    @default(0)
+  cyclesCompleted Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([path])
   @@index([depth])
@@ -134,39 +136,48 @@ model BinaryTree {
 }
 
 model KYCSubmission {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  fullName    String
-  phone       String
-  address     String
-  state       String
-  lga         String
-  idType      String   // NIN, BVN, PASSPORT, DRIVERS_LICENSE
-  idNumber    String
-  idDocument  String?
-  selfie      String?
+  id             String  @id @default(cuid())
+  userId         String  @unique
+  fullName       String
+  phone          String
+  address        String
+  state          String
+  lga            String
+  idType         String
+  idNumber       String
+  idDocument     String?
+  selfie         String?
   proofOfAddress String?
-  status      String   @default("SUBMITTED") // SUBMITTED, APPROVED, REJECTED
-  adminNote   String?
-  reviewedBy  String?
-  reviewedAt  DateTime?
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status         String  @default("PENDING")
+
+  governmentIdUrl String?
+  selfieUrl       String?
+  addressProofUrl String?
+  govIdStatus     String  @default("MISSING")
+  selfieStatus    String  @default("MISSING")
+  addressStatus   String  @default("MISSING")
+
+  adminNote  String?
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status])
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  adminId     String
-  action      String
-  targetType  String?
-  targetId    String?
-  details     String
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String
+  targetType String?
+  targetId   String?
+  details    String
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
 
   @@index([adminId])
   @@index([action])
@@ -175,24 +186,25 @@ model AuditLog {
 }
 
 model AdminCode {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  type        String   // "REGISTRATION" | "KYC"
-  status      String   @default("UNUSED") // "UNUSED" | "USED" | "REVOKED"
-  regUserId   String?  @unique
-  regUser     User?    @relation("RegistrationCode", fields: [regUserId], references: [id])
-  kycUserId   String?  @unique
-  kycUser     User?    @relation("KycCode", fields: [kycUserId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  code      String   @unique
+  type      String
+  status    String   @default("UNUSED")
+  regUserId String?  @unique
+  kycUserId String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  kycUser User? @relation("KycCode", fields: [kycUserId], references: [id])
+  regUser User? @relation("RegistrationCode", fields: [regUserId], references: [id])
 
   @@index([status])
   @@index([type])
 }
 
-model Commission {
+model CommissionSetting {
   id          String   @id @default(cuid())
-  type        String   // "DIRECT" | "PAIRING" | "LEADERSHIP"
+  type        String
   percentage  Float?
   fixedAmount Float?
   isActive    Boolean  @default(true)
@@ -200,6 +212,24 @@ model Commission {
   updatedAt   DateTime @updatedAt
 
   @@index([type])
+}
+
+model CommissionLog {
+  id         String   @id @default(cuid())
+  userId     String
+  fromUserId String
+  level      Int
+  amount     Float
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User @relation("CommissionRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  fromUser User @relation("CommissionSource", fields: [fromUserId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([fromUserId])
+  @@index([status])
 }
 
 model Content {
@@ -226,12 +256,13 @@ model WelcomeMessage {
 model Ticket {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   subject   String
-  status    String   @default("OPEN") // "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
-  messages  TicketMessage[]
+  status    String   @default("OPEN")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages TicketMessage[]
 
   @@index([userId])
   @@index([status])
@@ -240,27 +271,29 @@ model Ticket {
 model TicketMessage {
   id        String   @id @default(cuid())
   ticketId  String
-  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   senderId  String
   message   String
   createdAt DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
 }
 
 model Withdrawal {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount      Float
   method      String
   details     String
-  status      String   @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
+  status      String    @default("PENDING")
   adminNote   String?
   processedAt DateTime?
   processedBy String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
@@ -270,7 +303,7 @@ model CommissionCycle {
   id          String   @id @default(cuid())
   startDate   DateTime
   endDate     DateTime
-  status      String   @default("COMPLETED") // "PENDING" | "COMPLETED" | "FAILED"
+  status      String   @default("COMPLETED")
   totalPayout Float    @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -282,7 +315,7 @@ model AdminRole {
   id          String   @id @default(cuid())
   name        String   @unique
   description String
-  permissions String   // JSON string array
+  permissions String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -292,16 +325,16 @@ model AdminRole {
 model ActivationCode {
   id             String    @id @default(cuid())
   code           String    @unique
-  status         String    @default("UNUSED") // "UNUSED" | "USED" | "EXPIRED" | "DISABLED"
-  createdBy      String    // Admin User ID
+  status         String    @default("UNUSED")
+  createdBy      String
   createdDate    DateTime  @default(now())
   redeemedBy     String?   @unique
-  redeemedUser   User?     @relation("UserActivation", fields: [redeemedBy], references: [id])
   redeemedDate   DateTime?
   expirationDate DateTime?
-  
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  redeemedUser User? @relation("UserActivation", fields: [redeemedBy], references: [id])
 
   @@index([status])
   @@index([code])
@@ -318,45 +351,55 @@ model ActivationAttempt {
 }
 
 model MemberProfile {
-  id                    String    @id @default(cuid())
-  userId                String    @unique
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Personal Info (Step 1)
-  firstName             String?
-  lastName              String?
-  gender                String?
-  dob                   DateTime?
-  phone                 String?
-  country               String?   @default("Nigeria")
-  state                 String?
-  stateOfOrigin         String?
-  lga                   String?
-  city                  String?
-  address               String?
-  
-  // Next of Kin (Step 2)
-  nextOfKinName         String?
-  nextOfKinPhone        String?
-  relationship          String?
-  nextOfKinAddress      String?
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  firstName        String?
+  lastName         String?
+  gender           String?
+  dob              DateTime?
+  phone            String?
+  country          String?   @default("Nigeria")
+  state            String?
+  stateOfOrigin    String?
+  lga              String?
+  city             String?
+  address          String?
+  nextOfKinName    String?
+  nextOfKinPhone   String?
+  relationship     String?
+  nextOfKinAddress String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model RefreshToken {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash   String   @unique
-  familyId    String
-  expiresAt   DateTime
-  revoked     Boolean  @default(false)
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  familyId  String
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([familyId])
+}
+
+model FinancialEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  userId    String
+  type      String
+  amount    Float
+  metadata  String? // JSON string
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
+  @@index([userId])
 }

@@ -13,6 +13,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { walletId, newBalance, description, reference, metadata } = body;
 
+    if (!reference || typeof reference !== 'string' || !reference.trim()) {
+      return NextResponse.json({ message: 'reference (eventId) is required for idempotency' }, { status: 400 });
+    }
+
     if (!walletId) {
       return NextResponse.json({ message: 'walletId is required' }, { status: 400 });
     }

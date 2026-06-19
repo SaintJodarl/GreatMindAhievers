@@ -54,6 +54,14 @@ export async function POST(
 
       if (hasCode && hasCode.status === 'USED') {
         userUpdateData.status = 'ACTIVE';
+
+        const { distributeMultiLevelCommission } = await import('@/lib/wallet/service');
+        await distributeMultiLevelCommission(tx, {
+          buyerId: submission.userId,
+          amountPerLevel: [10000, 5000, 3000, 1000, 1000], // 10%, 5%, 3%, 1%, 1% of 100k
+          orderId: hasCode.id,
+          description: `Activation Commission for User ${submission.userId}`
+        });
       }
 
       await tx.user.update({

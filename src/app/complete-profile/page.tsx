@@ -51,13 +51,15 @@ export default function CompleteProfilePage() {
     accountNumber: '',
     accountName: '',
 
-    // Step 4: Identity Verification (KYC)
-    idType: 'NIN',
-    idNumber: '',
-    idDocument: '',
-    selfie: '',
-    proofOfAddress: '',
   });
+
+  const idDocumentInputRef = React.useRef<HTMLInputElement>(null);
+  const selfieInputRef = React.useRef<HTMLInputElement>(null);
+  const proofOfAddressInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleRealUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
+    // This function is no longer used here as KYC is decoupled
+  };
 
   const lgas = React.useMemo(() => getLgasForState(formData.state), [formData.state]);
   const stateOfOriginLgas = React.useMemo(() => getLgasForState(formData.stateOfOrigin), [formData.stateOfOrigin]);
@@ -74,31 +76,20 @@ export default function CompleteProfilePage() {
     const { name, value } = e.target;
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-      if (name === 'state') {
-        updated.lga = ''; // Reset LGA when residential state changes
+      if (name === 'stateOfOrigin') {
+        updated.lga = ''; // Reset LGA when state of origin changes
       }
       return updated;
     });
   };
 
-  // Simulated file drop uploader handler
-  const handleSimulatedUpload = (fieldName: string) => {
-    setLoading(true);
-    // Simulating file upload encoding to data-URL
-    setTimeout(() => {
-      setFormData((prev) => ({
-        ...prev,
-        [fieldName]: `https://gma-network.s3.amazonaws.com/uploads/${fieldName}_${Date.now()}.png`,
-      }));
-      setLoading(false);
-    }, 800);
-  };
+
 
   const handleNextStep = () => {
     setError(null);
     // Basic step validations
     if (activeStep === 1) {
-      if (!formData.dob || !formData.state || !formData.lga || !formData.city || !formData.address) {
+      if (!formData.dob || !formData.state || !formData.stateOfOrigin || !formData.lga || !formData.city || !formData.address) {
         setError('Please fill out all personal information fields.');
         return;
       }
@@ -128,15 +119,9 @@ export default function CompleteProfilePage() {
     setError(null);
     setLoading(true);
 
-    if (!formData.idDocument || !formData.selfie || !formData.proofOfAddress) {
-      setError('Please upload all required identity documents.');
-      setLoading(false);
-      return;
-    }
-
     try {
-      // 1. Submit Profile details
-      const profileRes = await api('/api/user/onboarding/profile', {
+      // 1. Submit Unified Onboarding Form (Profile, KYC, Bank, Wallet, Complete)
+      const submitRes = await api('/api/user/onboarding/submit', {
         method: 'POST',
         body: JSON.stringify({
           gender: formData.gender,
@@ -157,39 +142,12 @@ export default function CompleteProfilePage() {
         }),
       });
 
-      if (!profileRes.ok) {
-        const data = await profileRes.json();
-        throw new Error(data.message || 'Failed to save profile onboarding details.');
+      if (!submitRes.ok) {
+        const data = await submitRes.json();
+        throw new Error(data.message || 'Failed to submit onboarding details.');
       }
 
-      // 2. Submit KYC Documentations
-      const kycRes = await api('/api/user/kyc/submit', {
-        method: 'POST',
-        body: JSON.stringify({
-          idType: formData.idType,
-          idNumber: formData.idNumber || 'NOT_PROVIDED',
-          idDocument: formData.idDocument,
-          selfie: formData.selfie,
-          proofOfAddress: formData.proofOfAddress,
-        }),
-      });
-
-      if (!kycRes.ok) {
-        const data = await kycRes.json();
-        throw new Error(data.message || 'Failed to submit KYC documentation.');
-      }
-
-      // 3. Mark Onboarding Status as COMPLETE
-      const completeRes = await api('/api/user/onboarding/complete', {
-        method: 'POST',
-      });
-
-      if (!completeRes.ok) {
-        const data = await completeRes.json();
-        throw new Error(data.message || 'Failed to complete onboarding session.');
-      }
-
-      // 4. Force frontend to re-validate token/cookie and fetch active profile
+      // 2. Force frontend to re-validate token/cookie and fetch active profile
       await checkSession();
 
       // Redirect to dashboard
@@ -219,9 +177,8 @@ export default function CompleteProfilePage() {
           </p>
         </div>
 
-        {/* Steps Progress Indicators */}
         <div className="flex items-center justify-between max-w-md mx-auto py-6">
-          {[1, 2, 3, 4].map((step) => (
+          {[1, 2, 3].map((step) => (
             <React.Fragment key={step}>
               <div className="flex flex-col items-center">
                 <div
@@ -234,10 +191,10 @@ export default function CompleteProfilePage() {
                   {step}
                 </div>
                 <span className="text-[10px] mt-1 text-slate-400 font-medium">
-                  {step === 1 ? 'Personal' : step === 2 ? 'Next of Kin' : step === 3 ? 'Banking' : 'KYC Docs'}
+                  {step === 1 ? 'Personal' : step === 2 ? 'Next of Kin' : 'Banking'}
                 </span>
               </div>
-              {step < 4 && (
+              {step < 3 && (
                 <div
                   className={`flex-1 h-[2px] transition-all duration-300 ${
                     activeStep > step ? 'bg-indigo-600' : 'bg-slate-800'
@@ -271,7 +228,6 @@ export default function CompleteProfilePage() {
                   >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
-                    <option value="Other">Other / Prefer not to say</option>
                   </select>
                 </div>
 
@@ -287,14 +243,14 @@ export default function CompleteProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Residential State</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">State of Origin</label>
                   <select
-                    name="state"
-                    value={formData.state}
+                    name="stateOfOrigin"
+                    value={formData.stateOfOrigin}
                     onChange={handleChange}
                     className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                   >
-                    <option value="">Select State</option>
+                    <option value="">Select Origin State</option>
                     {statesList.map((st) => (
                       <option key={st} value={st}>{st}</option>
                     ))}
@@ -307,25 +263,25 @@ export default function CompleteProfilePage() {
                     name="lga"
                     value={formData.lga}
                     onChange={handleChange}
-                    disabled={!formData.state}
+                    disabled={!formData.stateOfOrigin}
                     className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:opacity-40 transition-all"
                   >
-                    <option value="">{formData.state ? 'Select LGA' : 'Select a state first'}</option>
-                    {lgas.map((lg) => (
+                    <option value="">{formData.stateOfOrigin ? 'Select LGA' : 'Select origin state first'}</option>
+                    {stateOfOriginLgas.map((lg) => (
                       <option key={lg} value={lg}>{lg}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">State of Origin (Optional)</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Residential State</label>
                   <select
-                    name="stateOfOrigin"
-                    value={formData.stateOfOrigin}
+                    name="state"
+                    value={formData.state}
                     onChange={handleChange}
                     className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                   >
-                    <option value="">Select Origin State</option>
+                    <option value="">Select State</option>
                     {statesList.map((st) => (
                       <option key={st} value={st}>{st}</option>
                     ))}
@@ -429,13 +385,37 @@ export default function CompleteProfilePage() {
                     className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                   >
                     <option value="">Select Bank</option>
+                    <option value="Alpha Morgan Bank">Alpha Morgan Bank</option>
                     <option value="Access Bank">Access Bank</option>
-                    <option value="GTBank">Guaranty Trust Bank (GTB)</option>
-                    <option value="Zenith Bank">Zenith Bank</option>
-                    <option value="UBA">United Bank for Africa (UBA)</option>
-                    <option value="First Bank">First Bank of Nigeria</option>
+                    <option value="Citibank Nigeria">Citibank Nigeria</option>
+                    <option value="Ecobank Nigeria">Ecobank Nigeria</option>
+                    <option value="FCMB (First City Monument Bank)">FCMB (First City Monument Bank)</option>
                     <option value="Fidelity Bank">Fidelity Bank</option>
+                    <option value="First Bank of Nigeria">First Bank of Nigeria</option>
+                    <option value="Globus Bank">Globus Bank</option>
+                    <option value="Guaranty Trust Bank (GTCO)">Guaranty Trust Bank (GTCO)</option>
+                    <option value="Keystone Bank">Keystone Bank</option>
+                    <option value="Nova Commercial Bank">Nova Commercial Bank</option>
+                    <option value="Optimus Bank">Optimus Bank</option>
+                    <option value="Parallex Bank">Parallex Bank</option>
+                    <option value="Polaris Bank">Polaris Bank</option>
+                    <option value="PremiumTrust Bank">PremiumTrust Bank</option>
+                    <option value="Providus Bank">Providus Bank</option>
+                    <option value="Stanbic IBTC Bank">Stanbic IBTC Bank</option>
+                    <option value="Standard Chartered Bank Nigeria">Standard Chartered Bank Nigeria</option>
                     <option value="Sterling Bank">Sterling Bank</option>
+                    <option value="Titan Trust Bank">Titan Trust Bank</option>
+                    <option value="Union Bank of Nigeria">Union Bank of Nigeria</option>
+                    <option value="United Bank for Africa (UBA)">United Bank for Africa (UBA)</option>
+                    <option value="Unity Bank">Unity Bank</option>
+                    <option value="Wema Bank">Wema Bank</option>
+                    <option value="Zenith Bank">Zenith Bank</option>
+                    <option value="Kuda Bank">Kuda Bank</option>
+                    <option value="Moniepoint Microfinance Bank">Moniepoint Microfinance Bank</option>
+                    <option value="OPay">OPay</option>
+                    <option value="PalmPay">PalmPay</option>
+                    <option value="Dot Microfinance Bank">Dot Microfinance Bank</option>
+                    <option value="VFD Microfinance Bank">VFD Microfinance Bank</option>
                   </select>
                 </div>
 
@@ -467,109 +447,7 @@ export default function CompleteProfilePage() {
             </div>
           )}
 
-          {/* STEP 4: Documents Uploads */}
-          {activeStep === 4 && (
-            <div className="space-y-6 animate-fade-in font-sans">
-              <h3 className="text-xl font-bold text-white border-b border-slate-800 pb-3">Step 4 — Identity Document Verification</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Identity Type</label>
-                  <select
-                    name="idType"
-                    value={formData.idType}
-                    onChange={handleChange}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                  >
-                    <option value="NIN">National Identification Number (NIN)</option>
-                    <option value="BVN">Bank Verification Number (BVN)</option>
-                    <option value="PASSPORT">International Passport</option>
-                    <option value="DRIVERS_LICENSE">Driver's License</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">ID Number</label>
-                  <input
-                    type="text"
-                    name="idNumber"
-                    value={formData.idNumber}
-                    onChange={handleChange}
-                    placeholder="Enter ID Number"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Upload boxes */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-                {/* ID Doc */}
-                <div className="space-y-2">
-                  <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Government ID Document</span>
-                  {formData.idDocument ? (
-                    <div className="flex flex-col items-center justify-center border border-emerald-500/25 bg-emerald-500/5 rounded-2xl p-4 text-emerald-400">
-                      <CheckCircle2 size={32} className="mb-2" />
-                      <span className="text-[11px] font-medium text-center">ID Document Uploaded</span>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleSimulatedUpload('idDocument')}
-                      disabled={loading}
-                      className="w-full flex flex-col items-center justify-center border border-dashed border-slate-700 bg-slate-900 hover:bg-slate-800/80 rounded-2xl p-6 transition-all text-slate-400 disabled:opacity-50"
-                    >
-                      <Upload size={24} className="mb-2 text-indigo-400" />
-                      <span className="text-xs font-semibold text-white">Click to Upload ID</span>
-                      <span className="text-[10px] text-slate-500 mt-1">PNG, JPG or PDF</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Selfie */}
-                <div className="space-y-2">
-                  <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Selfie Verification</span>
-                  {formData.selfie ? (
-                    <div className="flex flex-col items-center justify-center border border-emerald-500/25 bg-emerald-500/5 rounded-2xl p-4 text-emerald-400">
-                      <CheckCircle2 size={32} className="mb-2" />
-                      <span className="text-[11px] font-medium text-center">Selfie Uploaded</span>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleSimulatedUpload('selfie')}
-                      disabled={loading}
-                      className="w-full flex flex-col items-center justify-center border border-dashed border-slate-700 bg-slate-900 hover:bg-slate-800/80 rounded-2xl p-6 transition-all text-slate-400 disabled:opacity-50"
-                    >
-                      <Upload size={24} className="mb-2 text-indigo-400" />
-                      <span className="text-xs font-semibold text-white">Upload Face Selfie</span>
-                      <span className="text-[10px] text-slate-500 mt-1">Live camera snapshot</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Proof of Address */}
-                <div className="space-y-2">
-                  <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Proof of Address</span>
-                  {formData.proofOfAddress ? (
-                    <div className="flex flex-col items-center justify-center border border-emerald-500/25 bg-emerald-500/5 rounded-2xl p-4 text-emerald-400">
-                      <CheckCircle2 size={32} className="mb-2" />
-                      <span className="text-[11px] font-medium text-center">Proof Uploaded</span>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleSimulatedUpload('proofOfAddress')}
-                      disabled={loading}
-                      className="w-full flex flex-col items-center justify-center border border-dashed border-slate-700 bg-slate-900 hover:bg-slate-800/80 rounded-2xl p-6 transition-all text-slate-400 disabled:opacity-50"
-                    >
-                      <Upload size={24} className="mb-2 text-indigo-400" />
-                      <span className="text-xs font-semibold text-white">Proof of Address</span>
-                      <span className="text-[10px] text-slate-500 mt-1">Utility bill / bank statement</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Step 4 Removed (KYC is decoupled) */}
 
           {/* Navigation Controls */}
           <div className="pt-6 border-t border-slate-850 flex items-center justify-between">
@@ -587,7 +465,7 @@ export default function CompleteProfilePage() {
               <div />
             )}
 
-            {activeStep < 4 ? (
+            {activeStep < 3 ? (
               <button
                 type="button"
                 onClick={handleNextStep}
@@ -612,7 +490,7 @@ export default function CompleteProfilePage() {
                 ) : (
                   <>
                     <CheckCircle2 size={16} />
-                    Complete Setup
+                    Complete Signup
                   </>
                 )}
               </button>

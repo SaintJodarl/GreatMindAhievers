@@ -1,0 +1,43 @@
+import { PrismaService } from '../prisma/prisma.service';
+export declare class AuthService {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    registerUser(email: string, name?: string, sponsorId?: string): Promise<{
+        adminRole: string | null;
+        image: string | null;
+        name: string | null;
+        id: string;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        email: string | null;
+        referralCode: string | null;
+        username: string | null;
+        emailVerified: Date | null;
+        password: string | null;
+        role: string;
+        sponsorId: string | null;
+        placementId: string | null;
+        binaryPosition: string | null;
+        onboardingStatus: string;
+        autoPlacement: boolean;
+        kycStatus: string;
+        kycSubmittedAt: Date | null;
+        kycApprovedAt: Date | null;
+        kycRejectedAt: Date | null;
+        kycRejectionReason: string | null;
+        preferredPosition: string;
+        bankName: string | null;
+        accountNumber: string | null;
+        accountName: string | null;
+        notifyEmail: boolean;
+        notifySms: boolean;
+        resetToken: string | null;
+        resetTokenExpiry: Date | null;
+        leftLegCount: number;
+        rightLegCount: number;
+        totalDownlines: number;
+        path: string | null;
+        depth: number;
+    }>;
+}

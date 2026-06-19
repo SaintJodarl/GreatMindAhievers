@@ -15,6 +15,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { amount, type, description, reference, metadata } = body;
 
+    if (!reference || typeof reference !== 'string' || !reference.trim()) {
+      return NextResponse.json({ message: 'reference (eventId) is required for idempotency' }, { status: 400 });
+    }
+
     if (!amount || amount <= 0) {
       return NextResponse.json({ message: 'Amount must be greater than zero' }, { status: 400 });
     }

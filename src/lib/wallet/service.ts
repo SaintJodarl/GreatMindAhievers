@@ -108,20 +108,64 @@ export async function creditWallet(
     throw new Error(`Transaction type ${type} is not a credit type`);
   }
 
+  const txnReference = reference ?? generateReference();
+
+  // 1. Idempotency Check: check FinancialEvent first
+  const existingEvent = await tx.financialEvent.findUnique({
+    where: { eventId: txnReference },
+  });
+  if (existingEvent) {
+    console.log(`[Idempotency Gate] FinancialEvent with eventId ${txnReference} already exists. Skipping.`);
+    const existingTxn = await tx.walletTransaction.findUnique({
+      where: { reference: txnReference },
+    });
+    if (existingTxn) {
+      return castTransaction(existingTxn);
+    }
+    throw new Error(`FinancialEvent ${txnReference} exists but no matching WalletTransaction found.`);
+  }
+
+  // Also check WalletTransaction directly to be absolutely sure
+  const existingTxn = await tx.walletTransaction.findUnique({
+    where: { reference: txnReference },
+  });
+  if (existingTxn) {
+    console.log(`[Idempotency Gate] Transaction with reference ${txnReference} already exists. Skipping.`);
+    return castTransaction(existingTxn);
+  }
+
+  // Get wallet user ID
   const wallet = await tx.wallet.findUnique({
     where: { id: walletId },
   });
-
   if (!wallet) {
     throw new Error('Wallet not found');
   }
 
-  const newBalance = wallet.balance + amount;
-  const txnReference = reference ?? generateReference();
+  // 2. Create FinancialEvent
+  await tx.financialEvent.create({
+    data: {
+      eventId: txnReference,
+      userId: wallet.userId,
+      type,
+      amount,
+      metadata: metadata ? JSON.stringify(metadata) : null,
+    },
+  });
 
+  // 3. Atomic Balance Increment
+  const updatedWallet = await tx.wallet.update({
+    where: { id: walletId },
+    data: { balance: { increment: amount } },
+  });
+
+  const newBalance = updatedWallet.balance;
+
+  // 4. Create Transaction Ledger Record
   const transaction = await tx.walletTransaction.create({
     data: {
       walletId,
+      userId: wallet.userId,
       type,
       amount,
       balanceAfter: newBalance,
@@ -132,10 +176,8 @@ export async function creditWallet(
     },
   });
 
-  await tx.wallet.update({
-    where: { id: walletId },
-    data: { balance: newBalance },
-  });
+  // 5. Audit Drift Detection
+  await verifyWalletIntegrity(tx, walletId);
 
   return castTransaction(transaction);
 }
@@ -154,24 +196,74 @@ export async function debitWallet(
     throw new Error(`Transaction type ${type} is not a debit type`);
   }
 
+  const txnReference = reference ?? generateReference();
+
+  // 1. Idempotency Check: check FinancialEvent first
+  const existingEvent = await tx.financialEvent.findUnique({
+    where: { eventId: txnReference },
+  });
+  if (existingEvent) {
+    console.log(`[Idempotency Gate] FinancialEvent with eventId ${txnReference} already exists. Skipping.`);
+    const existingTxn = await tx.walletTransaction.findUnique({
+      where: { reference: txnReference },
+    });
+    if (existingTxn) {
+      return castTransaction(existingTxn);
+    }
+    throw new Error(`FinancialEvent ${txnReference} exists but no matching WalletTransaction found.`);
+  }
+
+  // Also check WalletTransaction directly
+  const existingTxn = await tx.walletTransaction.findUnique({
+    where: { reference: txnReference },
+  });
+  if (existingTxn) {
+    console.log(`[Idempotency Gate] Transaction with reference ${txnReference} already exists. Skipping.`);
+    return castTransaction(existingTxn);
+  }
+
+  // Get wallet user ID
   const wallet = await tx.wallet.findUnique({
     where: { id: walletId },
   });
-
   if (!wallet) {
     throw new Error('Wallet not found');
   }
 
+  // Check balance before debit
   if (wallet.balance < amount) {
     throw new Error('Insufficient balance');
   }
 
-  const newBalance = wallet.balance - amount;
-  const txnReference = reference ?? generateReference();
+  // 2. Create FinancialEvent
+  await tx.financialEvent.create({
+    data: {
+      eventId: txnReference,
+      userId: wallet.userId,
+      type,
+      amount,
+      metadata: metadata ? JSON.stringify(metadata) : null,
+    },
+  });
 
+  // 3. Atomic Balance Decrement and Constraint Check
+  const updatedWallet = await tx.wallet.update({
+    where: { id: walletId },
+    data: { balance: { decrement: amount } },
+  });
+
+  // Double check balance under concurrency
+  if (updatedWallet.balance < 0) {
+    throw new Error('Insufficient balance');
+  }
+
+  const newBalance = updatedWallet.balance;
+
+  // 4. Create Transaction Ledger Record
   const transaction = await tx.walletTransaction.create({
     data: {
       walletId,
+      userId: wallet.userId,
       type,
       amount,
       balanceAfter: newBalance,
@@ -182,10 +274,8 @@ export async function debitWallet(
     },
   });
 
-  await tx.wallet.update({
-    where: { id: walletId },
-    data: { balance: newBalance },
-  });
+  // 5. Audit Drift Detection
+  await verifyWalletIntegrity(tx, walletId);
 
   return castTransaction(transaction);
 }
@@ -198,6 +288,37 @@ export async function recordCommission(
 
   if (amount <= 0) {
     throw new Error('Commission amount must be greater than zero');
+  }
+
+  // Idempotency precheck to avoid creating wallet or query overhead if already processed
+  if (reference) {
+    const existingEvent = await tx.financialEvent.findUnique({
+      where: { eventId: reference },
+    });
+    if (existingEvent) {
+      console.log(`[Idempotency Gate] FinancialEvent with eventId ${reference} already exists. Skipping.`);
+      const existingTxn = await tx.walletTransaction.findUnique({
+        where: { reference },
+      });
+      if (existingTxn) return castTransaction(existingTxn);
+      throw new Error(`FinancialEvent ${reference} exists but no matching WalletTransaction found.`);
+    }
+
+    const existingTxn = await tx.walletTransaction.findUnique({
+      where: { reference },
+    });
+    if (existingTxn) {
+      console.log(`[Idempotency Check] Commission with reference ${reference} already exists. Skipping.`);
+      return castTransaction(existingTxn);
+    }
+  }
+
+  // Self-referral abuse prevention check: payee userId cannot earn commission from their own purchase
+  if (metadata && typeof metadata === 'object') {
+    const buyerId = (metadata as any).buyerId;
+    if (buyerId && buyerId === userId) {
+      throw new Error('Self-referral commission payout is forbidden');
+    }
   }
 
   let wallet = await tx.wallet.findUnique({
@@ -232,6 +353,31 @@ export async function adjustBalance(
     throw new Error('Balance cannot be negative');
   }
 
+  const txnReference = reference ?? generateReference();
+
+  // 1. Idempotency Check
+  const existingEvent = await tx.financialEvent.findUnique({
+    where: { eventId: txnReference },
+  });
+  if (existingEvent) {
+    console.log(`[Idempotency Gate] FinancialEvent with eventId ${txnReference} already exists. Skipping.`);
+    const existingTxn = await tx.walletTransaction.findUnique({
+      where: { reference: txnReference },
+    });
+    if (existingTxn) {
+      return castTransaction(existingTxn);
+    }
+    throw new Error(`FinancialEvent ${txnReference} exists but no matching WalletTransaction found.`);
+  }
+
+  const existingTxn = await tx.walletTransaction.findUnique({
+    where: { reference: txnReference },
+  });
+  if (existingTxn) {
+    console.log(`[Idempotency Gate] Adjustment with reference ${txnReference} already exists. Skipping.`);
+    return castTransaction(existingTxn);
+  }
+
   const wallet = await tx.wallet.findUnique({
     where: { id: walletId },
   });
@@ -241,12 +387,24 @@ export async function adjustBalance(
   }
 
   const difference = newBalance - wallet.balance;
-  const type = difference >= 0 ? 'ADJUSTMENT' : 'ADJUSTMENT';
-  const txnReference = reference ?? generateReference();
+  const type = 'ADJUSTMENT';
 
+  // 2. Create FinancialEvent
+  await tx.financialEvent.create({
+    data: {
+      eventId: txnReference,
+      userId: wallet.userId,
+      type,
+      amount: Math.abs(difference),
+      metadata: metadata ? JSON.stringify(metadata) : null,
+    },
+  });
+
+  // 3. Create Transaction Ledger Record
   const transaction = await tx.walletTransaction.create({
     data: {
       walletId,
+      userId: wallet.userId,
       type,
       amount: Math.abs(difference),
       balanceAfter: newBalance,
@@ -257,10 +415,14 @@ export async function adjustBalance(
     },
   });
 
+  // 4. Update Wallet balance
   await tx.wallet.update({
     where: { id: walletId },
     data: { balance: newBalance },
   });
+
+  // 5. Verify integrity
+  await verifyWalletIntegrity(tx, walletId);
 
   return castTransaction(transaction);
 }
@@ -346,20 +508,32 @@ export async function reverseTransaction(
 
   const isOriginalCredit = isCreditType(originalTxn.type as TransactionType);
   const reverseAmount = originalTxn.amount;
-  const newBalance = isOriginalCredit
-    ? wallet.balance - reverseAmount
-    : wallet.balance + reverseAmount;
-
-  if (newBalance < 0) {
-    throw new Error('Reversal would result in negative balance');
+  
+  // Use atomic updates for balance reversal
+  let updatedWallet;
+  if (isOriginalCredit) {
+    updatedWallet = await tx.wallet.update({
+      where: { id: originalTxn.walletId },
+      data: { balance: { decrement: reverseAmount } },
+    });
+    if (updatedWallet.balance < 0) {
+      throw new Error('Reversal would result in negative balance');
+    }
+  } else {
+    updatedWallet = await tx.wallet.update({
+      where: { id: originalTxn.walletId },
+      data: { balance: { increment: reverseAmount } },
+    });
   }
 
+  const newBalance = updatedWallet.balance;
   const reverseReference = `rev_${originalTxn.reference ?? originalTxn.id}`;
   const reverseType = isOriginalCredit ? 'DEBIT' : 'CREDIT';
 
   const reverseTxn = await tx.walletTransaction.create({
     data: {
       walletId: originalTxn.walletId,
+      userId: originalTxn.userId,
       type: reverseType,
       amount: reverseAmount,
       balanceAfter: newBalance,
@@ -370,15 +544,13 @@ export async function reverseTransaction(
     },
   });
 
-  await tx.wallet.update({
-    where: { id: originalTxn.walletId },
-    data: { balance: newBalance },
-  });
-
   await tx.walletTransaction.update({
     where: { id: transactionId },
     data: { status: 'REVERSED' },
   });
+
+  // Verify integrity
+  await verifyWalletIntegrity(tx, originalTxn.walletId);
 
   return castTransaction(reverseTxn);
 }
@@ -415,4 +587,152 @@ export async function recalculateBalanceFromTransactions(walletId: string): Prom
   });
 
   return balance;
+}
+
+export async function verifyWalletIntegrity(
+  tx: Prisma.TransactionClient,
+  walletId: string
+): Promise<{ isConsistent: boolean; drift: number; walletBalance: number; ledgerSum: number }> {
+  const wallet = await tx.wallet.findUnique({
+    where: { id: walletId },
+  });
+
+  if (!wallet) {
+    throw new Error('Wallet not found');
+  }
+
+  const transactions = await tx.walletTransaction.findMany({
+    where: { walletId, status: 'COMPLETED' },
+  });
+
+  let ledgerSum = 0;
+  for (const txn of transactions) {
+    if (isCreditType(txn.type as TransactionType)) {
+      ledgerSum += txn.amount;
+    } else if (isDebitType(txn.type as TransactionType)) {
+      ledgerSum -= txn.amount;
+    }
+  }
+
+  const drift = Math.abs(wallet.balance - ledgerSum);
+  const isConsistent = drift < 0.001;
+
+  if (!isConsistent) {
+    console.error(
+      `[CRITICAL AUDIT DRIFT DETECTED] Wallet ID: ${walletId} for User: ${wallet.userId} is inconsistent! Wallet balance cached: ${wallet.balance}, Ledger sum total: ${ledgerSum}, Drift difference: ${drift}`
+    );
+  }
+
+  return {
+    isConsistent,
+    drift,
+    walletBalance: wallet.balance,
+    ledgerSum,
+  };
+}
+
+export async function distributeMultiLevelCommission(
+  tx: Prisma.TransactionClient,
+  input: {
+    buyerId: string;
+    amountPerLevel: number[];
+    orderId: string;
+    description: string;
+  }
+): Promise<WalletTransaction[]> {
+  const { buyerId, amountPerLevel, orderId, description } = input;
+  const transactions: WalletTransaction[] = [];
+  const maxLevels = amountPerLevel.length;
+
+  // 1. Fetch buyer's path to resolve uplines without recursive database queries
+  const buyer = await tx.user.findUnique({
+    where: { id: buyerId },
+    select: { path: true, depth: true },
+  });
+
+  if (!buyer || !buyer.path) {
+    console.warn(`[Upline Resolution] Buyer ${buyerId} has no materialized path.`);
+    return [];
+  }
+
+  // 2. Parse upline sponsor chain from path
+  const pathParts = buyer.path.split('/');
+  // Filter out the 'root' constant and the buyer themselves
+  const uplineIds = pathParts.filter((id) => id !== 'root' && id !== buyerId);
+
+  // Circular referral loop verification: user cannot appear in their own path chain (except as buyerId, which we filtered out)
+  const uniqueUplines = new Set(uplineIds);
+  if (uniqueUplines.size !== uplineIds.length) {
+    console.warn(`[MLM LOOP GUARD] Circular loop detected in buyer ${buyerId} path: ${buyer.path}! Payout stopped.`);
+    return [];
+  }
+
+  // 3. Batch fetch upline users to check their existence and data integrity
+  // Note: the order of uplineIds from left to right is top-to-bottom:
+  // e.g. root -> Level 3 -> Level 2 -> Level 1 (Immediate sponsor)
+  // We want to slice from the end to match levels (Level 1 is candidateIds[candidateIds.length - 1])
+  const uplines = await tx.user.findMany({
+    where: {
+      id: { in: uplineIds },
+    },
+    select: {
+      id: true,
+      sponsorId: true,
+    },
+  });
+
+  const uplineMap = new Map(uplines.map((u) => [u.id, u]));
+
+  // Traverse the levels: Level 1 is the immediate sponsor, Level 2 is the sponsor's sponsor, etc.
+  for (let level = 1; level <= maxLevels; level++) {
+    // Immediate sponsor is at the end of the upline array
+    const sponsorId = uplineIds[uplineIds.length - level];
+    if (!sponsorId) {
+      break;
+    }
+
+    // Verify user exists in the database
+    const sponsor = uplineMap.get(sponsorId);
+    if (!sponsor) {
+      console.warn(`[Upline Resolution] Sponsor ${sponsorId} at level ${level} not found in database.`);
+      break;
+    }
+
+    // Self-commission prevention: sponsor cannot be the buyer themselves
+    if (sponsorId === buyerId) {
+      console.warn(`[Self-Referral Guard] Sponsor ${sponsorId} is the same as buyer ${buyerId}. Skipping level ${level} payout.`);
+      continue;
+    }
+
+    const amount = amountPerLevel[level - 1];
+    if (amount > 0) {
+      // Deterministic eventId per level to guarantee idempotency per level
+      // eventId format: ref:orderId:userId:level1
+      const eventId = `ref:${orderId}:${buyerId}:level${level}`;
+
+      const txn = await recordCommission(tx, {
+        userId: sponsorId,
+        amount,
+        commissionType: 'REFERRAL_BONUS',
+        description: `${description} (Level ${level} Referral Bonus from User ${buyerId})`,
+        reference: eventId,
+        metadata: { buyerId, level }, // pass buyerId to bypass self-referral check
+      });
+
+      // Write to explicit CommissionLog table
+      await tx.commissionLog.create({
+        data: {
+          userId: sponsorId,
+          fromUserId: buyerId,
+          level,
+          amount,
+          status: 'COMPLETED'
+        }
+      });
+
+      transactions.push(txn);
+    }
+  }
+
+  return transactions;
 }

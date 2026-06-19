@@ -96,6 +96,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await prisma.user.update({
+      where: { id: newAdmin.id },
+      data: {
+        path: `root/${newAdmin.id}`,
+        depth: 0,
+      },
+    });
+
     // Log to Audit logs
     await prisma.auditLog.create({
       data: {
