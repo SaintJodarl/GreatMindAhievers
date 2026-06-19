@@ -8,63 +8,59 @@ datasource db {
 }
 
 model User {
-  id                 String    @id @default(cuid())
-  name               String?
-  email              String?   @unique
-  emailVerified      DateTime?
-  image              String?
-  password           String?
-  role               String    @default("MEMBER")
-  status             String    @default("PENDING")
-  referralCode       String?   @unique
-  username           String?   @unique
-  sponsorId          String?
-  placementId        String?
-  binaryPosition     String?
-  onboardingStatus   String    @default("INCOMPLETE")
-  autoPlacement      Boolean   @default(true)
-  kycStatus          String    @default("PENDING")
-  kycSubmittedAt     DateTime?
-  kycApprovedAt      DateTime?
-  kycRejectedAt      DateTime?
-  kycRejectionReason String?
-  adminRole          String?
-  preferredPosition  String    @default("LEFT")
-  bankName           String?
-  accountNumber      String?
-  accountName        String?
-  notifyEmail        Boolean   @default(true)
-  notifySms          Boolean   @default(false)
-  resetToken         String?
-  resetTokenExpiry   DateTime?
-  leftLegCount       Int       @default(0)
-  rightLegCount      Int       @default(0)
-  totalDownlines     Int       @default(0)
-  path               String?
-  depth              Int       @default(0)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-
-  activationCode ActivationCode? @relation("UserActivation")
-  kycCode        AdminCode?      @relation("KycCode")
-  regCode        AdminCode?      @relation("RegistrationCode")
-  binaryTree     BinaryTree?
-  kycSubmission  KYCSubmission?
-  profile        MemberProfile?
-  refreshTokens  RefreshToken[]
-  tickets        Ticket[]
-
-  placement User?  @relation("PlacementRelation", fields: [placementId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  placed    User[] @relation("PlacementRelation")
-
-  sponsor   User?  @relation("SponsorRelation", fields: [sponsorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  sponsored User[] @relation("SponsorRelation")
-
+  id                  String              @id @default(cuid())
+  name                String?
+  email               String?             @unique
+  emailVerified       DateTime?
+  image               String?
+  password            String?
+  role                String              @default("MEMBER")
+  status              String              @default("PENDING")
+  referralCode        String?             @unique
+  username            String?             @unique
+  sponsorId           String?
+  placementId         String?
+  binaryPosition      String?
+  onboardingStatus    String              @default("INCOMPLETE")
+  autoPlacement       Boolean             @default(true)
+  kycStatus           String              @default("PENDING")
+  kycSubmittedAt      DateTime?
+  kycApprovedAt       DateTime?
+  kycRejectedAt       DateTime?
+  kycRejectionReason  String?
+  adminRole           String?
+  preferredPosition   String              @default("LEFT")
+  bankName            String?
+  accountNumber       String?
+  accountName         String?
+  notifyEmail         Boolean             @default(true)
+  notifySms           Boolean             @default(false)
+  resetToken          String?
+  resetTokenExpiry    DateTime?
+  leftLegCount        Int                 @default(0)
+  rightLegCount       Int                 @default(0)
+  totalDownlines      Int                 @default(0)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  depth               Int                 @default(0)
+  path                String?
+  activationCode      ActivationCode?     @relation("UserActivation")
+  kycCode             AdminCode?          @relation("KycCode")
+  regCode             AdminCode?          @relation("RegistrationCode")
+  binaryTree          BinaryTree?
+  commissionsSent     CommissionLog[]     @relation("CommissionSource")
+  commissionsReceived CommissionLog[]     @relation("CommissionRecipient")
+  kycSubmission       KYCSubmission?
+  profile             MemberProfile?
+  refreshTokens       RefreshToken[]
+  tickets             Ticket[]
+  placement           User?               @relation("PlacementRelation", fields: [placementId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  placed              User[]              @relation("PlacementRelation")
+  sponsor             User?               @relation("SponsorRelation", fields: [sponsorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sponsored           User[]              @relation("SponsorRelation")
   wallet              Wallet?
   transactions        WalletTransaction[]
   withdrawals         Withdrawal[]
-  commissionsReceived CommissionLog[]     @relation("CommissionRecipient")
-  commissionsSent     CommissionLog[]     @relation("CommissionSource")
 
   @@index([role])
   @@index([status])
@@ -77,12 +73,11 @@ model User {
 }
 
 model Wallet {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  balance   Float    @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  balance      Decimal             @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
   user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions WalletTransaction[]
 
@@ -90,21 +85,20 @@ model Wallet {
 }
 
 model WalletTransaction {
-  id       String @id @default(cuid())
-  walletId String
-  userId   String
-
+  id           String   @id @default(cuid())
+  walletId     String
+  userId       String
   type         String
-  amount       Float
-  balanceAfter Float
+  amount       Decimal
+  balanceAfter Decimal
   description  String
   reference    String?  @unique
   metadata     String?
   status       String   @default("COMPLETED")
   createdAt    DateTime @default(now())
-
-  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId      String?  @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet       Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
 
   @@index([walletId])
   @@index([userId])
@@ -112,6 +106,7 @@ model WalletTransaction {
   @@index([status])
   @@index([createdAt])
   @@index([reference])
+  @@index([eventId])
 }
 
 model BinaryTree {
@@ -122,13 +117,12 @@ model BinaryTree {
   rightChildId    String?  @unique
   path            String
   depth           Int      @default(0)
-  leftVolume      Float    @default(0)
-  rightVolume     Float    @default(0)
+  leftVolume      Decimal  @default(0)
+  rightVolume     Decimal  @default(0)
   cyclesCompleted Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([path])
   @@index([depth])
@@ -136,34 +130,31 @@ model BinaryTree {
 }
 
 model KYCSubmission {
-  id             String  @id @default(cuid())
-  userId         String  @unique
-  fullName       String
-  phone          String
-  address        String
-  state          String
-  lga            String
-  idType         String
-  idNumber       String
-  idDocument     String?
-  selfie         String?
-  proofOfAddress String?
-  status         String  @default("PENDING")
-
-  governmentIdUrl String?
-  selfieUrl       String?
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  fullName        String
+  phone           String
+  address         String
+  state           String
+  lga             String
+  idType          String
+  idNumber        String
+  idDocument      String?
+  selfie          String?
+  status          String    @default("PENDING")
+  adminNote       String?
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  proofOfAddress  String?
   addressProofUrl String?
-  govIdStatus     String  @default("MISSING")
-  selfieStatus    String  @default("MISSING")
-  addressStatus   String  @default("MISSING")
-
-  adminNote  String?
-  reviewedBy String?
-  reviewedAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addressStatus   String    @default("MISSING")
+  govIdStatus     String    @default("MISSING")
+  governmentIdUrl String?
+  selfieStatus    String    @default("MISSING")
+  selfieUrl       String?
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status])
 }
@@ -194,9 +185,8 @@ model AdminCode {
   kycUserId String?  @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  kycUser User? @relation("KycCode", fields: [kycUserId], references: [id])
-  regUser User? @relation("RegistrationCode", fields: [regUserId], references: [id])
+  kycUser   User?    @relation("KycCode", fields: [kycUserId], references: [id])
+  regUser   User?    @relation("RegistrationCode", fields: [regUserId], references: [id])
 
   @@index([status])
   @@index([type])
@@ -205,8 +195,8 @@ model AdminCode {
 model CommissionSetting {
   id          String   @id @default(cuid())
   type        String
-  percentage  Float?
-  fixedAmount Float?
+  percentage  Decimal?
+  fixedAmount Decimal?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -219,17 +209,18 @@ model CommissionLog {
   userId     String
   fromUserId String
   level      Int
-  amount     Float
+  amount     Decimal
   status     String   @default("PENDING")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  user     User @relation("CommissionRecipient", fields: [userId], references: [id], onDelete: Cascade)
-  fromUser User @relation("CommissionSource", fields: [fromUserId], references: [id], onDelete: Cascade)
+  eventId    String   @unique
+  fromUser   User     @relation("CommissionSource", fields: [fromUserId], references: [id], onDelete: Cascade)
+  user       User     @relation("CommissionRecipient", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([fromUserId])
   @@index([status])
+  @@index([eventId])
 }
 
 model Content {
@@ -254,15 +245,14 @@ model WelcomeMessage {
 }
 
 model Ticket {
-  id        String   @id @default(cuid())
+  id        String          @id @default(cuid())
   userId    String
   subject   String
-  status    String   @default("OPEN")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages TicketMessage[]
+  status    String          @default("OPEN")
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  TicketMessage[]
 
   @@index([userId])
   @@index([status])
@@ -274,8 +264,7 @@ model TicketMessage {
   senderId  String
   message   String
   createdAt DateTime @default(now())
-
-  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
 }
@@ -283,7 +272,7 @@ model TicketMessage {
 model Withdrawal {
   id          String    @id @default(cuid())
   userId      String
-  amount      Float
+  amount      Decimal
   method      String
   details     String
   status      String    @default("PENDING")
@@ -292,8 +281,7 @@ model Withdrawal {
   processedBy String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
@@ -304,7 +292,7 @@ model CommissionCycle {
   startDate   DateTime
   endDate     DateTime
   status      String   @default("COMPLETED")
-  totalPayout Float    @default(0)
+  totalPayout Decimal  @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -333,8 +321,7 @@ model ActivationCode {
   expirationDate DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-
-  redeemedUser User? @relation("UserActivation", fields: [redeemedBy], references: [id])
+  redeemedUser   User?     @relation("UserActivation", fields: [redeemedBy], references: [id])
 
   @@index([status])
   @@index([code])
@@ -370,8 +357,7 @@ model MemberProfile {
   nextOfKinAddress String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model RefreshToken {
@@ -384,8 +370,7 @@ model RefreshToken {
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([familyId])
@@ -396,10 +381,32 @@ model FinancialEvent {
   eventId   String   @unique
   userId    String
   type      String
-  amount    Float
-  metadata  String? // JSON string
+  amount    Decimal
+  metadata  String?
   createdAt DateTime @default(now())
 
   @@index([eventId])
+  @@index([userId])
+}
+
+model OutboxEvent {
+  id                   String    @id @default(uuid())
+  idempotencyKey       String    @unique
+  type                 String
+  userId               String
+  payload              Json
+  status               String    @default("OUTBOX_PENDING")
+  retryCount           Int       @default(0)
+  nextRetryAt          DateTime?
+  lastError            String?
+  failedAt             DateTime?
+  processingLeaseUntil DateTime?
+  processingWorkerId   String?
+  executionMode        String    @default("GREEN")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([type])
+  @@index([status, nextRetryAt])
   @@index([userId])
 }

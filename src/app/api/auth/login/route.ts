@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { signAccessToken } from '@/lib/auth/jwt';
 
@@ -12,10 +12,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
     }
 
-    // Find user by email
-    const user = await prisma.user.findUnique({
+    // 1. FAIL FAST: If DB connection is saturated, reject in 2.5s instead of hanging
+    const dbTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('DB_TIMEOUT')), 2500)
+    );
+    
+    const userLookup = prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
+
+    let user;
+    try {
+      user = await Promise.race([userLookup, dbTimeout]) as any;
+    } catch (error: any) {
+      if (error.message === 'DB_TIMEOUT') {
+        return NextResponse.json({ message: 'Service experiencing high load. Please try again in a few seconds.' }, { status: 503 });
+      }
+      throw error;
+    }
 
     if (!user || !user.password) {
       return NextResponse.json({ message: 'Invalid email or password' }, { status: 401 });
@@ -45,30 +59,30 @@ export async function POST(req: NextRequest) {
     const tokenHash = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
     const familyId = crypto.randomUUID();
 
-    // 3. Store in database
-    await prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        tokenHash,
-        familyId,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-        ipAddress: req.headers.get('x-forwarded-for') || null,
-        userAgent: req.headers.get('user-agent') || null,
-      },
-    });
-
-    // 4. Log to AuditLog
-    await prisma.auditLog.create({
-      data: {
-        adminId: user.id,
-        action: 'USER_LOGIN',
-        targetType: 'User',
-        targetId: user.id,
-        details: `User logged in successfully: ${user.email}`,
-        ipAddress: req.headers.get('x-forwarded-for') || null,
-        userAgent: req.headers.get('user-agent') || null,
-      },
-    });
+    // 3 & 4. Store Refresh Token and AuditLog in a single transaction
+    await prisma.$transaction([
+      prisma.refreshToken.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          familyId,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          ipAddress: req.headers.get('x-forwarded-for') || null,
+          userAgent: req.headers.get('user-agent') || null,
+        },
+      }),
+      prisma.auditLog.create({
+        data: {
+          adminId: user.id,
+          action: 'USER_LOGIN',
+          targetType: 'User',
+          targetId: user.id,
+          details: `User logged in successfully: ${user.email}`,
+          ipAddress: req.headers.get('x-forwarded-for') || null,
+          userAgent: req.headers.get('user-agent') || null,
+        },
+      })
+    ]);
 
     const response = NextResponse.json({
       accessToken,

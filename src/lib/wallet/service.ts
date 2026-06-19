@@ -13,6 +13,7 @@ import {
   TransactionStatus,
 } from './types';
 import { v4 as uuidv4 } from 'uuid';
+import { emitOutboxEvent } from '@/lib/events/outbox';
 
 export type { TransactionFilters, TransactionType, TransactionStatus, WalletTransaction };
 
@@ -97,9 +98,26 @@ export async function getWalletBalance(walletId: string): Promise<WalletBalance 
 export async function creditWallet(
   tx: Prisma.TransactionClient,
   input: CreditDebitInput
-): Promise<WalletTransaction> {
+): Promise<WalletTransaction | void> {
   const { walletId, amount, type, description, reference, metadata } = input;
 
+  const txnReference = reference ?? generateReference();
+
+  if (process.env.MLM_EVENT_MODE === 'true') {
+    // GREEN MODE: Emit WALLET_CREDIT event only (Pure Ledger Model)
+    const userId = (input as any).userId || 'SYSTEM';
+    await emitOutboxEvent(
+      tx,
+      'WALLET_CREDIT',
+      userId,
+      input as any,
+      txnReference,
+      'GREEN'
+    );
+    return;
+  }
+
+  // BLUE MODE (LEGACY): Direct mutation
   if (amount <= 0) {
     throw new Error('Amount must be greater than zero');
   }
@@ -108,7 +126,6 @@ export async function creditWallet(
     throw new Error(`Transaction type ${type} is not a credit type`);
   }
 
-  const txnReference = reference ?? generateReference();
 
   // 1. Idempotency Check: check FinancialEvent first
   const existingEvent = await tx.financialEvent.findUnique({
@@ -166,6 +183,7 @@ export async function creditWallet(
     data: {
       walletId,
       userId: wallet.userId,
+      eventId: txnReference,
       type,
       amount,
       balanceAfter: newBalance,
@@ -176,8 +194,7 @@ export async function creditWallet(
     },
   });
 
-  // 5. Audit Drift Detection
-  await verifyWalletIntegrity(tx, walletId);
+  await (global as any).verifyWalletIntegrity(tx, walletId);
 
   return castTransaction(transaction);
 }
@@ -274,8 +291,19 @@ export async function debitWallet(
     },
   });
 
-  // 5. Audit Drift Detection
-  await verifyWalletIntegrity(tx, walletId);
+  // 5. Audit Drift Detection (Deferred)
+  await tx.event.create({
+    data: {
+      type: "MLM_DEFERRED_OPERATION",
+      userId: wallet.userId,
+      payload: {
+        source: "debitWallet",
+        originalFunction: "verifyWalletIntegrity",
+        reason: "moved from auth optimization phase",
+        walletId
+      }
+    }
+  });
 
   return castTransaction(transaction);
 }
@@ -421,8 +449,19 @@ export async function adjustBalance(
     data: { balance: newBalance },
   });
 
-  // 5. Verify integrity
-  await verifyWalletIntegrity(tx, walletId);
+  // 5. Verify integrity (Deferred)
+  await tx.event.create({
+    data: {
+      type: "MLM_DEFERRED_OPERATION",
+      userId: wallet.userId,
+      payload: {
+        source: "adjustBalance",
+        originalFunction: "verifyWalletIntegrity",
+        reason: "moved from auth optimization phase",
+        walletId
+      }
+    }
+  });
 
   return castTransaction(transaction);
 }
@@ -549,8 +588,19 @@ export async function reverseTransaction(
     data: { status: 'REVERSED' },
   });
 
-  // Verify integrity
-  await verifyWalletIntegrity(tx, originalTxn.walletId);
+  // Verify integrity (Deferred)
+  await tx.event.create({
+    data: {
+      type: "MLM_DEFERRED_OPERATION",
+      userId: originalTxn.userId,
+      payload: {
+        source: "reverseTransaction",
+        originalFunction: "verifyWalletIntegrity",
+        reason: "moved from auth optimization phase",
+        walletId: originalTxn.walletId
+      }
+    }
+  });
 
   return castTransaction(reverseTxn);
 }
@@ -722,6 +772,7 @@ export async function distributeMultiLevelCommission(
       // Write to explicit CommissionLog table
       await tx.commissionLog.create({
         data: {
+          eventId,
           userId: sponsorId,
           fromUserId: buyerId,
           level,

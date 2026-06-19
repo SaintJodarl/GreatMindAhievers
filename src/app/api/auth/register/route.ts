@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/prisma';
 import { NextRequest } from 'next/server';
 import { generateUniqueReferralCode } from '@/lib/referral-code';
 import { executePlacementWithTx } from '@/lib/binary-placement/utils';
 import { BinaryPosition } from '@/lib/binary-placement/constants';
+import { emitOutboxEvent } from '@/lib/events/outbox';
 
 export async function POST(req: NextRequest) {
   try {
@@ -204,12 +205,23 @@ export async function POST(req: NextRequest) {
     let placementResult = null;
     try {
       placementResult = await prisma.$transaction(async (tx) => {
-        // 3. Perform MLM placement automatically
-        const placement = await executePlacementWithTx(tx, {
-          sponsorId,
-          preferredPosition: autoCalculatedPosition as BinaryPosition,
-          userId: user.id,
-        });
+        let placement = null;
+        if (process.env.MLM_EVENT_MODE === 'true') {
+          // GREEN MODE: Emit event, respond instantly
+          await emitOutboxEvent(tx, "MLM_DEFERRED_OPERATION", user.id, {
+            source: "register",
+            originalFunction: "spilloverSearch",
+            sponsorId,
+            preferredPosition: autoCalculatedPosition
+          }, `reg_spillover_${user.id}`);
+        } else {
+          // BLUE MODE (LEGACY): Block request, calculate synchronously
+          placement = await executePlacementWithTx(tx, {
+            sponsorId,
+            preferredPosition: autoCalculatedPosition as BinaryPosition,
+            userId: user.id,
+          });
+        }
 
         // 4. Log standard successful USER_REGISTER audit event
         await tx.auditLog.create({
