@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, setAccessToken } from '@/lib/api-client';
+import { forceLogout, BASE_URL } from '@/lib/api-client';
 
 interface User {
   id: string;
@@ -15,7 +15,6 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  accessToken: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -27,59 +26,38 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessTokenState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Updates the token state and sets the API client header
-  const updateToken = (token: string | null) => {
-    setAccessTokenState(token);
-    setAccessToken(token);
-  };
-
-  // Verifies session on mount or silent refresh
+  // Verifies session purely via the /me endpoint
   const checkSession = async () => {
     try {
-      // 1. Try silent refresh to get an active access token
-      const refreshRes = await fetch('/api/auth/refresh', { method: 'POST' });
-      if (!refreshRes.ok) throw new Error('Refresh failed');
-      
-      const { accessToken: newAccessToken } = await refreshRes.json();
-      updateToken(newAccessToken);
-
-      // 2. Fetch user profile details
-      const meRes = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${newAccessToken}` },
+      const meRes = await fetch(`${BASE_URL}/api/auth/me`, {
+        credentials: 'include'
       });
-      if (!meRes.ok) throw new Error('Failed to fetch profile');
+      if (!meRes.ok) {
+        forceLogout(); // ONLY ONCE
+        return;
+      }
 
-      const { user: profile } = await meRes.json();
-      setUser(profile);
+      const data = await meRes.json();
+      setUser(data.user);
     } catch (err) {
-      setUser(null);
-      updateToken(null);
+      forceLogout();
     } finally {
       setLoading(false);
     }
   };
 
-  // Run session check on mount
+  // Run session check on mount and bind tab focus listener
   useEffect(() => {
     checkSession();
+    window.addEventListener('focus', checkSession);
+    return () => window.removeEventListener('focus', checkSession);
   }, []);
 
-  // Periodic silent refresh (every 14 minutes)
-  useEffect(() => {
-    if (!accessToken) return;
-
-    const interval = setInterval(() => {
-      checkSession();
-    }, 14 * 60 * 1000); // 14 minutes
-
-    return () => clearInterval(interval);
-  }, [accessToken]);
-
   const login = async (email: string, password: string) => {
-    const res = await fetch('/api/auth/login', {
+    const loginUrl = `${BASE_URL}/api/auth/login`;
+    const res = await fetch(loginUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -90,7 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(data.message || 'Login failed');
     }
 
-    updateToken(data.accessToken);
     setUser(data.user);
 
     // Redirect based on role
@@ -107,14 +84,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
-      updateToken(null);
       setUser(null);
       router.push('/sign-up-login-screen');
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, logout, checkSession }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, checkSession }}>
       {children}
     </AuthContext.Provider>
   );

@@ -40,38 +40,31 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Clear the cookie and force login
+      // Clear the cookie and force login using the correct path to override the existing cookie
       const response = NextResponse.json(
         { message: 'Session compromised or expired. Please login again.' },
         { status: 403 }
       );
-      response.cookies.delete('refreshToken');
+      response.cookies.set('refreshToken', '', { path: '/api/auth', maxAge: 0 });
+      response.cookies.set('refreshToken', '', { path: '/', domain: process.env.NODE_ENV === 'production' ? '.greatmindachievers.org' : undefined, maxAge: 0 });
       return response;
     }
 
     // 2. Verify account status
     if (tokenRecord.user.status === 'SUSPENDED') {
       const response = NextResponse.json({ message: 'Account suspended' }, { status: 403 });
-      response.cookies.delete('refreshToken');
+      response.cookies.set('refreshToken', '', { path: '/api/auth', maxAge: 0 });
+      response.cookies.set('refreshToken', '', { path: '/', domain: process.env.NODE_ENV === 'production' ? '.greatmindachievers.org' : undefined, maxAge: 0 });
       return response;
     }
-
-    // 3. Generate new Access Token (JWT)
-    const newAccessToken = await signAccessToken({
-      sub: tokenRecord.userId,
-      role: tokenRecord.user.role,
-      status: tokenRecord.user.status,
-      onboardingStatus: tokenRecord.user.onboardingStatus,
-    });
 
     // 4. Rotate Refresh Token (Create new token, revoke old)
     const newRefreshToken = crypto.randomBytes(40).toString('hex');
     const newHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
 
     await prisma.$transaction([
-      prisma.refreshToken.update({
+      prisma.refreshToken.delete({
         where: { id: tokenRecord.id },
-        data: { revoked: true },
       }),
       prisma.refreshToken.create({
         data: {
@@ -85,23 +78,34 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
+    // 1. Generate new Access Token (JWT)
+    const newAccessToken = await signAccessToken({
+      sub: tokenRecord.user.id,
+      role: tokenRecord.user.role,
+      status: tokenRecord.user.status,
+      onboardingStatus: tokenRecord.user.onboardingStatus,
+      sessionVersion: tokenRecord.user.sessionVersion,
+    });
+
     const response = NextResponse.json({
-      accessToken: newAccessToken,
+      message: 'Session refreshed',
     });
 
     // 5. Set rotated cookies
     response.cookies.set('refreshToken', newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/api/auth',
+      secure: true,
+      sameSite: 'none',
+      domain: process.env.NODE_ENV === 'production' ? '.greatmindachievers.org' : undefined,
+      path: '/',
       maxAge: 7 * 24 * 60 * 60, // 7 days
     });
 
     response.cookies.set('accessToken', newAccessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
+      domain: process.env.NODE_ENV === 'production' ? '.greatmindachievers.org' : undefined,
       path: '/',
       maxAge: 15 * 60, // 15 minutes
     });

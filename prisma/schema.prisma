@@ -44,6 +44,7 @@ model User {
   updatedAt           DateTime            @updatedAt
   depth               Int                 @default(0)
   path                String?
+  sessionVersion      Int                 @default(0)
   activationCode      ActivationCode?     @relation("UserActivation")
   kycCode             AdminCode?          @relation("KycCode")
   regCode             AdminCode?          @relation("RegistrationCode")

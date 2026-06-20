@@ -1,12 +1,12 @@
-let inMemoryToken: string | null = null;
+export const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://app.greatmindachievers.org' : '';
 
-export const setAccessToken = (token: string | null) => {
-  inMemoryToken = token;
-};
+let isLoggingOut = false;
 
-export const getAccessToken = () => {
-  return inMemoryToken;
-};
+export function forceLogout() {
+  if (isLoggingOut || typeof window === 'undefined') return;
+  isLoggingOut = true;
+  window.location.href = '/sign-up-login-screen';
+}
 
 /**
  * Custom fetch client that automatically:
@@ -16,10 +16,6 @@ export const getAccessToken = () => {
  */
 export async function api(url: string, options: RequestInit = {}): Promise<Response> {
   const headers = new Headers(options.headers || {});
-
-  if (inMemoryToken) {
-    headers.set('Authorization', `Bearer ${inMemoryToken}`);
-  }
 
   // Fallback default content type
   if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
@@ -31,27 +27,28 @@ export async function api(url: string, options: RequestInit = {}): Promise<Respo
     headers,
   };
 
-  let response = await fetch(url, finalOptions);
+  const finalUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
 
-  // Intercept 401 Unauthorized and try refreshing token
+  let response = await fetch(finalUrl, finalOptions);
+
+  // Intercept 401 Unauthorized and attempt silent refresh cleanly
   if (response.status === 401) {
     try {
-      const refreshRes = await fetch('/api/auth/refresh', { method: 'POST' });
-      
-      if (refreshRes.ok) {
-        const { accessToken } = await refreshRes.json();
-        setAccessToken(accessToken);
+      const refreshUrl = `${BASE_URL}/api/auth/refresh`;
+      const refreshRes = await fetch(refreshUrl, {
+        method: 'POST',
+        credentials: 'include'
+      });
 
-        // Update authorization header and retry original request
-        headers.set('Authorization', `Bearer ${accessToken}`);
-        response = await fetch(url, finalOptions);
-      } else {
-        setAccessToken(null);
+      if (refreshRes.ok) {
+        return await fetch(finalUrl, finalOptions);
       }
     } catch (err) {
-      console.error('Silent token refresh error in client request:', err);
-      setAccessToken(null);
+      console.error(err);
     }
+
+    forceLogout();
+    return response;
   }
 
   return response;

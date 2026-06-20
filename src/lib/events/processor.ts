@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { executePlacementWithTx } from '@/lib/binary-placement/utils';
-import { processWalletCredit } from './workers/wallet';
+import { processWalletCredit, processWalletDebit } from './workers/wallet';
 import { processCommissionCalc } from './workers/commission';
 import { processReferralUpdate } from './workers/referral';
 
@@ -107,6 +107,8 @@ async function routeAndExecuteWorker(event: any) {
     }
   } else if (event.type === 'WALLET_CREDIT') {
     await processWalletCredit(event);
+  } else if (event.type === 'DEBIT_WALLET') {
+    await processWalletDebit(event);
   } else if (event.type === 'COMMISSION_CALC') {
     await processCommissionCalc(event);
   } else if (event.type === 'REFERRAL_UPDATE') {

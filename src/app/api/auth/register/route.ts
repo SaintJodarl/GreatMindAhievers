@@ -1,3 +1,4 @@
+import { MLM_EVENT_MODE, LEGACY_WRITE_DISABLED } from "@/lib/env";
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/prisma';
@@ -7,7 +8,10 @@ import { executePlacementWithTx } from '@/lib/binary-placement/utils';
 import { BinaryPosition } from '@/lib/binary-placement/constants';
 import { emitOutboxEvent } from '@/lib/events/outbox';
 
+export const maxDuration = 10; // Enforce strict 10-second timeout
+
 export async function POST(req: NextRequest) {
+  console.log("SIGNUP START - Request received");
   try {
     let {
       firstName,
@@ -206,7 +210,7 @@ export async function POST(req: NextRequest) {
     try {
       placementResult = await prisma.$transaction(async (tx) => {
         let placement = null;
-        if (process.env.MLM_EVENT_MODE === 'true') {
+        if (MLM_EVENT_MODE) {
           // GREEN MODE: Emit event, respond instantly
           await emitOutboxEvent(tx, "MLM_DEFERRED_OPERATION", user.id, {
             source: "register",
@@ -216,6 +220,9 @@ export async function POST(req: NextRequest) {
           }, `reg_spillover_${user.id}`);
         } else {
           // BLUE MODE (LEGACY): Block request, calculate synchronously
+          if (LEGACY_WRITE_DISABLED) {
+            throw new Error("Legacy financial writes disabled");
+          }
           placement = await executePlacementWithTx(tx, {
             sponsorId,
             preferredPosition: autoCalculatedPosition as BinaryPosition,
@@ -278,10 +285,20 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('Registration error:', error);
+    console.error('SIGNUP END (FAILED) - Registration error:', error);
+    
+    if (error.code === 'P1001' || error.message?.includes('timeout') || error.message?.includes('Can\'t reach database')) {
+      return NextResponse.json(
+        { message: 'Service is experiencing high load. Please try again.' },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { message: error.message || 'An error occurred during registration' },
       { status: 500 }
     );
+  } finally {
+    console.log("SIGNUP END - Request finalized");
   }
 }

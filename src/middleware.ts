@@ -6,6 +6,11 @@ const JWT_SECRET_STRING = process.env.JWT_SECRET || 'gma-dev-secret-key-change-i
 const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
 
 export async function middleware(req: NextRequest) {
+  // Redirect Vercel Preview environments to Production
+  if (process.env.VERCEL_ENV === 'preview') {
+    return NextResponse.redirect(new URL(req.nextUrl.pathname, 'https://app.greatmindachievers.org'));
+  }
+
   const path = req.nextUrl.pathname;
 
   // Skip static assets
@@ -30,13 +35,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Extract access token from Authorization header or cookie
-  const authHeader = req.headers.get('authorization');
-  let token = authHeader?.split(' ')[1];
-
-  if (!token) {
-    token = req.cookies.get('accessToken')?.value;
-  }
+  // Extract access token exclusively from cookie
+  let token = req.cookies.get('accessToken')?.value;
 
   const isApiRequest = path.startsWith('/api/');
 

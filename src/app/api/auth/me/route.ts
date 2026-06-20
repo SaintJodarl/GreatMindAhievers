@@ -4,8 +4,7 @@ import { verifyAccessToken } from '@/lib/auth/jwt';
 
 export async function GET(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
+    const token = req.cookies.get('accessToken')?.value;
 
     if (!token) {
       return NextResponse.json({ message: 'Missing access token' }, { status: 401 });
@@ -25,11 +24,16 @@ export async function GET(req: NextRequest) {
         email: true,
         role: true,
         status: true,
+        sessionVersion: true,
       },
     });
 
     if (!user) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    }
+
+    if (user.sessionVersion !== payload.sessionVersion) {
+      return NextResponse.json({ message: 'Session expired or invalidated by new login' }, { status: 401 });
     }
 
     if (user.status === 'SUSPENDED') {

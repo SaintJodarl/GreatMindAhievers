@@ -8,6 +8,7 @@ export interface TokenPayload {
   role: string;
   status: string;
   onboardingStatus: string;
+  sessionVersion: number;
   [key: string]: any;
 }
 

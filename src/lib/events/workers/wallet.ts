@@ -40,3 +40,49 @@ export async function processWalletCredit(event: any) {
     throw e;
   }
 }
+
+export async function processWalletDebit(event: any) {
+  const { walletId, userId, amount, type, description } = event.payload;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1. Create Ledger Record (Throws P2002 if duplicate eventId)
+      const txn = await tx.walletTransaction.create({
+        data: {
+          walletId,
+          userId,
+          type,
+          amount,
+          balanceAfter: 0,
+          description,
+          eventId: event.idempotencyKey,
+          status: 'COMPLETED'
+        }
+      });
+
+      // 2. Atomic Balance Decrement
+      const updatedWallet = await tx.wallet.update({
+        where: { id: walletId },
+        data: { balance: { decrement: amount } }
+      });
+
+      // Concurrency safety check
+      if (updatedWallet.balance < 0) {
+        throw new Error('Insufficient balance');
+      }
+
+      // 3. Update correct balanceAfter
+      await tx.walletTransaction.update({
+        where: { id: txn.id },
+        data: { balanceAfter: updatedWallet.balance }
+      });
+    });
+  } catch (e: any) {
+    if (e.code === 'P2002' && e.meta?.target?.includes('eventId')) {
+      console.log(`[Wallet Worker] DB Idempotency catch: Debit transaction for event ${event.idempotencyKey} already exists. Skipping safely.`);
+      return;
+    }
+    throw e;
+  }
+}
+

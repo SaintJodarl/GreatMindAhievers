@@ -95,6 +95,8 @@ export async function getWalletBalance(walletId: string): Promise<WalletBalance 
   };
 }
 
+import { MLM_EVENT_MODE, LEGACY_WRITE_DISABLED } from "@/lib/env";
+
 export async function creditWallet(
   tx: Prisma.TransactionClient,
   input: CreditDebitInput
@@ -103,7 +105,7 @@ export async function creditWallet(
 
   const txnReference = reference ?? generateReference();
 
-  if (process.env.MLM_EVENT_MODE === 'true') {
+  if (MLM_EVENT_MODE) {
     // GREEN MODE: Emit WALLET_CREDIT event only (Pure Ledger Model)
     const userId = (input as any).userId || 'SYSTEM';
     await emitOutboxEvent(
@@ -115,6 +117,10 @@ export async function creditWallet(
       'GREEN'
     );
     return;
+  }
+
+  if (LEGACY_WRITE_DISABLED) {
+    throw new Error("Legacy financial writes disabled");
   }
 
   // BLUE MODE (LEGACY): Direct mutation
@@ -202,7 +208,7 @@ export async function creditWallet(
 export async function debitWallet(
   tx: Prisma.TransactionClient,
   input: CreditDebitInput
-): Promise<WalletTransaction> {
+): Promise<WalletTransaction | void> {
   const { walletId, amount, type, description, reference, metadata } = input;
 
   if (amount <= 0) {
@@ -214,6 +220,23 @@ export async function debitWallet(
   }
 
   const txnReference = reference ?? generateReference();
+
+  if (MLM_EVENT_MODE) {
+    const userId = (input as any).userId || 'SYSTEM';
+    await emitOutboxEvent(
+      tx,
+      'DEBIT_WALLET',
+      userId,
+      input as any,
+      txnReference,
+      'GREEN'
+    );
+    return;
+  }
+
+  if (LEGACY_WRITE_DISABLED) {
+    throw new Error("Legacy financial writes disabled");
+  }
 
   // 1. Idempotency Check: check FinancialEvent first
   const existingEvent = await tx.financialEvent.findUnique({
@@ -377,6 +400,10 @@ export async function adjustBalance(
   reference?: string,
   metadata?: Record<string, unknown>
 ): Promise<WalletTransaction> {
+  if (LEGACY_WRITE_DISABLED) {
+    throw new Error("Legacy financial writes disabled");
+  }
+
   if (newBalance < 0) {
     throw new Error('Balance cannot be negative');
   }
@@ -521,6 +548,10 @@ export async function reverseTransaction(
   transactionId: string,
   reason: string
 ): Promise<WalletTransaction> {
+  if (LEGACY_WRITE_DISABLED) {
+    throw new Error("Legacy financial writes disabled");
+  }
+
   const originalTxn = await tx.walletTransaction.findUnique({
     where: { id: transactionId },
   });
@@ -691,6 +722,27 @@ export async function distributeMultiLevelCommission(
   }
 ): Promise<WalletTransaction[]> {
   const { buyerId, amountPerLevel, orderId, description } = input;
+
+  if (MLM_EVENT_MODE) {
+    await emitOutboxEvent(
+      tx,
+      'COMMISSION_CALC',
+      buyerId,
+      {
+        orderId,
+        tierLevels: amountPerLevel.length,
+        amounts: amountPerLevel,
+      },
+      `comm_calc_${orderId}`,
+      'GREEN'
+    );
+    return [];
+  }
+
+  if (LEGACY_WRITE_DISABLED) {
+    throw new Error("Legacy financial writes disabled");
+  }
+
   const transactions: WalletTransaction[] = [];
   const maxLevels = amountPerLevel.length;
 
