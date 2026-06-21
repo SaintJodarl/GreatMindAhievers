@@ -4,6 +4,11 @@ let isLoggingOut = false;
 
 export function forceLogout() {
   if (isLoggingOut || typeof window === 'undefined') return;
+  
+  if (window.location.pathname === '/sign-up-login-screen') {
+    return; // Already on login screen, do not refresh
+  }
+
   isLoggingOut = true;
   window.location.href = '/sign-up-login-screen';
 }

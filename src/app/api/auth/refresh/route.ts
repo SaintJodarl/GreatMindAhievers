@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         { status: 403 }
       );
       response.cookies.set('refreshToken', '', { path: '/api/auth', maxAge: 0 });
-      response.cookies.set('refreshToken', '', { path: '/', domain: process.env.NODE_ENV === 'production' ? '.greatmindachievers.org' : undefined, maxAge: 0 });
+      response.cookies.set('refreshToken', '', { path: '/', maxAge: 0 });
       return response;
     }
 
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     if (tokenRecord.user.status === 'SUSPENDED') {
       const response = NextResponse.json({ message: 'Account suspended' }, { status: 403 });
       response.cookies.set('refreshToken', '', { path: '/api/auth', maxAge: 0 });
-      response.cookies.set('refreshToken', '', { path: '/', domain: process.env.NODE_ENV === 'production' ? '.greatmindachievers.org' : undefined, maxAge: 0 });
+      response.cookies.set('refreshToken', '', { path: '/', maxAge: 0 });
       return response;
     }
 
@@ -96,7 +96,6 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
-      domain: process.env.NODE_ENV === 'production' ? '.greatmindachievers.org' : undefined,
       path: '/',
       maxAge: 7 * 24 * 60 * 60, // 7 days
     });
@@ -105,7 +104,6 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
-      domain: process.env.NODE_ENV === 'production' ? '.greatmindachievers.org' : undefined,
       path: '/',
       maxAge: 15 * 60, // 15 minutes
     });
