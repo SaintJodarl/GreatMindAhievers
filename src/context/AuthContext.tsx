@@ -71,10 +71,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
 
     // Redirect based on role
+    // Using window.location.href instead of router.push to bypass Next.js App Router client-side cache
+    // which sometimes aggressively caches the unauthenticated state/middleware redirect
     if (data.user.role === 'ADMIN' || data.user.role === 'SUPER_ADMIN') {
-      router.push('/admin-dashboard');
+      window.location.href = '/admin-dashboard';
     } else {
-      router.push('/user-dashboard');
+      window.location.href = '/user-dashboard';
     }
   };
 
