@@ -22,9 +22,11 @@ import { getStates, getLgasForState } from '@/lib/nigeria-locations';
 interface OnboardingWidgetProps {
   summary: any;
   onRefresh: () => void;
+  initialStep?: number;
+  onClose?: () => void;
 }
 
-export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidgetProps) {
+export default function OnboardingWidget({ summary, onRefresh, initialStep, onClose }: OnboardingWidgetProps) {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -122,7 +124,9 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
       }));
 
       // Determine initial active step based on account status
-      if (summary.status === 'PENDING_ACTIVATION') {
+      if (initialStep) {
+        setActiveStep(initialStep);
+      } else if (summary.status === 'PENDING_ACTIVATION') {
         setActiveStep(5);
       } else if (summary.status === 'PENDING_KYC_REVIEW') {
         // If KYC submitted, direct user to Activation (Step 5)
@@ -350,8 +354,16 @@ export default function OnboardingWidget({ summary, onRefresh }: OnboardingWidge
   return (
     <div className="bg-white rounded-3xl border border-indigo-150 shadow-md shadow-indigo-600/5 overflow-hidden animate-fade-in space-y-6">
       {/* Banner / Header */}
-      <div className="bg-gradient-to-r from-indigo-50/50 via-blue-50/20 to-white p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-1.5">
+      <div className="bg-gradient-to-r from-indigo-50/50 via-blue-50/20 to-white p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6 relative">
+        {onClose && (
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 bg-white hover:bg-gray-50 rounded-full p-1.5 shadow-sm border border-gray-200 transition-colors z-10"
+          >
+            <X size={18} />
+          </button>
+        )}
+        <div className="space-y-1.5 mt-2 md:mt-0">
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
             <h2 className="text-lg font-bold text-gray-900">Complete Onboarding</h2>

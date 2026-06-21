@@ -46,3 +46,6 @@ turbo/
 .env.production.local
 *.db
 *.db-journal
+
+.vercel
+.env*
