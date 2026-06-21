@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { signAccessToken } from '@/lib/auth/jwt';
 
-export const maxDuration = 10;
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,22 +14,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
     }
 
-    // 1. FAIL FAST: If DB connection is saturated, reject in 2.5s instead of hanging
-    const dbTimeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('DB_TIMEOUT')), 2500)
-    );
-    
-    const userLookup = prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
-
     let user;
     try {
-      user = await Promise.race([userLookup, dbTimeout]) as any;
+      user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+      });
     } catch (error: any) {
-      if (error.message === 'DB_TIMEOUT') {
-        return NextResponse.json({ message: 'Service experiencing high load. Please try again in a few seconds.' }, { status: 503 });
-      }
+      console.error('Login DB error:', error);
       throw error;
     }
 

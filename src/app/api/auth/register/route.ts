@@ -8,7 +8,7 @@ import { executePlacementWithTx } from '@/lib/binary-placement/utils';
 import { BinaryPosition } from '@/lib/binary-placement/constants';
 import { emitOutboxEvent } from '@/lib/events/outbox';
 
-export const maxDuration = 10; // Enforce strict 10-second timeout
+export const maxDuration = 60; // Allow enough time for Neon cold starts and MLM placement
 
 export async function POST(req: NextRequest) {
   console.log("SIGNUP START - Request received");
@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
 
         return createdUser;
       }, {
-        timeout: 10000 // 10s timeout safety for user creation
+        timeout: 20000 // 20s timeout safety for user creation
       });
     } catch (createError: any) {
       console.error('Base user creation failed:', createError);
@@ -245,7 +245,7 @@ export async function POST(req: NextRequest) {
 
         return placement;
       }, {
-        timeout: 15000 // 15s timeout safety for binary placement
+        timeout: 30000 // 30s timeout safety for binary placement
       });
     } catch (placementError: any) {
       console.error('Placement transaction failed, logging and applying fallback:', placementError);
