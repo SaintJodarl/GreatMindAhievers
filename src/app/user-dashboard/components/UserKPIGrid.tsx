@@ -42,7 +42,6 @@ export default function UserKPIGrid({ summary }: UserKPIGridProps) {
       iconBg: 'bg-emerald-50',
       trend: `₦${lifetimeEarnings.toLocaleString('en-NG', { maximumFractionDigits: 0 })} lifetime`,
       trendColor: 'text-emerald-600',
-      borderClass: 'border-t-4 border-t-emerald-500 hover:border-t-emerald-400',
     },
     {
       id: 'kpi-total-earnings',
@@ -53,7 +52,6 @@ export default function UserKPIGrid({ summary }: UserKPIGridProps) {
       iconBg: 'bg-blue-50',
       trend: 'All-time earnings',
       trendColor: 'text-blue-600',
-      borderClass: 'border-t-4 border-t-blue-500 hover:border-t-blue-400',
     },
     {
       id: 'kpi-team',
@@ -63,8 +61,7 @@ export default function UserKPIGrid({ summary }: UserKPIGridProps) {
       iconColor: 'text-purple-600',
       iconBg: 'bg-purple-50',
       trend: `Left: ${leftLegCount} | Right: ${rightLegCount}`,
-      trendColor: 'text-gray-500',
-      borderClass: 'border-t-4 border-t-purple-500 hover:border-t-purple-400',
+      trendColor: 'text-slate-500',
     },
     {
       id: 'kpi-referrals',
@@ -75,7 +72,6 @@ export default function UserKPIGrid({ summary }: UserKPIGridProps) {
       iconBg: 'bg-orange-50',
       trend: 'Sponsor network',
       trendColor: 'text-orange-600',
-      borderClass: 'border-t-4 border-t-orange-500 hover:border-t-orange-400',
     },
   ];
 
@@ -86,30 +82,28 @@ export default function UserKPIGrid({ summary }: UserKPIGridProps) {
         return (
           <div
             key={kpi.id}
-            className={`bg-white rounded-xl border border-gray-150 p-5 shadow-sm flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${kpi.borderClass}`}
+            className={`bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md`}
           >
             <div>
               {/* Card Header */}
-              <div className="flex items-center justify-between mb-3">
-                <div className={`p-2 rounded-lg ${kpi.iconBg} ${kpi.iconColor}`}>
-                  <IconComponent size={18} />
+              <div className="flex items-center justify-between mb-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${kpi.iconBg} ${kpi.iconColor}`}>
+                  <IconComponent size={20} strokeWidth={2.5} />
                 </div>
-                <button className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-50">
-                  <MoreVertical size={16} />
+                <button className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-50">
+                  <MoreVertical size={18} />
                 </button>
               </div>
 
-              {/* Title / Label */}
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{kpi.label}</h3>
-
-              {/* Large Value */}
-              <p className="text-2xl font-extrabold text-gray-900 tracking-tight mb-2 font-mono-nums">
-                {kpi.value}
-              </p>
+              {/* Value */}
+              <div className="space-y-1">
+                <h3 className="text-[13px] font-medium text-slate-500">{kpi.label}</h3>
+                <div className="text-2xl font-bold tracking-tight text-slate-900">{kpi.value}</div>
+              </div>
             </div>
 
-            {/* Bottom Trend / Subtext */}
-            <div className={`text-xs font-semibold ${kpi.trendColor}`}>
+            {/* Trend */}
+            <div className={`mt-4 text-xs font-medium flex items-center gap-1.5 ${kpi.trendColor}`}>
               {kpi.trend}
             </div>
           </div>

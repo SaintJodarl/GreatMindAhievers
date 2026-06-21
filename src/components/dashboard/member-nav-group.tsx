@@ -127,10 +127,10 @@ export default function MemberNavGroup({ group, collapsed, userStatus, counts }:
                   transition-all duration-200 group relative
                   ${
                     isActive
-                      ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/20'
-                      : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                      ? 'bg-indigo-50/50 text-indigo-600 font-semibold before:absolute before:-left-2 before:top-1/2 before:-translate-y-1/2 before:h-3/4 before:w-1 before:bg-indigo-600 before:rounded-r-full'
+                      : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
                   }
-                  ${collapsed ? 'justify-center' : ''}
+                  ${collapsed ? 'justify-center before:left-0' : ''}
                 `}
               >
                 {Icon && (
@@ -138,7 +138,7 @@ export default function MemberNavGroup({ group, collapsed, userStatus, counts }:
                     size={20}
                     strokeWidth={isActive ? 2.5 : 2}
                     className={`flex-shrink-0 ${
-                      isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'
+                      isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'
                     }`}
                   />
                 )}

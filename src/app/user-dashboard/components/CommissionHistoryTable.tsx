@@ -147,18 +147,16 @@ export default function CommissionHistoryTable() {
 
   return (
     <div
-      className="rounded-xl overflow-hidden"
-      style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+      className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden"
     >
       <div
-        className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b"
-        style={{ borderColor: 'var(--border)' }}
+        className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100"
       >
         <div>
-          <h3 className="text-base font-semibold" style={{ color: 'var(--foreground)' }}>
+          <h3 className="text-lg font-bold text-slate-900">
             Commission History
           </h3>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
+          <p className="text-xs mt-0.5 text-slate-500 font-medium">
             {filtered.length} transactions
           </p>
         </div>
@@ -173,12 +171,11 @@ export default function CommissionHistoryTable() {
             }}
           />
           <svg
-            className="absolute left-2.5 top-1/2 -translate-y-1/2"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
             width="12"
             height="12"
             viewBox="0 0 12 12"
             fill="none"
-            style={{ color: 'var(--muted-foreground)' }}
           >
             <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.3" />
             <path d="M10 10L8 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
@@ -189,12 +186,11 @@ export default function CommissionHistoryTable() {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[700px]">
           <thead>
-            <tr style={{ background: 'var(--muted)' }}>
+            <tr className="bg-slate-50 border-b border-slate-200/60">
               {['Date', 'Type', 'Match Vol (PV)', 'Rate', 'Amount', 'From', 'Status'].map((h) => (
                 <th
                   key={`th-${h}`}
-                  className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: 'var(--muted-foreground)', letterSpacing: '0.06em' }}
+                  className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
                 >
                   {h}
                 </th>
@@ -205,53 +201,52 @@ export default function CommissionHistoryTable() {
             {paged.map((row, i) => (
               <tr
                 key={row.id}
-                className="transition-colors hover:bg-muted/40 border-b"
-                style={{
-                  borderColor: 'var(--border)',
-                  background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
-                }}
+                className="transition-colors hover:bg-slate-50/50 border-b border-slate-100"
               >
                 <td
-                  className="px-4 py-3 text-xs font-mono-nums"
-                  style={{ color: 'var(--secondary-foreground)' }}
+                  className="px-5 py-4 text-sm font-medium text-slate-600"
                 >
                   {row.date}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-5 py-4">
                   <span
-                    className="badge text-xs"
+                    className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase border"
                     style={{
-                      background: typeColors[row.type]?.bg || 'rgba(255,255,255,0.05)',
-                      color: typeColors[row.type]?.color || 'var(--foreground)',
+                      background: typeColors[row.type]?.bg || 'rgba(241,245,249,1)',
+                      color: typeColors[row.type]?.color || '#475569',
+                      borderColor: 'rgba(0,0,0,0.05)'
                     }}
                   >
                     {row.type}
                   </span>
                 </td>
                 <td
-                  className="px-4 py-3 text-xs font-mono-nums"
-                  style={{ color: 'var(--foreground)' }}
+                  className="px-5 py-4 text-sm text-slate-600 font-medium"
                 >
                   {row.matchVol > 0 ? `${row.matchVol.toLocaleString()} PV` : '—'}
                 </td>
                 <td
-                  className="px-4 py-3 text-xs font-mono-nums"
-                  style={{ color: 'var(--secondary-foreground)' }}
+                  className="px-5 py-4 text-sm text-slate-500 font-medium"
                 >
                   {row.rate}
                 </td>
                 <td
-                  className="px-4 py-3 text-sm font-bold font-mono-nums"
-                  style={{ color: 'var(--accent)' }}
+                  className="px-5 py-4 text-sm font-bold text-indigo-600 font-mono-nums"
                 >
                   +₦{row.amount.toFixed(2)}
                 </td>
-                <td className="px-4 py-3 text-xs" style={{ color: 'var(--secondary-foreground)' }}>
+                <td className="px-5 py-4 text-sm text-slate-500 font-medium">
                   {row.fromMember}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-5 py-4">
                   <span
-                    className={`badge ${row.status === 'Credited' ? 'badge-active' : 'badge-pending'}`}
+                    className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase border ${
+                      row.status === 'Credited'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : row.status === 'Pending'
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-slate-50 text-slate-700 border-slate-200'
+                    }`}
                   >
                     {row.status === 'Credited' ? '✓' : '⏳'} {row.status}
                   </span>
