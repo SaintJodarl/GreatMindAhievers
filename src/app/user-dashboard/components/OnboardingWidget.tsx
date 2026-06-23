@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   Upload,
   Calendar,
-  Lock
+  Lock,
+  X
 } from 'lucide-react';
 import { getStates, getLgasForState } from '@/lib/nigeria-locations';
 
@@ -146,8 +147,8 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
     const { name, value } = e.target;
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-      if (name === 'state') {
-        updated.lga = ''; // Reset LGA when residential state changes
+      if (name === 'stateOfOrigin') {
+        updated.lga = ''; // Reset LGA when state of origin changes
       }
       return updated;
     });
@@ -553,11 +554,11 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
                   name="lga"
                   value={formData.lga}
                   onChange={handleInputChange}
-                  disabled={!formData.state}
+                  disabled={!formData.stateOfOrigin}
                   className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 disabled:opacity-50"
                 >
-                  <option value="">{formData.state ? 'Select LGA' : 'Select a state first'}</option>
-                  {lgas.map((lg) => (
+                  <option value="">{formData.stateOfOrigin ? 'Select LGA' : 'Select a state of origin first'}</option>
+                  {statesOfOriginLgas.map((lg) => (
                     <option key={`lga-opt-${lg}`} value={lg}>{lg}</option>
                   ))}
                 </select>
@@ -684,14 +685,25 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="block text-[10px] font-bold text-gray-400 uppercase">Bank Name</label>
-                <input
-                  type="text"
+                <select
                   name="bankName"
-                  placeholder="e.g. Zenith Bank, GTBank"
                   value={formData.bankName}
                   onChange={handleInputChange}
-                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
-                />
+                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 bg-white"
+                >
+                  <option value="" disabled>Select a bank</option>
+                  {[
+                    "Access Bank", "Citibank Nigeria", "Ecobank Nigeria", "FCMB (First City Monument Bank)",
+                    "Fidelity Bank", "First Bank of Nigeria", "Globus Bank", "Guaranty Trust Bank (GTCO)",
+                    "Keystone Bank", "Nova Commercial Bank", "Optimus Bank", "Parallex Bank", "Polaris Bank",
+                    "PremiumTrust Bank", "Providus Bank", "Stanbic IBTC Bank", "Standard Chartered Bank Nigeria",
+                    "Sterling Bank", "Titan Trust Bank", "Union Bank of Nigeria", "United Bank for Africa (UBA)",
+                    "Unity Bank", "Wema Bank", "Zenith Bank", "Kuda Bank", "Moniepoint Microfinance Bank",
+                    "OPay", "PalmPay", "Dot Microfinance Bank", "VFD Microfinance Bank"
+                  ].map(bank => (
+                    <option key={bank} value={bank}>{bank}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-1">

@@ -57,6 +57,36 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/sign-up-login-screen?error=suspended', req.url));
     }
 
+    // ACTIVATION ENFORCEMENT: Block ALL non-ACTIVE member users from protected routes.
+    // Admin/SUPER_ADMIN users are exempt — they don't require activation codes.
+    const isAdminUser = payload.role === 'ADMIN' || payload.role === 'SUPER_ADMIN';
+    if (!isAdminUser && payload.status !== 'ACTIVE') {
+      const allowedInactiveApis = [
+        '/api/user/dashboard-summary',
+        '/api/user/activation/submit',
+        '/api/auth'
+      ];
+      const allowedInactivePages = [
+        '/user-dashboard',
+        '/user-dashboard/kyc',
+        '/user-dashboard/account'
+      ];
+
+      if (isApiRequest) {
+        if (!allowedInactiveApis.some(p => path.startsWith(p))) {
+          return NextResponse.json(
+            { message: 'Forbidden: Account not activated. Please submit an activation code.' },
+            { status: 403 }
+          );
+        }
+      } else {
+        // Allow dashboard overview, KYC pages, and account pages for non-ACTIVE users
+        if (!allowedInactivePages.some(p => path === p || path.startsWith(p + '/'))) {
+          return NextResponse.redirect(new URL('/user-dashboard', req.url));
+        }
+      }
+    }
+
     const onboardingStatus = (payload.onboardingStatus as string) || 'INCOMPLETE';
 
     // Users are allowed to access dashboard immediately. No hard-blocking redirect.

@@ -20,7 +20,7 @@ async function main() {
     },
   });
 
-  // Create member user
+  // Create member user (INACTIVE — must activate via activation code, matching production flow)
   const memberPassword = await bcrypt.hash('Member@2026', 10);
   const member = await prisma.user.upsert({
     where: { email: 'adebayo.okafor@gma.network' },
@@ -30,7 +30,7 @@ async function main() {
       name: 'Adebayo Okafor',
       password: memberPassword,
       role: 'MEMBER',
-      status: 'ACTIVE',
+      status: 'INACTIVE',
       referralCode: 'GMA-MBR1',
     },
   });

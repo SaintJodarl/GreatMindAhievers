@@ -55,13 +55,25 @@ export async function POST(
       if (hasCode && hasCode.status === 'USED') {
         userUpdateData.status = 'ACTIVE';
 
-        const { distributeMultiLevelCommission } = await import('@/lib/wallet/service');
-        await distributeMultiLevelCommission(tx, {
-          buyerId: submission.userId,
-          amountPerLevel: [10000, 5000, 3000, 1000, 1000], // 10%, 5%, 3%, 1%, 1% of 100k
-          orderId: hasCode.id,
-          description: `Activation Commission for User ${submission.userId}`
+        // Idempotency check: Only distribute commissions if not already distributed
+        // for this activation code. The activation/submit route may have already done this.
+        const existingCommission = await tx.walletTransaction.findFirst({
+          where: {
+            reference: { contains: hasCode.id },
+            type: 'REFERRAL_BONUS',
+            status: 'COMPLETED',
+          },
         });
+
+        if (!existingCommission) {
+          const { distributeMultiLevelCommission } = await import('@/lib/wallet/service');
+          await distributeMultiLevelCommission(tx, {
+            buyerId: submission.userId,
+            amountPerLevel: [10000, 5000, 3000, 1000, 1000], // 10%, 5%, 3%, 1%, 1% of 100k
+            orderId: hasCode.id,
+            description: `Activation Commission for User ${submission.userId}`
+          });
+        }
       }
 
       await tx.user.update({

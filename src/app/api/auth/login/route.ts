@@ -46,12 +46,12 @@ export async function POST(req: NextRequest) {
     const familyId = crypto.randomUUID();
 
     // 3 & 4. Store Refresh Token, AuditLog, and update User Session Version in a single transaction
-    const newSessionVersion = user.sessionVersion + 1;
+    const newSessionVersion = (user.sessionVersion || 1) + 1;
     
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { sessionVersion: newSessionVersion }
+        data: { id: user.id, sessionVersion: newSessionVersion }
       }),
       prisma.refreshToken.deleteMany({
         where: { userId: user.id }

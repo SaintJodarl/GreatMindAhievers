@@ -21,6 +21,7 @@ import ReferralSection from './ReferralSection';
 import WithdrawalSection from './WithdrawalSection';
 import KYCStatusCard from './KYCStatusCard';
 import OnboardingWidget from './OnboardingWidget';
+import UserActionRequiredCards from './UserActionRequiredCards';
 
 export default function UserDashboardContent() {
   const [activeTab, setActiveTab] = useState<'overview' | 'network' | 'earnings' | 'withdrawals'>(
@@ -30,6 +31,10 @@ export default function UserDashboardContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('');
+
+  // Modal states
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [onboardingStartStep, setOnboardingStartStep] = useState(1);
 
   // Extra data for overview
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
@@ -236,9 +241,14 @@ export default function UserDashboardContent() {
       {/* 3. Content Panel */}
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-fade-in">
-          {summary.status !== 'ACTIVE' && (
-            <OnboardingWidget summary={summary} onRefresh={handleRefreshAll} />
-          )}
+          <UserActionRequiredCards 
+            summary={summary} 
+            onOpenAction={(step) => {
+              setOnboardingStartStep(step);
+              setShowOnboardingModal(true);
+            }} 
+          />
+          
           {/* KPI metrics grid */}
           <UserKPIGrid summary={summary} />
 
@@ -326,7 +336,7 @@ export default function UserDashboardContent() {
               </div>
             </div>
 
-            {/* Right Column (Narrow) - Referred Downlines */}
+            {/* Right Column (Narrow) - Recent Referrals */}
             <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
@@ -463,21 +473,44 @@ export default function UserDashboardContent() {
 
       {activeTab === 'network' && (
         <div className="space-y-6 animate-fade-in">
-          <BinaryTreeSection />
-          <ReferralSection />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ReferralSection initialReferrals={recentReferrals} summary={summary} />
+            <BinaryTreeSection summary={summary} />
+          </div>
         </div>
       )}
 
       {activeTab === 'earnings' && (
         <div className="space-y-6 animate-fade-in">
-          <EarningsChartSection />
-          <CommissionHistoryTable />
+          <EarningsChartSection data={[]} />
+          <CommissionHistoryTable initialTransactions={recentTransactions} />
         </div>
       )}
 
       {activeTab === 'withdrawals' && (
-        <div className="space-y-6 animate-fade-in">
-          <WithdrawalSection />
+        <div className="animate-fade-in">
+          <WithdrawalSection summary={summary} />
+        </div>
+      )}
+
+      {/* Onboarding Modal Overlay */}
+      {showOnboardingModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowOnboardingModal(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl">
+            <OnboardingWidget 
+              summary={summary} 
+              onRefresh={handleRefreshAll}
+              initialStep={onboardingStartStep}
+              onClose={() => setShowOnboardingModal(false)}
+            />
+          </div>
         </div>
       )}
 

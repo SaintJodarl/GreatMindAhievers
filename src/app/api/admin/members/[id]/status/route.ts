@@ -24,7 +24,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { status } = body; // ACTIVE, INACTIVE, SUSPENDED
+    const { status } = body; // INACTIVE, SUSPENDED, PENDING_*, or ACTIVE (requires activation code)
 
     if (
       !status ||
@@ -39,6 +39,25 @@ export async function PATCH(
       ].includes(status)
     ) {
       return NextResponse.json({ message: 'Invalid status value' }, { status: 400 });
+    }
+
+    // ENFORCEMENT: Setting status to ACTIVE requires a redeemed activation code.
+    // Admin users (role ADMIN/SUPER_ADMIN) are exempt from this check.
+    if (status === 'ACTIVE' && user.role === 'MEMBER') {
+      const redeemedCode = await prisma.activationCode.findUnique({
+        where: { redeemedBy: id },
+      });
+
+      if (!redeemedCode || redeemedCode.status !== 'USED') {
+        return NextResponse.json(
+          {
+            message:
+              'Cannot set member to ACTIVE: No redeemed activation code found. ' +
+              'The member must submit a valid activation code first.',
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const updated = await prisma.user.update({

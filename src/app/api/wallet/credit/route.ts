@@ -12,6 +12,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    // Defense-in-depth: Block non-ACTIVE members from wallet operations
+    if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN' && currentUser.status !== 'ACTIVE') {
+      return NextResponse.json({ message: 'Forbidden: Account not activated' }, { status: 403 });
+    }
+
     const body = await req.json();
     const { amount, type, description, reference, metadata } = body;
 

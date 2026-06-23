@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Activation code has expired' }, { status: 400 });
     }
 
-    // 4. Perform redemption in transaction
+      // 4. Perform redemption in transaction
     const result = await prisma.$transaction(async (tx) => {
       // Mark code as used
       await tx.activationCode.update({
@@ -100,27 +100,20 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Fetch user profile and KYC details
-      const user = await tx.user.findUnique({
+      // Update user status to ACTIVE unconditionally upon valid code
+      const updatedUser = await tx.user.update({
         where: { id: userId },
+        data: { status: 'ACTIVE' },
       });
 
-      let nextStatus = 'PENDING_ACTIVATION';
-      if (user?.kycStatus === 'APPROVED') {
-        nextStatus = 'ACTIVE';
-        await tx.user.update({
-          where: { id: userId },
-          data: { status: 'ACTIVE' },
-        });
-
-        const { distributeMultiLevelCommission } = await import('@/lib/wallet/service');
-        await distributeMultiLevelCommission(tx, {
-          buyerId: userId,
-          amountPerLevel: [10000, 5000, 3000, 1000, 1000], // 10%, 5%, 3%, 1%, 1% of 100k
-          orderId: dbCode.id,
-          description: `Activation Commission for User ${userId}`
-        });
-      }
+      // Distribute multi-level commission if not previously distributed
+      const { distributeMultiLevelCommission } = await import('@/lib/wallet/service');
+      await distributeMultiLevelCommission(tx, {
+        buyerId: userId,
+        amountPerLevel: [10000, 5000, 3000, 1000, 1000], // 10%, 5%, 3%, 1%, 1% of 100k
+        orderId: dbCode.id,
+        description: `Activation Commission for User ${userId}`
+      });
 
       // Log activation action to AuditLog
       await tx.auditLog.create({
@@ -129,21 +122,38 @@ export async function POST(req: NextRequest) {
           action: 'REDEEM_ACTIVATION_CODE',
           targetType: 'ActivationCode',
           targetId: dbCode.id,
-          details: `User ${userId} redeemed activation code ${normalizedCode}. Account status is ${nextStatus}.`,
+          details: `User ${userId} redeemed activation code ${normalizedCode}. Account status is ACTIVE.`,
           ipAddress,
           userAgent: req.headers.get('user-agent'),
         },
       });
 
-      return { nextStatus };
+      return { user: updatedUser };
     });
 
-    return NextResponse.json({
-      message: result.nextStatus === 'ACTIVE'
-        ? 'Account successfully activated! Full platform access unlocked.'
-        : 'Activation code redeemed successfully! Status pending KYC approval.',
-      status: result.nextStatus,
+    const { signAccessToken } = await import('@/lib/auth/jwt');
+    const accessToken = await signAccessToken({
+      sub: result.user.id,
+      role: result.user.role,
+      status: result.user.status,
+      onboardingStatus: result.user.onboardingStatus,
+      sessionVersion: result.user.sessionVersion,
     });
+
+    const response = NextResponse.json({
+      message: 'Account successfully activated! Full platform access unlocked.',
+      status: 'ACTIVE',
+    });
+
+    response.cookies.set('accessToken', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+      maxAge: 15 * 60, // 15 minutes
+    });
+
+    return response;
   } catch (error: any) {
     console.error('Submit activation code error:', error);
     return NextResponse.json(

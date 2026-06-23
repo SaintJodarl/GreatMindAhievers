@@ -1,0 +1,1 @@
+const email = 'jane@gmail.com'; const password = 'Abcd1234@1'; fetch('http://localhost:3000/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) }).then(r => r.json()).then(console.log).catch(console.error);

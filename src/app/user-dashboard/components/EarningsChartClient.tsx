@@ -9,24 +9,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-
-const data = [
-  { day: 'Apr 1', left: 420, right: 310 },
-  { day: 'Apr 3', left: 580, right: 420 },
-  { day: 'Apr 5', left: 490, right: 510 },
-  { day: 'Apr 7', left: 720, right: 480 },
-  { day: 'Apr 9', left: 650, right: 390 },
-  { day: 'Apr 11', left: 840, right: 620 },
-  { day: 'Apr 13', left: 760, right: 700 },
-  { day: 'Apr 15', left: 920, right: 580 },
-  { day: 'Apr 17', left: 1040, right: 810 },
-  { day: 'Apr 19', left: 880, right: 930 },
-  { day: 'Apr 21', left: 1120, right: 840 },
-  { day: 'Apr 23', left: 980, right: 760 },
-  { day: 'Apr 25', left: 1240, right: 1050 },
-  { day: 'Apr 27', left: 1180, right: 920 },
-  { day: 'Apr 29', left: 1420, right: 1240 },
-];
+interface EarningsChartClientProps {
+  data?: Array<{ day: string; left: number; right: number }>;
+}
 
 const CustomTooltip = ({
   active,
@@ -67,7 +52,19 @@ const CustomTooltip = ({
   return null;
 };
 
-export default function EarningsChartClient() {
+export default function EarningsChartClient({ data = [] }: EarningsChartClientProps) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-[240px] flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50">
+        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        </div>
+        <p className="text-sm font-medium text-slate-500">No earnings data yet</p>
+        <p className="text-xs text-slate-400 mt-1 max-w-[200px] text-center">Your chart will populate as you generate network volume.</p>
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={240}>
       <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>

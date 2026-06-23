@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       role: tokenRecord.user.role,
       status: tokenRecord.user.status,
       onboardingStatus: tokenRecord.user.onboardingStatus,
-      sessionVersion: tokenRecord.user.sessionVersion,
+      sessionVersion: tokenRecord.user.sessionVersion || 1,
     });
 
     const response = NextResponse.json({

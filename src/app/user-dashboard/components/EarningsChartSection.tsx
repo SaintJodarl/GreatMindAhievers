@@ -4,7 +4,11 @@ import dynamic from 'next/dynamic';
 
 const EarningsChart = dynamic(() => import('./EarningsChartClient'), { ssr: false });
 
-export default function EarningsChartSection() {
+interface EarningsChartSectionProps {
+  data?: Array<{ day: string; left: number; right: number }>;
+}
+
+export default function EarningsChartSection({ data = [] }: EarningsChartSectionProps) {
   return (
     <div
       className="p-5 rounded-xl"
@@ -34,7 +38,7 @@ export default function EarningsChartSection() {
           </div>
         </div>
       </div>
-      <EarningsChart />
+      <EarningsChart data={data} />
     </div>
   );
 }

@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
             username: username.toLowerCase().trim(),
             password: hashedPassword,
             role: 'MEMBER',
-            status: 'ACTIVE',
+            status: 'INACTIVE',
             onboardingStatus: 'INCOMPLETE',
             autoPlacement: true,
             referralCode,

@@ -7,67 +7,10 @@ interface TreeNode {
   rank: string;
   volume: number;
   status: 'Active' | 'Pending' | 'Suspended';
-  leftChild?: TreeNode;
-  rightChild?: TreeNode;
+  leftChild?: TreeNode | null;
+  rightChild?: TreeNode | null;
   joinDate: string;
 }
-
-const TREE_DATA: TreeNode = {
-  id: 'GMA-00142',
-  name: 'Adebayo Okafor (You)',
-  rank: 'Silver',
-  volume: 27300,
-  status: 'Active',
-  joinDate: 'Jan 12, 2026',
-  leftChild: {
-    id: 'GMA-00218',
-    name: 'Chidinma Obi',
-    rank: 'Bronze',
-    volume: 8420,
-    status: 'Active',
-    joinDate: 'Feb 3, 2026',
-    leftChild: {
-      id: 'GMA-00341',
-      name: 'Emeka Nwosu',
-      rank: 'Entry',
-      volume: 2100,
-      status: 'Active',
-      joinDate: 'Mar 15, 2026',
-    },
-    rightChild: {
-      id: 'GMA-00389',
-      name: 'Amaka Eze',
-      rank: 'Entry',
-      volume: 1840,
-      status: 'Pending',
-      joinDate: 'Apr 2, 2026',
-    },
-  },
-  rightChild: {
-    id: 'GMA-00267',
-    name: 'Tunde Bakare',
-    rank: 'Bronze',
-    volume: 6180,
-    status: 'Active',
-    joinDate: 'Feb 18, 2026',
-    leftChild: {
-      id: 'GMA-00412',
-      name: 'Ngozi Adeyemi',
-      rank: 'Entry',
-      volume: 1650,
-      status: 'Active',
-      joinDate: 'Mar 28, 2026',
-    },
-    rightChild: {
-      id: 'GMA-00445',
-      name: 'Kelechi Eze',
-      rank: 'Entry',
-      volume: 980,
-      status: 'Active',
-      joinDate: 'Apr 10, 2026',
-    },
-  },
-};
 
 const rankColors: Record<string, string> = {
   Silver: '#C0C0C0',
@@ -106,10 +49,10 @@ function TreeNodeCard({ node, isRoot = false }: { node: TreeNode; isRoot?: boole
           }
         >
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1.5 text-xs font-bold text-white"
+            className="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1.5 text-xs font-bold text-white uppercase"
             style={{ background: `linear-gradient(135deg, ${rankColor} 0%, ${rankColor}88 100%)` }}
           >
-            {node.name.split(' ')[0][0]}
+            {node.name ? node.name.split(' ')[0][0] : '?'}
           </div>
           <p
             className="text-xs font-semibold leading-tight mb-0.5"
@@ -118,20 +61,20 @@ function TreeNodeCard({ node, isRoot = false }: { node: TreeNode; isRoot?: boole
             {node.name.length > 16 ? node.name.slice(0, 14) + '…' : node.name}
           </p>
           <p className="text-xs font-mono-nums" style={{ color: 'var(--muted-foreground)' }}>
-            {node.id}
+            {node.id ? node.id.slice(0,8).toUpperCase() : 'UNKNOWN'}
           </p>
           <div className="flex items-center justify-center gap-1.5 mt-1.5">
             <span
               className="text-xs font-medium px-1.5 py-0.5 rounded-full"
               style={{ background: `${rankColor}15`, color: rankColor, fontSize: '10px' }}
             >
-              {node.rank}
+              {node.rank || 'Entry'}
             </span>
             <span
               className="text-xs font-mono-nums"
               style={{ color: 'var(--accent)', fontSize: '10px' }}
             >
-              {node.volume.toLocaleString()} PV
+              {(node.volume || 0).toLocaleString()} PV
             </span>
           </div>
           {node.status !== 'Active' && (
@@ -234,7 +177,35 @@ function EmptySlot({ side }: { side: string }) {
   );
 }
 
-export default function BinaryTreeSection() {
+interface BinaryTreeSectionProps {
+  summary?: any;
+}
+
+export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
+  // If no summary is loaded yet, show skeleton or empty
+  if (!summary) {
+    return (
+      <div className="p-5 rounded-xl flex items-center justify-center h-[300px]" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+        <p className="text-sm text-slate-400 animate-pulse">Loading tree...</p>
+      </div>
+    );
+  }
+
+  // Construct the root node from summary
+  // Assuming API gives us leftLegCount, rightLegCount, etc. 
+  // We'll leave children empty for now since we're removing mock data.
+  // Real tree data should be fetched from /api/user/network/tree
+  const rootNode: TreeNode = {
+    id: summary.id || 'User',
+    name: summary.name || 'You',
+    rank: summary.rank || 'Entry',
+    volume: Math.min(summary.leftVolume || 0, summary.rightVolume || 0),
+    status: summary.status === 'ACTIVE' ? 'Active' : 'Pending',
+    joinDate: summary.createdAt || new Date().toISOString(),
+    leftChild: null,
+    rightChild: null,
+  };
+
   return (
     <div
       className="p-5 rounded-xl"
@@ -246,49 +217,28 @@ export default function BinaryTreeSection() {
             Binary Network Tree
           </h3>
           <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
-            Your downline structure — click nodes to expand/collapse
+            Your downline structure
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div
-            className="flex items-center gap-3 text-xs"
-            style={{ color: 'var(--muted-foreground)' }}
-          >
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full" style={{ background: 'var(--primary)' }} />
-              Left: 14,820 PV
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full" style={{ background: 'var(--info)' }} />
-              Right: 12,480 PV
-            </span>
-          </div>
+        <div className="flex gap-3">
+          {['Silver', 'Bronze', 'Entry'].map((r) => (
+            <div key={r} className="flex items-center gap-1.5">
+              <div
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ background: rankColors[r] }}
+              />
+              <span className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>
+                {r}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Tree container */}
       <div className="overflow-x-auto pb-4">
-        <div className="flex justify-center min-w-[600px] py-4">
-          <TreeNodeCard node={TREE_DATA} isRoot />
+        <div className="min-w-[400px] flex justify-center py-6">
+          <TreeNodeCard node={rootNode} isRoot />
         </div>
-      </div>
-
-      {/* Legend */}
-      <div
-        className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t"
-        style={{ borderColor: 'var(--border)' }}
-      >
-        <p className="text-xs font-semibold" style={{ color: 'var(--muted-foreground)' }}>
-          Rank:
-        </p>
-        {Object.entries(rankColors).map(([rank, color]) => (
-          <div key={`legend-${rank}`} className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
-            <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-              {rank}
-            </span>
-          </div>
-        ))}
       </div>
     </div>
   );
