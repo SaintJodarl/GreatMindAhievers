@@ -1,4 +1,4 @@
-export const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://app.greatmindachievers.org' : '';
+export const BASE_URL = '';
 
 let isLoggingOut = false;
 

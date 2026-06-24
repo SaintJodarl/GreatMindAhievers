@@ -7,9 +7,9 @@ const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
 
 export async function middleware(req: NextRequest) {
   // Redirect Vercel Preview environments to Production
-  if (process.env.VERCEL_ENV === 'preview') {
-    return NextResponse.redirect(new URL(req.nextUrl.pathname, 'https://app.greatmindachievers.org'));
-  }
+  // if (process.env.VERCEL_ENV === 'preview') {
+  //   return NextResponse.redirect(new URL(req.nextUrl.pathname, 'https://app.greatmindachievers.org'));
+  // }
 
   const path = req.nextUrl.pathname;
 
