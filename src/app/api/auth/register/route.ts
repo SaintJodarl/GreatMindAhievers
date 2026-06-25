@@ -11,6 +11,7 @@ import { emitOutboxEvent } from '@/lib/events/outbox';
 export const maxDuration = 60; // Allow enough time for Neon cold starts and MLM placement
 
 export async function POST(req: NextRequest) {
+  console.log("[AUTH DEBUG] Registration started");
   console.log("SIGNUP START - Request received");
   try {
     let {
@@ -128,6 +129,7 @@ export async function POST(req: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log("[AUTH DEBUG] Password hashed for user:", email);
     const referralCode = await generateUniqueReferralCode(prisma);
 
     let user;
@@ -194,6 +196,7 @@ export async function POST(req: NextRequest) {
           },
         });
 
+        console.log("[AUTH DEBUG] User created successfully in database:", createdUser.id);
         return createdUser;
       }, {
         timeout: 20000 // 20s timeout safety for user creation
@@ -294,6 +297,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.error('[AUTH DEBUG] Registration failed with error:', error);
     return NextResponse.json(
       { message: error.message || 'An error occurred during registration' },
       { status: 500 }
