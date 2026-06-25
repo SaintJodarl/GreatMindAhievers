@@ -1,6 +1,6 @@
 import { MLM_EVENT_MODE, LEGACY_WRITE_DISABLED } from "@/lib/env";
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { NextRequest } from 'next/server';
 import { generateUniqueReferralCode } from '@/lib/referral-code';
