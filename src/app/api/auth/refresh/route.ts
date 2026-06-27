@@ -94,16 +94,16 @@ export async function POST(req: NextRequest) {
     // 5. Set rotated cookies
     response.cookies.set('refreshToken', newRefreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60, // 7 days
     });
 
     response.cookies.set('accessToken', newAccessToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       path: '/',
       maxAge: 15 * 60, // 15 minutes
     });

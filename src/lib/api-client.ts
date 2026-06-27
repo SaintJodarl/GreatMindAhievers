@@ -10,6 +10,8 @@ export function forceLogout() {
   }
 
   isLoggingOut = true;
+  // Clear cookies via server-side logout before redirecting
+  fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
   window.location.href = '/sign-up-login-screen';
 }
 

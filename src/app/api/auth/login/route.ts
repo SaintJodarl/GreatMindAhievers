@@ -115,16 +115,16 @@ export async function POST(req: NextRequest) {
     // 5. Set Cookies
     response.cookies.set('refreshToken', rawRefreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60, // 7 days
     });
 
     response.cookies.set('accessToken', accessToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       path: '/',
       maxAge: 15 * 60, // 15 minutes
     });

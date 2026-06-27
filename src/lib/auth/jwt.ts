@@ -1,6 +1,12 @@
 import { SignJWT, jwtVerify } from 'jose';
 
-const JWT_SECRET_STRING = process.env.JWT_SECRET || 'gma-dev-secret-key-change-in-production-123456789';
+const JWT_SECRET_STRING = (() => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret && process.env.NODE_ENV === 'production') {
+    console.error('[CRITICAL] JWT_SECRET environment variable is not set in production!');
+  }
+  return secret || 'gma-dev-secret-key-change-in-production-123456789';
+})();
 const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
 
 export interface TokenPayload {
