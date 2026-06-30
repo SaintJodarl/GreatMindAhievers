@@ -44,7 +44,9 @@ export default function UserDashboardContent() {
 
   const fetchSummary = async () => {
     try {
-      setLoading(true);
+      if (!summary) {
+        setLoading(true);
+      }
       setError(null);
       const res = await fetch('/api/user/dashboard-summary');
       if (!res.ok) {

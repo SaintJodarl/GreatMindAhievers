@@ -39,17 +39,18 @@ export async function POST(req: NextRequest) {
       resource_type: 'auto',
     });
 
-    // Note: If the preset is configured as async: true in Cloudinary, uploadResult.secure_url might be undefined.
-    // If it is missing, we must fail gracefully.
-    if (!uploadResult.secure_url) {
-       // Check if public_id exists, which implies async upload
-       if (uploadResult.status === 'pending') {
-          return NextResponse.json({ message: 'Upload is pending Cloudinary async processing. Ensure your preset is synchronous.' }, { status: 400 });
-       }
-       throw new Error('Upload completed but no secure URL was returned by Cloudinary.');
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    let secureUrl = uploadResult.secure_url;
+    if (!secureUrl && uploadResult.public_id) {
+      const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.replace(/['"]/g, '').trim();
+      const resourceType = uploadResult.resource_type || 'image';
+      const formatSuffix = uploadResult.format ? `.${uploadResult.format}` : (extension ? `.${extension}` : '');
+      secureUrl = `https://res.cloudinary.com/${cloudName}/${resourceType}/upload/${uploadResult.public_id}${formatSuffix}`;
     }
 
-    const secureUrl = uploadResult.secure_url;
+    if (!secureUrl) {
+       throw new Error('Upload completed but no secure URL was returned by Cloudinary.');
+    }
 
     // Retrieve or initialize KYCSubmission
     const user = await prisma.user.findUnique({
