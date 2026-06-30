@@ -34,6 +34,12 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Keep track of the step synced from the server.
+  // We only reset activeStep when the server reports a change in progress
+  // (e.g. after a successful save), while preserving manual client-side
+  // navigation back/forward in between updates.
+  const lastSyncedStepRef = React.useRef<number | null>(null);
+
   const [selectedFiles, setSelectedFiles] = useState<{
     idDocument: File | null;
     selfie: File | null;
@@ -91,7 +97,7 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
   const lgas = React.useMemo(() => getLgasForState(formData.state), [formData.state]);
   const statesOfOriginLgas = React.useMemo(() => getLgasForState(formData.stateOfOrigin), [formData.stateOfOrigin]); // If they choose state of origin
 
-  // Prefill details from summary on mount
+  // Prefill details from summary on mount and after refresh
   useEffect(() => {
     if (summary) {
       const parts = (summary.name || '').split(' ');
@@ -124,19 +130,13 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
         proofOfAddress: summary.kycSubmission?.proofOfAddress || '',
       }));
 
-      // Determine initial active step based on account status
-      if (initialStep) {
-        setActiveStep(initialStep);
-      } else if (summary.status === 'PENDING_ACTIVATION') {
-        setActiveStep(5);
-      } else if (summary.status === 'PENDING_KYC_REVIEW') {
-        // If KYC submitted, direct user to Activation (Step 5)
-        setActiveStep(5);
-      } else if (summary.kycStatus === 'SUBMITTED') {
-        setActiveStep(5);
-      } else {
-        // PENDING_PROFILE_COMPLETION or default
-        setActiveStep(1);
+      const serverStep = summary.onboardingStep ?? 1;
+      if (lastSyncedStepRef.current === null) {
+        setActiveStep(initialStep || serverStep);
+        lastSyncedStepRef.current = serverStep;
+      } else if (serverStep !== lastSyncedStepRef.current) {
+        setActiveStep(serverStep);
+        lastSyncedStepRef.current = serverStep;
       }
     }
   }, [summary]);
@@ -211,8 +211,8 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
         throw new Error(data.message || 'Failed to save profile information');
       }
 
-      onRefresh();
       setActiveStep(4); // Advance to Step 4 (KYC)
+      onRefresh();
     } catch (err: any) {
       setError(err.message || 'An error occurred while saving profile info.');
     } finally {
@@ -275,10 +275,10 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
 
       setSuccess('KYC documents submitted successfully for compliance review.');
       setSelectedFiles({ idDocument: null, selfie: null, proofOfAddress: null });
-      onRefresh();
       setTimeout(() => {
         setSuccess(null);
         setActiveStep(5); // Advance to Step 5 (Activation)
+        onRefresh();
       }, 1500);
     } catch (err: any) {
       setError(err.message || 'An error occurred while submitting identity files.');
@@ -306,8 +306,41 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
 
       setSuccess(data.message || 'Account successfully activated!');
       onRefresh();
+      if (onClose) {
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      }
     } catch (err: any) {
       setError(err.message || 'An error occurred during account activation.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleSkipActivation = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api('/api/user/onboarding/skip-activation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to skip activation');
+      }
+
+      setSuccess('Onboarding completed. Activation skipped.');
+      onRefresh();
+      if (onClose) {
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred while skipping activation.');
     } finally {
       setLoading(false);
     }
@@ -388,13 +421,13 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4">
           {stepsList.map((step) => {
             const StepIcon = step.icon;
-            const isCompleted = activeStep > step.id || (step.id === 4 && summary.kycStatus === 'APPROVED') || (step.id === 5 && summary.status === 'ACTIVE');
+            const isCompleted = (summary.onboardingStep ?? 1) > step.id;
             const isActive = activeStep === step.id;
 
             return (
               <button
                 key={`step-btn-${step.id}`}
-                disabled={summary.status === 'ACTIVE' || step.id > activeStep && !validateStep(activeStep)}
+                disabled={step.id > (summary.onboardingStep ?? 1)}
                 onClick={() => {
                   setError(null);
                   setActiveStep(step.id);
@@ -921,15 +954,25 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
                 >
                   Back
                 </button>
-                <button
-                  type="button"
-                  disabled={loading || !formData.code.trim()}
-                  onClick={handleSubmitActivation}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-5 rounded-xl transition-all text-xs disabled:opacity-50 inline-flex items-center gap-1.5"
-                >
-                  {loading && <Loader2 className="animate-spin" size={14} />}
-                  Redeem and Activate
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={handleSkipActivation}
+                    className="text-gray-500 hover:text-gray-700 font-semibold py-2 px-4 rounded-xl transition-all text-xs border border-gray-200 hover:bg-gray-50"
+                  >
+                    Skip for now
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading || !formData.code.trim()}
+                    onClick={handleSubmitActivation}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-5 rounded-xl transition-all text-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                  >
+                    {loading && <Loader2 className="animate-spin" size={14} />}
+                    Redeem and Activate
+                  </button>
+                </div>
               </div>
             </div>
           </div>

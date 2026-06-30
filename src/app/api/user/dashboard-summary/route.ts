@@ -116,6 +116,13 @@ export async function GET(req: NextRequest) {
       openTicketsCount,
       announcementsCount,
       rank,
+      bankName: user.bankName || '',
+      accountNumber: user.accountNumber || '',
+      accountName: user.accountName || '',
+      onboardingStep: user.onboardingStep,
+      kycCompleted: user.kycStatus === 'APPROVED' || user.kycStatus === 'SUBMITTED',
+      activationStatus: user.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING',
+      accountStatus: user.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
       activationCode: user.activationCode ? {
         code: user.activationCode.code,
         status: user.activationCode.status,

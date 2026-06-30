@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       });
       await prisma.user.update({
         where: { id: userId },
-        data: { kycStatus: 'SUBMITTED', kycSubmittedAt: new Date() },
+        data: { kycStatus: 'SUBMITTED', kycSubmittedAt: new Date(), onboardingStep: 5 },
       });
     }
 

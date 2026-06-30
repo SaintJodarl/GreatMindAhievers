@@ -53,7 +53,7 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
         {!isKycComplete && (
           <div className="mt-5 flex justify-end">
             <button
-              onClick={() => onOpenAction(1)}
+              onClick={() => onOpenAction(summary.onboardingStep || 1)}
               className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
             >
               Complete KYC Now

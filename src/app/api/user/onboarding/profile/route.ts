@@ -127,6 +127,7 @@ export async function POST(req: NextRequest) {
           bankName,
           accountNumber,
           accountName,
+          onboardingStep: 4,
         },
       });
     });
