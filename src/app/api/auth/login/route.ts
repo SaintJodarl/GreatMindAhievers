@@ -9,7 +9,6 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
-    console.log("[AUTH DEBUG] Login attempt for email:", email);
 
     if (!email || !password) {
       return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
@@ -20,11 +19,6 @@ export async function POST(req: NextRequest) {
       user = await prisma.user.findUnique({
         where: { email: email.toLowerCase() },
       });
-      if (user) {
-        console.log("[AUTH DEBUG] User found in database:", user.id);
-      } else {
-        console.log("[AUTH DEBUG] User not found for email:", email);
-      }
     } catch (error: any) {
       console.error('[AUTH DEBUG] Login DB error:', error);
       throw error;
@@ -41,12 +35,10 @@ export async function POST(req: NextRequest) {
 
     // Verify password
     const isCorrectPassword = await bcrypt.compare(password, user.password);
-    console.log("[AUTH DEBUG] Password comparison result:", isCorrectPassword);
-    
+
     if (!isCorrectPassword) {
       return NextResponse.json({ message: 'Invalid email or password' }, { status: 401 });
     }
-
 
     // 2. Generate long-lived Refresh Token
     const rawRefreshToken = crypto.randomBytes(40).toString('hex');
@@ -55,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     // 3 & 4. Store Refresh Token, AuditLog, and update User Session Version in a single transaction
     const newSessionVersion = (user.sessionVersion || 1) + 1;
-    
+
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
@@ -86,8 +78,6 @@ export async function POST(req: NextRequest) {
         },
       })
     ]);
-    
-    console.log("[AUTH DEBUG] Session created successfully in database (Refresh Token / Audit Log)");
 
     // 1. Generate short-lived Access Token (JWT)
     const accessToken = await signAccessToken({
@@ -97,8 +87,6 @@ export async function POST(req: NextRequest) {
       onboardingStatus: user.onboardingStatus,
       sessionVersion: newSessionVersion,
     });
-    
-    console.log("[AUTH DEBUG] JWT generated successfully for user:", user.id);
 
     const response = NextResponse.json({
       message: 'Login successful',

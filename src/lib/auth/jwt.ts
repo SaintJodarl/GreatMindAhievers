@@ -1,13 +1,14 @@
 import { SignJWT, jwtVerify } from 'jose';
 
-const JWT_SECRET_STRING = (() => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret && process.env.NODE_ENV === 'production') {
-    console.error('[CRITICAL] JWT_SECRET environment variable is not set in production!');
-  }
-  return secret || 'gma-dev-secret-key-change-in-production-123456789';
-})();
-const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
+const secret = process.env.JWT_SECRET;
+
+if (!secret && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET environment variable is required in production.');
+}
+
+const JWT_SECRET = new TextEncoder().encode(
+  secret || 'gma-dev-secret-key-change-in-development'
+);
 
 export interface TokenPayload {
   sub: string;
@@ -36,7 +37,7 @@ export async function verifyAccessToken(token: string): Promise<TokenPayload | n
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload as unknown as TokenPayload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

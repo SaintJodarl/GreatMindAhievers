@@ -2,14 +2,15 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const JWT_SECRET_STRING = (() => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret && process.env.NODE_ENV === 'production') {
-    console.error('[CRITICAL] JWT_SECRET environment variable is not set in production middleware!');
-  }
-  return secret || 'gma-dev-secret-key-change-in-production-123456789';
-})();
-const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
+const secret = process.env.JWT_SECRET;
+
+if (!secret && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET environment variable is required in production.');
+}
+
+const JWT_SECRET = new TextEncoder().encode(
+  secret || 'gma-dev-secret-key-change-in-development'
+);
 
 export async function middleware(req: NextRequest) {
   // Redirect Vercel Preview environments to Production
@@ -31,9 +32,9 @@ export async function middleware(req: NextRequest) {
   // Determine matcher targets
   const isOnboardingRoute = path.startsWith('/complete-profile');
   const isAdminRoute = path.startsWith('/admin-dashboard') || path.startsWith('/api/admin');
-  const isMemberRoute = path.startsWith('/user-dashboard') || 
-                        path.startsWith('/api/user') || 
-                        path.startsWith('/api/network') || 
+  const isMemberRoute = path.startsWith('/user-dashboard') ||
+                        path.startsWith('/api/user') ||
+                        path.startsWith('/api/network') ||
                         path.startsWith('/api/wallet') ||
                         isOnboardingRoute;
 
@@ -47,7 +48,6 @@ export async function middleware(req: NextRequest) {
   const isApiRequest = path.startsWith('/api/');
 
   if (!token) {
-    console.log(`[MW] No accessToken cookie for path=${path} isApi=${isApiRequest}`);
     if (isApiRequest) {
       return NextResponse.json({ message: 'Unauthorized: Missing session token' }, { status: 401 });
     }
@@ -56,7 +56,6 @@ export async function middleware(req: NextRequest) {
 
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    console.log(`[MW] JWT verified: sub=${payload.sub} role=${payload.role} status=${payload.status} path=${path}`);
 
     if (payload.status === 'SUSPENDED') {
       if (isApiRequest) {
@@ -72,7 +71,10 @@ export async function middleware(req: NextRequest) {
       const allowedInactiveApis = [
         '/api/user/dashboard-summary',
         '/api/user/activation/submit',
-        '/api/auth'
+        '/api/auth',
+        '/api/user/onboarding',
+        '/api/user/kyc',
+        '/api/user/account/profile'
       ];
       const allowedInactivePages = [
         '/user-dashboard',
@@ -140,7 +142,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/user-dashboard/:path*', 
+    '/user-dashboard/:path*',
     '/admin-dashboard/:path*',
     '/complete-profile',
     '/api/admin/:path*',
