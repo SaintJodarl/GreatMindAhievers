@@ -159,12 +159,21 @@ export async function assignPlacementInTransaction(
   });
 
   if (result.parentId) {
-    const updateData =
-      result.binaryPosition === 'LEFT' ? { leftChildId: userId } : { rightChildId: userId };
-    await tx.binaryTree.update({
-      where: { userId: result.parentId },
-      data: updateData,
+    const targetField = result.binaryPosition === 'LEFT' ? 'leftChildId' : 'rightChildId';
+    // Atomic check: Only update if the target child slot is currently null to prevent concurrent overwrite race conditions
+    const updateCount = await tx.binaryTree.updateMany({
+      where: {
+        userId: result.parentId,
+        [targetField]: null,
+      },
+      data: {
+        [targetField]: userId,
+      },
     });
+
+    if (updateCount.count === 0) {
+      throw new Error(`Placement slot ${result.binaryPosition} on parent ${result.parentId} is already occupied.`);
+    }
   }
 
   await tx.user.update({

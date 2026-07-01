@@ -158,6 +158,7 @@ export async function POST(req: NextRequest) {
       role: result.role,
       status: result.status,
       onboardingStatus: 'COMPLETE',
+      sessionVersion: result.sessionVersion,
     });
 
     const response = NextResponse.json({

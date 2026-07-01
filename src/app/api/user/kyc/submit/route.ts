@@ -88,15 +88,17 @@ export async function POST(req: NextRequest) {
       kycSub.selfieStatus === 'UPLOADED' &&
       kycSub.addressStatus === 'UPLOADED';
 
-    if (isComplete && kycSub.status === 'PENDING') {
-      await prisma.kYCSubmission.update({
-        where: { userId },
-        data: { status: 'COMPLETE' },
-      });
-      await prisma.user.update({
-        where: { id: userId },
-        data: { kycStatus: 'SUBMITTED', kycSubmittedAt: new Date(), onboardingStep: 5 },
-      });
+    if (isComplete && kycSub.status !== 'APPROVED') {
+      await prisma.$transaction([
+        prisma.kYCSubmission.update({
+          where: { userId },
+          data: { status: 'SUBMITTED' },
+        }),
+        prisma.user.update({
+          where: { id: userId },
+          data: { kycStatus: 'SUBMITTED', kycSubmittedAt: new Date(), onboardingStep: 5 },
+        }),
+      ]);
     }
 
     return NextResponse.json({

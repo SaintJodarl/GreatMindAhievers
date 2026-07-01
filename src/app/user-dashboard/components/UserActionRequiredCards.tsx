@@ -9,7 +9,7 @@ interface UserActionRequiredCardsProps {
 }
 
 export default function UserActionRequiredCards({ summary, onOpenAction }: UserActionRequiredCardsProps) {
-  const isKycComplete = summary.kycStatus === 'APPROVED';
+  const isKycComplete = summary.kycStatus === 'APPROVED' || summary.kycStatus === 'SUBMITTED';
   const isActivated = summary.status === 'ACTIVE';
 
   return (
@@ -36,7 +36,11 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
                 isKycComplete ? 'text-emerald-900' : 'text-amber-950'
               }`}
             >
-              {isKycComplete ? 'KYC Verified' : 'KYC Verification Incomplete'}
+              {isKycComplete 
+                ? summary.kycStatus === 'APPROVED' 
+                  ? 'KYC Verified' 
+                  : 'KYC Completed' 
+                : 'KYC Verification Incomplete'}
             </h3>
             <p
               className={`text-[13px] mt-1 font-medium ${
@@ -44,7 +48,9 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
               }`}
             >
               {isKycComplete
-                ? 'Your identity has been fully verified. All features are unlocked.'
+                ? summary.kycStatus === 'APPROVED'
+                  ? 'Your identity has been fully verified. All features are unlocked.'
+                  : 'Your documents have been submitted and are under review.'
                 : 'Submit your identity documents to unlock withdrawals and full features.'}
             </p>
           </div>
@@ -85,7 +91,7 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
                 isActivated ? 'text-emerald-900' : 'text-blue-950'
               }`}
             >
-              {isActivated ? 'Account Activated' : 'Activate Your Account'}
+              {isActivated ? 'Account Activated' : 'Activation Pending'}
             </h3>
             <p
               className={`text-[13px] mt-1 font-medium ${

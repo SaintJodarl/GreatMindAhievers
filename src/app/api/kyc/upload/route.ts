@@ -12,8 +12,12 @@ cloudinary.config({
 export async function POST(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
+
     if (!currentUser) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const formData = await req.formData();
@@ -21,67 +25,122 @@ export async function POST(req: NextRequest) {
     const docType = formData.get('docType') as string | null;
 
     if (!file) {
-      return NextResponse.json({ message: 'No file provided' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'No file provided' },
+        { status: 400 }
+      );
     }
 
-    if (!docType || !['government_id', 'selfie', 'address_proof'].includes(docType)) {
-      return NextResponse.json({ message: 'Invalid document type' }, { status: 400 });
+    if (
+      !docType ||
+      !['government_id', 'selfie', 'address_proof'].includes(docType)
+    ) {
+      return NextResponse.json(
+        { message: 'Invalid document type' },
+        { status: 400 }
+      );
     }
 
+    // Validate file type
+    const validExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'webp'];
+    const extension = file.name.split('.').pop()?.toLowerCase();
+
+    if (!extension || !validExtensions.includes(extension)) {
+      return NextResponse.json(
+        {
+          message:
+            'Invalid file type. Only PDF, JPG, PNG, HEIC, and WEBP are allowed.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size (5 MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { message: 'File size exceeds the 5MB limit.' },
+        { status: 400 }
+      );
+    }
+
+    // Convert uploaded file to Data URI
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // Verify file signature (magic bytes) to prevent extension spoofing / dangerous uploads
+    if (buffer.length < 4) {
+      return NextResponse.json({ message: 'Invalid file size' }, { status: 400 });
+    }
+    const headerBytes = buffer.slice(0, 4).toString('hex').toUpperCase();
+    const isPdf = headerBytes === '25504446'; // %PDF
+    const isPng = headerBytes === '89504E47'; // PNG
+    const isJpg = headerBytes.startsWith('FFD8'); // JPEG
+    const isWebp = headerBytes === '52494646'; // RIFF (for WEBP)
+    const isHeic = buffer.slice(4, 8).toString('utf-8') === 'ftyp';
+
+    if (!isPdf && !isPng && !isJpg && !isWebp && !isHeic) {
+      return NextResponse.json(
+        { message: 'Invalid file content. Spoofed or dangerous file type detected.' },
+        { status: 400 }
+      );
+    }
+
     const base64 = buffer.toString('base64');
     const mimeType = file.type || 'application/octet-stream';
     const dataUri = `data:${mimeType};base64,${base64}`;
 
-    // Use unsigned_upload with the mlm_uploads preset as requested
-    const uploadResult = await cloudinary.uploader.unsigned_upload(dataUri, 'mlm_uploads', {
-      resource_type: 'auto',
-    });
+    // Upload to Cloudinary using the configured upload preset
+    const uploadResult = await cloudinary.uploader.unsigned_upload(
+      dataUri,
+      process.env.CLOUDINARY_UPLOAD_PRESET!,
+      {
+        resource_type: 'auto',
+      }
+    );
 
-    const extension = file.name.split('.').pop()?.toLowerCase();
-    let secureUrl = uploadResult.secure_url;
-    if (!secureUrl && uploadResult.public_id) {
-      const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.replace(/['"]/g, '').trim();
-      const resourceType = uploadResult.resource_type || 'image';
-      const formatSuffix = uploadResult.format ? `.${uploadResult.format}` : (extension ? `.${extension}` : '');
-      secureUrl = `https://res.cloudinary.com/${cloudName}/${resourceType}/upload/${uploadResult.public_id}${formatSuffix}`;
+    if (!uploadResult.secure_url) {
+      throw new Error('Cloudinary did not return a secure URL.');
     }
 
-    if (!secureUrl) {
-       throw new Error('Upload completed but no secure URL was returned by Cloudinary.');
-    }
+    const secureUrl = uploadResult.secure_url;
 
-    // Retrieve or initialize KYCSubmission
+    // Retrieve or initialize KYC submission
     const user = await prisma.user.findUnique({
       where: { id: currentUser.id },
       include: { profile: true },
     });
 
-    const fullName = user?.name || `${user?.profile?.firstName || ''} ${user?.profile?.lastName || ''}`.trim() || 'Unknown';
+    const fullName =
+      user?.name ||
+      `${user?.profile?.firstName || ''} ${user?.profile?.lastName || ''}`.trim() ||
+      'Unknown';
+
     const phone = user?.profile?.phone || 'Not Provided';
     const address = user?.profile?.address || 'Not Provided';
     const state = user?.profile?.state || 'Not Provided';
     const lga = user?.profile?.lga || 'Not Provided';
 
-    // Update the database depending on the document type
+    // Update fields based on document type
     const updateData: any = {};
+
     if (docType === 'government_id') {
       updateData.governmentIdUrl = secureUrl;
       updateData.govIdStatus = 'UPLOADED';
-      updateData.idDocument = secureUrl; // Legacy field sync
+      updateData.idDocument = secureUrl;
     } else if (docType === 'selfie') {
       updateData.selfieUrl = secureUrl;
       updateData.selfieStatus = 'UPLOADED';
-      updateData.selfie = secureUrl; // Legacy field sync
+      updateData.selfie = secureUrl;
     } else if (docType === 'address_proof') {
       updateData.addressProofUrl = secureUrl;
       updateData.addressStatus = 'UPLOADED';
-      updateData.proofOfAddress = secureUrl; // Legacy field sync
+      updateData.proofOfAddress = secureUrl;
     }
 
     const kycSub = await prisma.kYCSubmission.upsert({
-      where: { userId: currentUser.id },
+      where: {
+        userId: currentUser.id,
+      },
       create: {
         userId: currentUser.id,
         fullName,
@@ -89,43 +148,60 @@ export async function POST(req: NextRequest) {
         address,
         state,
         lga,
-        idType: 'NIN', // default, can be updated later
+        idType: 'NIN',
         idNumber: 'NOT_PROVIDED',
         ...updateData,
-        status: 'PENDING', // Initial status
+        status: 'PENDING',
       },
       update: updateData,
     });
 
-    // Check if all 3 documents are now uploaded
-    const isComplete = 
-      kycSub.govIdStatus === 'UPLOADED' && 
-      kycSub.selfieStatus === 'UPLOADED' && 
+    const isComplete =
+      kycSub.govIdStatus === 'UPLOADED' &&
+      kycSub.selfieStatus === 'UPLOADED' &&
       kycSub.addressStatus === 'UPLOADED';
 
     if (isComplete && kycSub.status === 'PENDING') {
-       // Update overall status if all are uploaded
-       await prisma.kYCSubmission.update({
-         where: { userId: currentUser.id },
-         data: { status: 'COMPLETE' }, // The DB expects 'COMPLETE' or 'SUBMITTED', I'll use COMPLETE based on original logic
-       });
-       await prisma.user.update({
-         where: { id: currentUser.id },
-         data: { kycStatus: 'SUBMITTED', kycSubmittedAt: new Date() },
-       });
+      await prisma.kYCSubmission.update({
+        where: {
+          userId: currentUser.id,
+        },
+        data: {
+          status: 'COMPLETE',
+        },
+      });
+
+      await prisma.user.update({
+        where: {
+          id: currentUser.id,
+        },
+        data: {
+          kycStatus: 'SUBMITTED',
+          kycSubmittedAt: new Date(),
+        },
+      });
     }
 
     return NextResponse.json({
       message: 'Upload successful',
       secure_url: secureUrl,
+      public_id: uploadResult.public_id,
+      original_filename: uploadResult.original_filename,
+      format: uploadResult.format,
+      bytes: uploadResult.bytes,
       documentType: docType,
-      isComplete
+      isComplete,
     });
   } catch (error: any) {
     console.error('KYC upload error:', error);
+
     return NextResponse.json(
-      { message: error.message || 'File upload failed' },
-      { status: 500 }
+      {
+        message: error.message || 'File upload failed',
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

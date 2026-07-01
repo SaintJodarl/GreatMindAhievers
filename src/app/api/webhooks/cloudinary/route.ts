@@ -1,9 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME?.replace(/['"]/g, '').trim(),
+  api_key: process.env.CLOUDINARY_API_KEY?.replace(/['"]/g, '').trim(),
+  api_secret: process.env.CLOUDINARY_API_SECRET?.replace(/['"]/g, '').trim(),
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const signature = req.headers.get('x-cld-signature');
+    const timestamp = req.headers.get('x-cld-timestamp');
+
+    if (!signature || !timestamp) {
+      return NextResponse.json({ message: 'Missing signature headers' }, { status: 401 });
+    }
+
+    const rawBody = await req.text();
+    
+    // Verify notification signature using Cloudinary SDK utility
+    const isValid = cloudinary.utils.verifyNotificationSignature(
+      rawBody,
+      Number(timestamp),
+      signature,
+      process.env.CLOUDINARY_API_SECRET?.replace(/['"]/g, '').trim()
+    );
+
+    if (!isValid) {
+      return NextResponse.json({ message: 'Invalid webhook signature' }, { status: 401 });
+    }
+
+    const body = JSON.parse(rawBody);
 
     // Verify it's an upload event
     if (body.notification_type !== 'upload') {

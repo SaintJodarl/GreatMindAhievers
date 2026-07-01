@@ -35,7 +35,13 @@ export default function MemberSidebar({
         console.error('Error fetching sidebar summary:', err);
       }
     };
+
     fetchSummary();
+
+    window.addEventListener('dashboard-refresh', fetchSummary);
+    return () => {
+      window.removeEventListener('dashboard-refresh', fetchSummary);
+    };
   }, []);
 
   const userName = summary?.name || user?.name || 'Member User';

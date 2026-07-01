@@ -23,6 +23,10 @@ export async function PATCH(
       return NextResponse.json({ message: 'Member not found' }, { status: 404 });
     }
 
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+      return NextResponse.json({ message: 'Forbidden: Cannot manage administrator accounts via member endpoints' }, { status: 403 });
+    }
+
     const body = await req.json();
     const { status } = body; // INACTIVE, SUSPENDED, PENDING_*, or ACTIVE (requires activation code)
 
@@ -62,7 +66,15 @@ export async function PATCH(
 
     const updated = await prisma.user.update({
       where: { id },
-      data: { status },
+      data: {
+        status,
+        sessionVersion: { increment: 1 },
+      },
+    });
+
+    // Revoke refresh tokens to invalidate other active sessions immediately
+    await prisma.refreshToken.deleteMany({
+      where: { userId: id },
     });
 
     // Log to Audit logs

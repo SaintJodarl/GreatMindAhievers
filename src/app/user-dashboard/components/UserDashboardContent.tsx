@@ -22,8 +22,10 @@ import WithdrawalSection from './WithdrawalSection';
 import KYCStatusCard from './KYCStatusCard';
 import OnboardingWidget from './OnboardingWidget';
 import UserActionRequiredCards from './UserActionRequiredCards';
+import { useAuth } from '@/context/AuthContext';
 
 export default function UserDashboardContent() {
+  const { checkSession } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'network' | 'earnings' | 'withdrawals'>(
     'overview'
   );
@@ -97,6 +99,8 @@ export default function UserDashboardContent() {
   const handleRefreshAll = () => {
     fetchSummary();
     fetchExtraData();
+    checkSession().catch((err) => console.error('Error refreshing session:', err));
+    window.dispatchEvent(new Event('dashboard-refresh'));
   };
 
   const tabs = [

@@ -21,18 +21,19 @@ export async function POST(req: Request) {
       );
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
+    const rawToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = new Date(Date.now() + 3600000);
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        resetToken,
+        resetToken: hashedToken,
         resetTokenExpiry,
       },
     });
 
-    const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${rawToken}`;
 
     console.log('Password reset URL:', resetUrl);
 

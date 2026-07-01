@@ -50,12 +50,18 @@ export async function POST(req: NextRequest) {
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update the password in database
+    // Update the password and increment sessionVersion in database
     await prisma.user.update({
       where: { id: userId },
       data: {
         password: hashedPassword,
+        sessionVersion: { increment: 1 },
       },
+    });
+
+    // Revoke all refresh tokens to invalidate other sessions
+    await prisma.refreshToken.deleteMany({
+      where: { userId },
     });
 
     return NextResponse.json({ message: 'Password updated successfully' });

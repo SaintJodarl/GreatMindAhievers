@@ -21,8 +21,18 @@ function castTransaction(t: any): WalletTransaction {
   if (!t) return t;
   return {
     ...t,
+    amount: Number(t.amount),
+    balanceAfter: Number(t.balanceAfter),
     type: t.type as TransactionType,
     status: t.status as TransactionStatus,
+  };
+}
+
+function castWallet(w: any): Wallet {
+  if (!w) return w;
+  return {
+    ...w,
+    balance: Number(w.balance),
   };
 }
 
@@ -63,19 +73,21 @@ export async function getOrCreateWallet(userId: string): Promise<Wallet> {
     });
   }
 
-  return wallet;
+  return castWallet(wallet);
 }
 
 export async function getWalletByUserId(userId: string): Promise<Wallet | null> {
-  return prisma.wallet.findUnique({
+  const wallet = await prisma.wallet.findUnique({
     where: { userId },
   });
+  return wallet ? castWallet(wallet) : null;
 }
 
 export async function getWalletById(walletId: string): Promise<Wallet | null> {
-  return prisma.wallet.findUnique({
+  const wallet = await prisma.wallet.findUnique({
     where: { id: walletId },
   });
+  return wallet ? castWallet(wallet) : null;
 }
 
 export async function getWalletBalance(walletId: string): Promise<WalletBalance | null> {
@@ -89,7 +101,7 @@ export async function getWalletBalance(walletId: string): Promise<WalletBalance 
   return {
     walletId: wallet.id,
     userId: wallet.userId,
-    balance: wallet.balance,
+    balance: Number(wallet.balance),
     currency: 'NGN',
     lastUpdated: wallet.updatedAt,
   };
@@ -315,8 +327,9 @@ export async function debitWallet(
   });
 
   // 5. Audit Drift Detection (Deferred)
-  await tx.event.create({
+  await tx.outboxEvent.create({
     data: {
+      idempotencyKey: `deferred-integrity-${walletId}-${Date.now()}-${uuidv4()}`,
       type: "MLM_DEFERRED_OPERATION",
       userId: wallet.userId,
       payload: {
@@ -324,7 +337,8 @@ export async function debitWallet(
         originalFunction: "verifyWalletIntegrity",
         reason: "moved from auth optimization phase",
         walletId
-      }
+      },
+      status: "OUTBOX_PENDING"
     }
   });
 
@@ -477,8 +491,9 @@ export async function adjustBalance(
   });
 
   // 5. Verify integrity (Deferred)
-  await tx.event.create({
+  await tx.outboxEvent.create({
     data: {
+      idempotencyKey: `deferred-integrity-${walletId}-${Date.now()}-${uuidv4()}`,
       type: "MLM_DEFERRED_OPERATION",
       userId: wallet.userId,
       payload: {
@@ -486,7 +501,8 @@ export async function adjustBalance(
         originalFunction: "verifyWalletIntegrity",
         reason: "moved from auth optimization phase",
         walletId
-      }
+      },
+      status: "OUTBOX_PENDING"
     }
   });
 
@@ -620,8 +636,9 @@ export async function reverseTransaction(
   });
 
   // Verify integrity (Deferred)
-  await tx.event.create({
+  await tx.outboxEvent.create({
     data: {
+      idempotencyKey: `deferred-integrity-${originalTxn.walletId}-${Date.now()}-${uuidv4()}`,
       type: "MLM_DEFERRED_OPERATION",
       userId: originalTxn.userId,
       payload: {
@@ -629,7 +646,8 @@ export async function reverseTransaction(
         originalFunction: "verifyWalletIntegrity",
         reason: "moved from auth optimization phase",
         walletId: originalTxn.walletId
-      }
+      },
+      status: "OUTBOX_PENDING"
     }
   });
 
@@ -642,7 +660,7 @@ export async function calculateBalance(walletId: string): Promise<number> {
     select: { balance: true },
   });
 
-  return wallet?.balance ?? 0;
+  return wallet?.balance ? Number(wallet.balance) : 0;
 }
 
 export async function recalculateBalanceFromTransactions(walletId: string): Promise<number> {
@@ -656,9 +674,9 @@ export async function recalculateBalanceFromTransactions(walletId: string): Prom
 
   for (const txn of transactions) {
     if (isCreditType(txn.type as TransactionType)) {
-      balance += txn.amount;
+      balance += Number(txn.amount);
     } else if (isDebitType(txn.type as TransactionType)) {
-      balance -= txn.amount;
+      balance -= Number(txn.amount);
     }
   }
 
@@ -689,25 +707,26 @@ export async function verifyWalletIntegrity(
   let ledgerSum = 0;
   for (const txn of transactions) {
     if (isCreditType(txn.type as TransactionType)) {
-      ledgerSum += txn.amount;
+      ledgerSum += Number(txn.amount);
     } else if (isDebitType(txn.type as TransactionType)) {
-      ledgerSum -= txn.amount;
+      ledgerSum -= Number(txn.amount);
     }
   }
 
-  const drift = Math.abs(wallet.balance - ledgerSum);
+  const walletBalance = Number(wallet.balance);
+  const drift = Math.abs(walletBalance - ledgerSum);
   const isConsistent = drift < 0.001;
 
   if (!isConsistent) {
     console.error(
-      `[CRITICAL AUDIT DRIFT DETECTED] Wallet ID: ${walletId} for User: ${wallet.userId} is inconsistent! Wallet balance cached: ${wallet.balance}, Ledger sum total: ${ledgerSum}, Drift difference: ${drift}`
+      `[CRITICAL AUDIT DRIFT DETECTED] Wallet ID: ${walletId} for User: ${wallet.userId} is inconsistent! Wallet balance cached: ${walletBalance}, Ledger sum total: ${ledgerSum}, Drift difference: ${drift}`
     );
   }
 
   return {
     isConsistent,
     drift,
-    walletBalance: wallet.balance,
+    walletBalance,
     ledgerSum,
   };
 }

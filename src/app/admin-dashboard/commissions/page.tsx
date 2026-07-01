@@ -9,9 +9,11 @@ export const metadata = {
 export default async function CommissionsPage() {
   const commissions = await prisma.commissionSetting.findMany();
 
-  // Serialize date fields for Client Component compatibility
+  // Serialize date and Decimal fields for Client Component compatibility
   const serializedCommissions = commissions.map((comm) => ({
     ...comm,
+    percentage: comm.percentage ? Number(comm.percentage) : null,
+    fixedAmount: comm.fixedAmount ? Number(comm.fixedAmount) : null,
     createdAt: comm.createdAt.toISOString(),
     updatedAt: comm.updatedAt.toISOString(),
   }));

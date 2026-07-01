@@ -81,15 +81,22 @@ export async function POST(req: NextRequest) {
 
       // 4. Perform redemption in transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Mark code as used
-      await tx.activationCode.update({
-        where: { id: dbCode.id },
+      // Mark code as used only if it is unused to prevent race conditions / double redemption
+      const updateResult = await tx.activationCode.updateMany({
+        where: {
+          id: dbCode.id,
+          status: 'UNUSED',
+        },
         data: {
           status: 'USED',
           redeemedBy: userId,
           redeemedDate: new Date(),
         },
       });
+
+      if (updateResult.count === 0) {
+        throw new Error('Activation code has already been redeemed.');
+      }
 
       // Reset lockout counter
       if (attemptRecord) {

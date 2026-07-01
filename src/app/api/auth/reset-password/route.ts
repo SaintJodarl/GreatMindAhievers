@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import crypto from 'crypto';
 
 export async function POST(req: Request) {
   try {
@@ -17,9 +18,11 @@ export async function POST(req: Request) {
       );
     }
 
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
     const user = await prisma.user.findFirst({
       where: {
-        resetToken: token,
+        resetToken: hashedToken,
         resetTokenExpiry: {
           gt: new Date(),
         },
@@ -38,7 +41,13 @@ export async function POST(req: Request) {
         password: hashedPassword,
         resetToken: null,
         resetTokenExpiry: null,
+        sessionVersion: { increment: 1 },
       },
+    });
+
+    // Revoke all refresh tokens to invalidate other sessions
+    await prisma.refreshToken.deleteMany({
+      where: { userId: user.id },
     });
 
     return NextResponse.json({ message: 'Password reset successful' }, { status: 200 });

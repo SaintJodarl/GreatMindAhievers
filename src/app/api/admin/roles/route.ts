@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 // GET: List all administrators and admin role configurations
 export async function GET(req: NextRequest) {
   try {
-    const auth = await verifyAdminPermission('member:read'); // view admin roles
+    const auth = await verifyAdminPermission('admin:read'); // view admin roles
     if (!auth.authorized) {
       return NextResponse.json({ message: auth.message }, { status: auth.status });
     }
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 // POST: Create/Invite a new Administrator user
 export async function POST(req: NextRequest) {
   try {
-    const auth = await verifyAdminPermission('member:write'); // edit admin roles
+    const auth = await verifyAdminPermission('admin:write'); // edit admin roles
     if (!auth.authorized) {
       return NextResponse.json({ message: auth.message }, { status: auth.status });
     }

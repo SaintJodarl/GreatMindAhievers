@@ -7,7 +7,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await verifyAdminPermission('member:write');
+    const auth = await verifyAdminPermission('admin:write');
     if (!auth.authorized) {
       return NextResponse.json({ message: auth.message }, { status: auth.status });
     }
@@ -53,7 +53,10 @@ export async function PATCH(
 
     const updated = await prisma.user.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...updateData,
+        sessionVersion: { increment: 1 },
+      },
       select: {
         id: true,
         name: true,
@@ -62,6 +65,11 @@ export async function PATCH(
         status: true,
         createdAt: true,
       },
+    });
+
+    // Revoke refresh tokens to invalidate other active sessions immediately
+    await prisma.refreshToken.deleteMany({
+      where: { userId: id },
     });
 
     // Log to Audit logs

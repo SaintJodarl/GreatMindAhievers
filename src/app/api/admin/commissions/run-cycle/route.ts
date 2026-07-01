@@ -15,10 +15,10 @@ export async function POST(req: NextRequest) {
     const cycleId = requestCycleId || `cycle_${Date.now()}`;
 
     // 1. Fetch Pairing commission setting percentage
-    const pairingSetting = await prisma.commission.findFirst({
+    const pairingSetting = await prisma.commissionSetting.findFirst({
       where: { type: 'PAIRING', isActive: true },
     });
-    const pairingPercentage = pairingSetting?.percentage || 5; // default 5% matching
+    const pairingPercentage = pairingSetting?.percentage ? Number(pairingSetting.percentage) : 5; // default 5% matching
 
     // 2. Fetch all nodes with positive volumes on both legs
     const nodes = await prisma.binaryTree.findMany({
@@ -49,7 +49,9 @@ export async function POST(req: NextRequest) {
 
     const result = await prisma.$transaction(async (tx) => {
       for (const node of nodes) {
-        const matchable = Math.min(node.leftVolume, node.rightVolume);
+        const leftVol = Number(node.leftVolume);
+        const rightVol = Number(node.rightVolume);
+        const matchable = Math.min(leftVol, rightVol);
         if (matchable <= 0) continue;
 
         const payout = matchable * (pairingPercentage / 100);

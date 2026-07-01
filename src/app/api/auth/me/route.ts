@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
         email: true,
         role: true,
         status: true,
+        onboardingStatus: true,
         sessionVersion: true,
       },
     });

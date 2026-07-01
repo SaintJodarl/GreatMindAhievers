@@ -412,3 +412,13 @@ model OutboxEvent {
   @@index([status, nextRetryAt])
   @@index([userId])
 }
+
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  email       String
+  ipAddress   String
+  attempts    Int      @default(1)
+  lastAttempt DateTime @default(now())
+
+  @@unique([email, ipAddress])
+}

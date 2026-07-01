@@ -14,10 +14,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
     }
 
+    const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
+                      req.headers.get('x-real-ip')?.trim() || 
+                      '127.0.0.1';
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check failed login lockout (5 attempts within 15 minutes)
+    const attemptRecord = await prisma.loginAttempt.findUnique({
+      where: {
+        email_ipAddress: {
+          email: normalizedEmail,
+          ipAddress,
+        },
+      },
+    });
+
+    const LOCKOUT_MINUTES = 15;
+    const MAX_ATTEMPTS = 5;
+
+    if (attemptRecord && attemptRecord.attempts >= MAX_ATTEMPTS) {
+      const timeDiff = Date.now() - new Date(attemptRecord.lastAttempt).getTime();
+      const lockDurationMs = LOCKOUT_MINUTES * 60000;
+      if (timeDiff < lockDurationMs) {
+        const remainingMin = Math.ceil((lockDurationMs - timeDiff) / 60000);
+        return NextResponse.json(
+          { message: `Too many failed login attempts. Locked out. Try again in ${remainingMin} minutes.` },
+          { status: 429 }
+        );
+      }
+    }
+
     let user;
     try {
       user = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
+        where: { email: normalizedEmail },
       });
     } catch (error: any) {
       console.error('[AUTH DEBUG] Login DB error:', error);
@@ -25,6 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!user || !user.password) {
+      await logFailedLogin(normalizedEmail, ipAddress, attemptRecord);
       return NextResponse.json({ message: 'Invalid email or password' }, { status: 401 });
     }
 
@@ -37,7 +69,15 @@ export async function POST(req: NextRequest) {
     const isCorrectPassword = await bcrypt.compare(password, user.password);
 
     if (!isCorrectPassword) {
+      await logFailedLogin(normalizedEmail, ipAddress, attemptRecord);
       return NextResponse.json({ message: 'Invalid email or password' }, { status: 401 });
+    }
+
+    // Reset failed login attempts on successful login
+    if (attemptRecord) {
+      await prisma.loginAttempt.delete({
+        where: { id: attemptRecord.id },
+      });
     }
 
     // 2. Generate long-lived Refresh Token
@@ -121,5 +161,30 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('[AUTH DEBUG] Login error:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+  }
+}
+
+async function logFailedLogin(email: string, ipAddress: string, record: any) {
+  if (record) {
+    const timeDiff = Date.now() - new Date(record.lastAttempt).getTime();
+    const lockDurationMs = 15 * 60000;
+    const isReset = timeDiff >= lockDurationMs;
+
+    await prisma.loginAttempt.update({
+      where: { id: record.id },
+      data: {
+        attempts: isReset ? 1 : record.attempts + 1,
+        lastAttempt: new Date(),
+      },
+    });
+  } else {
+    await prisma.loginAttempt.create({
+      data: {
+        email,
+        ipAddress,
+        attempts: 1,
+        lastAttempt: new Date(),
+      },
+    });
   }
 }
