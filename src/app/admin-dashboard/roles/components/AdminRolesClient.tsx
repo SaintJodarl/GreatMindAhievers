@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Users, ShieldAlert, X, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Plus, Users, ShieldAlert, X, Loader2, AlertCircle, CheckCircle2, KeyRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 interface AdminUser {
   id: string;
@@ -48,6 +49,61 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const { user: currentUser } = useAuth();
+
+  // Reset password states
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+
+  const generateRandomPassword = () => {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
+    let pass = '';
+    pass += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)];
+    pass += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)];
+    pass += '0123456789'[Math.floor(Math.random() * 10)];
+    pass += '!@#$%^&*()_+'[Math.floor(Math.random() * 12)];
+    for (let i = 0; i < 6; i++) {
+      pass += chars[Math.floor(Math.random() * chars.length)];
+    }
+    pass = pass.split('').sort(() => 0.5 - Math.random()).join('');
+    setResetNewPassword(pass);
+    setResetConfirmPassword(pass);
+  };
+
+  const handleResetPassword = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!selectedAdmin) return;
+    if (!resetNewPassword || !resetConfirmPassword) {
+      showNotification('Both password fields are required', 'error');
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      showNotification('Passwords do not match', 'error');
+      return;
+    }
+
+    setResetSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/members/${selectedAdmin.id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: resetNewPassword, confirmPassword: resetConfirmPassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to reset password');
+
+      showNotification(data.message || 'Password reset successfully!', 'success');
+      setResetNewPassword('');
+      setResetConfirmPassword('');
+    } catch (err: any) {
+      showNotification(err.message || 'Something went wrong', 'error');
+    } finally {
+      setResetSubmitting(false);
+    }
+  };
 
   const showNotification = (msg: string, type: 'success' | 'error') => {
     if (type === 'success') {
@@ -358,6 +414,62 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
                   <option value="INACTIVE">Inactive</option>
                 </select>
               </div>
+
+              {currentUser?.role === 'SUPER_ADMIN' && (
+                <div className="pt-4 border-t border-gray-105 space-y-3">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <KeyRound size={14} className="text-indigo-600" />
+                    Reset Admin Password
+                  </h4>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">New Password</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter new password..."
+                        value={resetNewPassword}
+                        onChange={(e) => setResetNewPassword(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-250 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-gray-800"
+                      />
+                      <button
+                        type="button"
+                        onClick={generateRandomPassword}
+                        className="px-2 py-1.5 border border-gray-200 bg-gray-50 hover:bg-gray-100 rounded-xl text-[10px] font-bold text-gray-600 transition-colors"
+                      >
+                        Generate
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Confirm Password</label>
+                    <input
+                      type="text"
+                      placeholder="Repeat new password..."
+                      value={resetConfirmPassword}
+                      onChange={(e) => setResetConfirmPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-250 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-gray-800"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleResetPassword}
+                    disabled={resetSubmitting}
+                    className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-300 font-bold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    {resetSubmitting ? (
+                      <>
+                        <Loader2 size={12} className="animate-spin" />
+                        Resetting...
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound size={12} />
+                        Update Password Only
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                 <button

@@ -21,11 +21,14 @@ import {
   LogOut,
   Menu,
   X,
+  Settings,
+  KeyRound,
 } from 'lucide-react';
 
 const sidebarLinks = [
   { href: '/admin-dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/admin-dashboard/members', label: 'Member Management', icon: Users },
+  { href: '/admin-dashboard/reset-requests', label: 'Reset Requests', icon: KeyRound },
   { href: '/admin-dashboard/codes', label: 'Registration Codes', icon: Key },
   { href: '/admin-dashboard/wallet', label: 'Wallet & Finance', icon: Wallet },
   { href: '/admin-dashboard/withdrawals', label: 'Withdrawals', icon: ArrowDownToLine },
@@ -37,6 +40,7 @@ const sidebarLinks = [
   { href: '/admin-dashboard/reports', label: 'Reports & Analytics', icon: BarChart3 },
   { href: '/admin-dashboard/roles', label: 'Admin Roles', icon: UserCog },
   { href: '/admin-dashboard/audit', label: 'Audit Logs', icon: History },
+  { href: '/admin-dashboard/settings/security', label: 'Settings', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

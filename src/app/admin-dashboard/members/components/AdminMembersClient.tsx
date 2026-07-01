@@ -11,7 +11,10 @@ import {
   Mail,
   User,
   ShieldCheck,
-  X
+  X,
+  KeyRound,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
 
 interface MemberData {
@@ -54,6 +57,65 @@ export default function AdminMembersClient() {
   const [kycFilter, setKycFilter] = useState('all');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  // Password reset state
+  const [resetPasswordMember, setResetPasswordMember] = useState<MemberData | null>(null);
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
+
+  const generateRandomPassword = () => {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
+    let pass = '';
+    pass += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)];
+    pass += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)];
+    pass += '0123456789'[Math.floor(Math.random() * 10)];
+    pass += '!@#$%^&*()_+'[Math.floor(Math.random() * 12)];
+    for (let i = 0; i < 6; i++) {
+      pass += chars[Math.floor(Math.random() * chars.length)];
+    }
+    pass = pass.split('').sort(() => 0.5 - Math.random()).join('');
+    setResetNewPassword(pass);
+    setResetConfirmPassword(pass);
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetPasswordMember) return;
+    setResetError(null);
+    setResetSuccess(null);
+
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError('Passwords do not match.');
+      return;
+    }
+
+    try {
+      setResetSubmitting(true);
+      const res = await fetch(`/api/admin/members/${resetPasswordMember.id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: resetNewPassword, confirmPassword: resetConfirmPassword }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.message || 'Failed to reset password');
+      }
+
+      setResetSuccess(result.message || 'Password reset successfully!');
+      setTimeout(() => {
+        setResetPasswordMember(null);
+        setResetSuccess(null);
+      }, 2000);
+    } catch (err: any) {
+      setResetError(err.message || 'An error occurred during password reset.');
+    } finally {
+      setResetSubmitting(false);
+    }
+  };
 
   // Debounce search
   useEffect(() => {
@@ -326,25 +388,42 @@ export default function AdminMembersClient() {
                       ₦{member.wallet?.balance?.toLocaleString() || 0}
                     </td>
 
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                       {actionLoadingId === member.id ? (
-                        <Loader2 className="animate-spin text-indigo-600 inline-block mr-2" size={16} />
-                      ) : member.status === 'SUSPENDED' ? (
-                        <button
-                          onClick={() => handleStatusToggle(member, 'ACTIVE')}
-                          className="text-xs font-bold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-100 transition-colors inline-flex items-center gap-1"
-                        >
-                          <UserCheck size={14} />
-                          Reactivate
-                        </button>
+                        <Loader2 className="animate-spin text-indigo-600 inline-block" size={16} />
                       ) : (
-                        <button
-                          onClick={() => handleStatusToggle(member, 'SUSPENDED')}
-                          className="text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-100 transition-colors inline-flex items-center gap-1"
-                        >
-                          <UserX size={14} />
-                          Suspend
-                        </button>
+                        <>
+                          {member.status === 'SUSPENDED' ? (
+                            <button
+                              onClick={() => handleStatusToggle(member, 'ACTIVE')}
+                              className="text-xs font-bold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-100 transition-colors inline-flex items-center gap-1"
+                            >
+                              <UserCheck size={14} />
+                              Reactivate
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleStatusToggle(member, 'SUSPENDED')}
+                              className="text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-100 transition-colors inline-flex items-center gap-1"
+                            >
+                              <UserX size={14} />
+                              Suspend
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              setResetPasswordMember(member);
+                              setResetNewPassword('');
+                              setResetConfirmPassword('');
+                              setResetError(null);
+                              setResetSuccess(null);
+                            }}
+                            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors inline-flex items-center gap-1"
+                          >
+                            <KeyRound size={14} />
+                            Reset PW
+                          </button>
+                        </>
                       )}
                     </td>
                   </tr>
@@ -387,6 +466,100 @@ export default function AdminMembersClient() {
           </div>
         )}
       </div>
+
+      {/* RESET PASSWORD DIALOG MODAL */}
+      {resetPasswordMember && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in text-gray-800">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-xl border border-gray-150 p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-gray-150">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <KeyRound className="text-indigo-600" size={20} />
+                Reset Member Password
+              </h3>
+              <button onClick={() => setResetPasswordMember(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            {resetError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-center gap-2 font-medium">
+                <AlertCircle className="text-rose-500 flex-shrink-0" size={16} />
+                <span>{resetError}</span>
+              </div>
+            )}
+
+            {resetSuccess && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2 font-medium">
+                <CheckCircle2 className="text-emerald-500 flex-shrink-0" size={16} />
+                <span>{resetSuccess}</span>
+              </div>
+            )}
+
+            <p className="text-xs text-gray-500 leading-relaxed">
+              You are resetting the password for <span className="font-bold text-gray-900">{resetPasswordMember.name}</span> (<span className="font-mono text-indigo-600">{resetPasswordMember.email}</span>). The registered email will not be changed.
+            </p>
+
+            <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">New Password</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter new password..."
+                    value={resetNewPassword}
+                    onChange={(e) => setResetNewPassword(e.target.value)}
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-semibold"
+                  />
+                  <button
+                    type="button"
+                    onClick={generateRandomPassword}
+                    className="px-3 py-2 border border-gray-200 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-bold text-gray-600 transition-colors"
+                  >
+                    Generate
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Confirm Password</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Repeat new password..."
+                  value={resetConfirmPassword}
+                  onChange={(e) => setResetConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-semibold"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-150">
+                <button
+                  type="button"
+                  onClick={() => setResetPasswordMember(null)}
+                  className="px-4 py-2 border border-gray-200 rounded-xl font-bold text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetSubmitting}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {resetSubmitting ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Password'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

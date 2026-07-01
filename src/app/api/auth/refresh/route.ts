@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
       status: tokenRecord.user.status,
       onboardingStatus: tokenRecord.user.onboardingStatus,
       sessionVersion: tokenRecord.user.sessionVersion || 1,
+      isPasswordTemporary: tokenRecord.user.isPasswordTemporary,
     });
 
     const response = NextResponse.json({

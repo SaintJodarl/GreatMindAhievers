@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Settings, Shield, KeyRound, Monitor, History, Loader2, AlertCircle, CheckCircle2, QrCode } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function SecurityPage() {
+  const { logout } = useAuth();
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -77,11 +79,13 @@ export default function SecurityPage() {
         throw new Error(result.message || 'Failed to update password');
       }
 
-      setSuccess('Password updated successfully!');
+      setSuccess('Password updated successfully! Logging you out...');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setTimeout(() => setSuccess(null), 4000);
+      setTimeout(() => {
+        logout();
+      }, 1500);
     } catch (err: any) {
       setError(err.message || 'An error occurred while changing password.');
     } finally {

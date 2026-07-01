@@ -126,6 +126,7 @@ export async function POST(req: NextRequest) {
       status: user.status,
       onboardingStatus: user.onboardingStatus,
       sessionVersion: newSessionVersion,
+      isPasswordTemporary: user.isPasswordTemporary,
     });
 
     const response = NextResponse.json({
@@ -137,6 +138,7 @@ export async function POST(req: NextRequest) {
         role: user.role,
         status: user.status,
         onboardingStatus: user.onboardingStatus,
+        isPasswordTemporary: user.isPasswordTemporary,
       },
     });
 

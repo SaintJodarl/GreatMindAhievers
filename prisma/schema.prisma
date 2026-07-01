@@ -46,6 +46,8 @@ model User {
   depth               Int                 @default(0)
   path                String?
   sessionVersion      Int                 @default(0)
+  isPasswordTemporary Boolean             @default(false)
+  resetRequests       PasswordResetRequest[]
   activationCode      ActivationCode?     @relation("UserActivation")
   kycCode             AdminCode?          @relation("KycCode")
   regCode             AdminCode?          @relation("RegistrationCode")
@@ -421,4 +423,22 @@ model LoginAttempt {
   lastAttempt DateTime @default(now())
 
   @@unique([email, ipAddress])
+}
+
+model PasswordResetRequest {
+  id          String    @id @default(cuid())
+  userId      String?
+  email       String
+  status      String    @default("PENDING") // PENDING, APPROVED, COMPLETED, REJECTED
+  requestedAt DateTime  @default(now())
+  completedAt DateTime?
+  resolvedBy  String?
+  reason      String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([email])
+  @@index([status])
 }

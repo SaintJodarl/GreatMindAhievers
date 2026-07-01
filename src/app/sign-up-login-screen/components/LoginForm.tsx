@@ -154,6 +154,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           </label>
           <button
             type="button"
+            onClick={() => router.push('/sign-up-login-screen/forgot-password')}
             className="text-sm font-medium transition-colors hover:underline"
             style={{ color: 'var(--primary)' }}
           >

@@ -64,9 +64,35 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/sign-up-login-screen?error=suspended', req.url));
     }
 
-    // ACTIVATION ENFORCEMENT: Block ALL non-ACTIVE member users from protected routes.
-    // Admin/SUPER_ADMIN users are exempt — they don't require activation codes.
     const isAdminUser = payload.role === 'ADMIN' || payload.role === 'SUPER_ADMIN';
+
+    // PASSWORD TEMPORARY ENFORCEMENT: Block all non-admin users with temporary passwords.
+    const isTemporary = payload.isPasswordTemporary === true;
+    if (isTemporary && !isAdminUser) {
+      const allowedTempApis = [
+        '/api/user/account/force-password-change',
+        '/api/auth/logout'
+      ];
+      const allowedTempPages = [
+        '/user-dashboard/force-password-change',
+        '/sign-up-login-screen'
+      ];
+
+      if (isApiRequest) {
+        if (!allowedTempApis.some(p => path.startsWith(p))) {
+          return NextResponse.json(
+            { message: 'Forbidden: Password reset change required.', code: 'PASSWORD_TEMPORARY' },
+            { status: 403 }
+          );
+        }
+      } else {
+        if (!allowedTempPages.some(p => path === p || path.startsWith(p + '/'))) {
+          return NextResponse.redirect(new URL('/user-dashboard/force-password-change', req.url));
+        }
+      }
+    }
+
+    // ACTIVATION ENFORCEMENT: Block ALL non-ACTIVE member users from protected routes.
     if (!isAdminUser && payload.status !== 'ACTIVE') {
       const allowedInactiveApis = [
         '/api/user/dashboard-summary',

@@ -1,6 +1,6 @@
-import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { verifyAdminPermission } from '@/lib/auth/admin-guard';
 import bcrypt from 'bcryptjs';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -10,12 +10,12 @@ export async function POST(req: NextRequest) {
   const userAgent = req.headers.get('user-agent') || null;
 
   try {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const auth = await verifyAdminPermission();
+    if (!auth.authorized) {
+      return NextResponse.json({ message: auth.message }, { status: auth.status });
     }
 
-    const userId = currentUser.id;
+    const userId = auth.user!.id;
     const body = await req.json().catch(() => ({}));
     const { currentPassword, newPassword } = body;
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+      return NextResponse.json({ message: 'Admin not found' }, { status: 404 });
     }
 
     // Verify current password
@@ -59,11 +59,11 @@ export async function POST(req: NextRequest) {
         // Log failed attempt
         await prisma.auditLog.create({
           data: {
-            adminId: userId, // User doing own change acts as adminId for logging target
+            adminId: userId,
             action: 'FAILED_PASSWORD_CHANGE_ATTEMPT',
             targetType: 'User',
             targetId: userId,
-            details: `Failed own password change: incorrect current password`,
+            details: `Admin failed own password change: incorrect current password`,
             ipAddress,
             userAgent,
           },
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update the password and increment sessionVersion in database
+    // Update password and increment sessionVersion (to force logout)
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Revoke all refresh tokens to invalidate other sessions
+    // Invalidate refresh tokens to force all sessions out
     await prisma.refreshToken.deleteMany({
       where: { userId },
     });
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
         action: 'PASSWORD_CHANGED',
         targetType: 'User',
         targetId: userId,
-        details: `Successfully changed own password`,
+        details: `Admin successfully changed own password`,
         ipAddress,
         userAgent,
       },
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message: 'Password updated successfully' });
   } catch (error: any) {
-    console.error('Password change error:', error);
+    console.error('Admin password change error:', error);
     return NextResponse.json(
       { message: error.message || 'Failed to change password' },
       { status: 500 }
