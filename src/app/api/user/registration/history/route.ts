@@ -20,9 +20,6 @@ export async function GET(req: NextRequest) {
 
     const where = {
       sponsorId: userId,
-      regCode: {
-        isNot: null,
-      },
     };
 
     const [users, total] = await Promise.all([
@@ -34,7 +31,7 @@ export async function GET(req: NextRequest) {
           email: true,
           createdAt: true,
           binaryPosition: true,
-          regCode: {
+          activationCode: {
             select: {
               code: true,
             },
@@ -55,7 +52,7 @@ export async function GET(req: NextRequest) {
       email: u.email || '',
       registrationDate: u.createdAt.toISOString(),
       placementPosition: u.binaryPosition || 'LEFT',
-      codeUsed: u.regCode?.code || 'N/A',
+      codeUsed: u.activationCode?.code || 'N/A',
     }));
 
     return NextResponse.json({

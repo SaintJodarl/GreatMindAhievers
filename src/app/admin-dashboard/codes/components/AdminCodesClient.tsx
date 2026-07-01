@@ -60,7 +60,7 @@ export default function AdminCodesClient() {
   // Filters
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('ACTIVATION');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Modals & Generate form state
@@ -272,9 +272,9 @@ export default function AdminCodesClient() {
 
         <div className="bg-white p-5 rounded-2xl border border-gray-150 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Activation Codes</p>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Unused Codes</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">
-              {codes.filter((c) => c.type === 'ACTIVATION' && c.status === 'UNUSED').length} Active
+              {codes.filter((c) => c.status === 'UNUSED').length} Active
             </p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
@@ -296,9 +296,9 @@ export default function AdminCodesClient() {
 
         <div className="bg-white p-5 rounded-2xl border border-gray-150 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Expired / Revoked</p>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Expired / Disabled</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">
-              {codes.filter((c) => ['REVOKED', 'DISABLED', 'EXPIRED'].includes(c.status)).length}
+              {codes.filter((c) => ['DISABLED', 'EXPIRED'].includes(c.status)).length}
             </p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
@@ -323,23 +323,6 @@ export default function AdminCodesClient() {
 
         {/* Dropdowns */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Filter size={14} className="text-gray-400" />
-            <span className="text-xs text-gray-500 font-bold uppercase">Type:</span>
-            <select
-              value={typeFilter}
-              onChange={(e) => {
-                setTypeFilter(e.target.value);
-                setPagination((prev) => ({ ...prev, page: 1 }));
-              }}
-              className="py-1.5 px-3 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-            >
-              <option value="all">All Types</option>
-              <option value="ACTIVATION">Activation Code</option>
-              <option value="REGISTRATION">Registration Code</option>
-              <option value="KYC">KYC Verification Code</option>
-            </select>
-          </div>
 
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 font-bold uppercase">Status:</span>
@@ -461,23 +444,14 @@ export default function AdminCodesClient() {
                         {updatingCodeId === code.id ? (
                           <Loader2 className="animate-spin text-indigo-600 inline-block mr-2" size={16} />
                         ) : isUnused ? (
-                          isActivation ? (
-                            <button
-                              onClick={() => handleStatusToggle(code, 'DISABLED')}
-                              className="text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-100 transition-colors inline-flex items-center gap-1"
-                            >
-                              <ToggleRight size={14} />
-                              Deactivate
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleStatusToggle(code, 'REVOKED')}
-                              className="text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-100 transition-colors inline-flex items-center gap-1"
-                            >
-                              Revoke
-                            </button>
-                          )
-                        ) : isDisabled && isActivation ? (
+                          <button
+                            onClick={() => handleStatusToggle(code, 'DISABLED')}
+                            className="text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-100 transition-colors inline-flex items-center gap-1"
+                          >
+                            <ToggleRight size={14} />
+                            Deactivate
+                          </button>
+                        ) : isDisabled ? (
                           <button
                             onClick={() => handleStatusToggle(code, 'UNUSED')}
                             className="text-xs font-bold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-100 transition-colors inline-flex items-center gap-1"
@@ -552,25 +526,15 @@ export default function AdminCodesClient() {
             {/* Modal Form */}
             <form onSubmit={handleGenerate}>
               <div className="p-6 space-y-4">
-                {/* Code Type */}
+                {/* Code Type Info (ReadOnly) */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-gray-500 uppercase">Code Type</label>
-                  <select
-                    value={generateForm.type}
-                    onChange={(e) =>
-                      setGenerateForm((prev) => ({
-                        ...prev,
-                        type: e.target.value,
-                        prefix: e.target.value === 'ACTIVATION' ? 'GMA-' : prev.prefix,
-                      }))
-                    }
-                    className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    required
-                  >
-                    <option value="ACTIVATION">Activation Code</option>
-                    <option value="REGISTRATION">Registration Code</option>
-                    <option value="KYC">KYC Verification Code</option>
-                  </select>
+                  <input
+                    type="text"
+                    value="Activation Code"
+                    disabled
+                    className="w-full px-3.5 py-2.5 text-sm border border-gray-250 bg-gray-50 text-gray-700 rounded-xl font-bold focus:outline-none cursor-not-allowed"
+                  />
                 </div>
 
                 {/* Count */}

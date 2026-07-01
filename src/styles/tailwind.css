@@ -303,3 +303,35 @@
   animation: shimmer 1.5s infinite;
   border-radius: var(--radius);
 }
+
+/* Hardening high-contrast text and cursors inside the admin-dashboard */
+.admin-layout input,
+.admin-layout select,
+.admin-layout textarea {
+  color: #111827 !important; /* text-gray-900 */
+  background-color: #ffffff !important; /* bg-white */
+  border-color: #d1d5db !important; /* border-gray-300 */
+  caret-color: #111827 !important; /* Visible cursor */
+}
+
+.admin-layout input::placeholder,
+.admin-layout textarea::placeholder {
+  color: #9ca3af !important; /* placeholder-gray-400 */
+}
+
+/* Ensure focus states are distinct and accessible */
+.admin-layout input:focus,
+.admin-layout select:focus,
+.admin-layout textarea:focus {
+  border-color: #4f46e5 !important; /* focus:border-indigo-600 */
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+}
+
+/* Ensure disabled elements look consistently blocked and cursor acts correctly */
+.admin-layout input:disabled,
+.admin-layout select:disabled,
+.admin-layout textarea:disabled {
+  background-color: #f3f4f6 !important; /* bg-gray-100 */
+  color: #9ca3af !important; /* text-gray-400 */
+  cursor: not-allowed !important;
+}

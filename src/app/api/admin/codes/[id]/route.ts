@@ -16,53 +16,7 @@ export async function PATCH(
     const resolvedParams = await params;
     const { id } = resolvedParams;
 
-    // Check AdminCode first
-    const adminCode = await prisma.adminCode.findFirst({
-      where: {
-        OR: [{ id }, { code: id }],
-      },
-    });
-
-    if (adminCode) {
-      if (adminCode.status === 'USED') {
-        return NextResponse.json(
-          { message: 'Cannot update a code that has already been used' },
-          { status: 400 }
-        );
-      }
-
-      const body = await req.json().catch(() => ({}));
-      const targetStatus = body.status || 'REVOKED';
-
-      const updated = await prisma.adminCode.update({
-        where: { id: adminCode.id },
-        data: { status: targetStatus },
-      });
-
-      // Log action to audit logs
-      await prisma.auditLog.create({
-        data: {
-          adminId: auth.user!.id,
-          action: 'UPDATE_ADMIN_CODE',
-          targetType: 'AdminCode',
-          targetId: adminCode.id,
-          details: `Updated code: ${adminCode.code} to status: ${targetStatus}`,
-        },
-      });
-
-      return NextResponse.json({
-        message: `Code updated successfully`,
-        code: {
-          id: updated.id,
-          code: updated.code,
-          type: updated.type,
-          status: updated.status,
-          createdAt: updated.createdAt,
-        },
-      });
-    }
-
-    // Check ActivationCode next
+    // Check ActivationCode
     const activationCode = await prisma.activationCode.findFirst({
       where: {
         OR: [{ id }, { code: id }],
