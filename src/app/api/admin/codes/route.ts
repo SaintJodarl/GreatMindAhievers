@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 // GET: List activation codes (paginated, with search & status filters)
 export async function GET(req: NextRequest) {
@@ -86,9 +86,34 @@ export async function POST(req: NextRequest) {
     const generatedCodes = [];
     const expirationDate = expirationDays ? new Date(Date.now() + parseInt(expirationDays) * 24 * 60 * 60 * 1000) : null;
 
+    const batchCodes = new Set<string>();
+
     for (let i = 0; i < count; i++) {
-      const uniqueSuffix = uuidv4().slice(0, 8).toUpperCase();
-      const codeStr = `${prefix}ACT${uniqueSuffix}`;
+      let codeStr = '';
+      let attempts = 0;
+      let isUnique = false;
+
+      while (!isUnique && attempts < 100) {
+        const randomDigits = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+        codeStr = `GMA-${randomDigits}`;
+
+        if (!batchCodes.has(codeStr)) {
+          // Check database collision
+          const exists = await prisma.activationCode.findUnique({
+            where: { code: codeStr },
+          });
+          if (!exists) {
+            isUnique = true;
+          }
+        }
+        attempts++;
+      }
+
+      if (!isUnique) {
+        throw new Error('Collision limit reached. Failed to generate a unique activation code.');
+      }
+
+      batchCodes.add(codeStr);
 
       generatedCodes.push({
         code: codeStr,

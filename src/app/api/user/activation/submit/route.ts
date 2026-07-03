@@ -21,6 +21,19 @@ export async function POST(req: NextRequest) {
 
     const normalizedCode = code.trim().toUpperCase();
 
+    if (!/^GMA-\d{6}$/.test(normalizedCode)) {
+      return NextResponse.json({ message: 'Invalid activation code format. Required format: GMA-123456' }, { status: 400 });
+    }
+
+    const userRecord = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { status: true },
+    });
+
+    if (userRecord && userRecord.status === 'ACTIVE') {
+      return NextResponse.json({ message: 'Account is already activated.' }, { status: 400 });
+    }
+
     // 1. Get client IP address for brute-force tracking
     const ipAddress = req.headers.get('x-forwarded-for') || '127.0.0.1';
 

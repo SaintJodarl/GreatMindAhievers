@@ -56,7 +56,7 @@ export default function RegistrationNewForm({ sponsorCode }: RegistrationNewForm
     password: '',
     phone: '',
     state: 'Lagos',
-    registrationCode: '',
+    activationCode: '',
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -98,8 +98,10 @@ export default function RegistrationNewForm({ sponsorCode }: RegistrationNewForm
     if (!formData.phone.trim()) {
       errors.phone = 'Phone number is required';
     }
-    if (!formData.registrationCode.trim()) {
-      errors.registrationCode = 'Registration Activation Code is required';
+    if (!formData.activationCode.trim()) {
+      errors.activationCode = 'Activation Code is required';
+    } else if (!/^GMA-\d{6}$/i.test(formData.activationCode.trim())) {
+      errors.activationCode = 'Must follow format: GMA-123456';
     }
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -128,7 +130,7 @@ export default function RegistrationNewForm({ sponsorCode }: RegistrationNewForm
           password: formData.password,
           phone: formData.phone,
           state: formData.state,
-          registrationCode: formData.registrationCode,
+          activationCode: formData.activationCode.toUpperCase().trim(),
           sponsorCode: sponsorCode,
         }),
       });
@@ -147,7 +149,7 @@ export default function RegistrationNewForm({ sponsorCode }: RegistrationNewForm
         password: '',
         phone: '',
         state: 'Lagos',
-        registrationCode: '',
+        activationCode: '',
       });
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred during registration.');
@@ -337,31 +339,31 @@ export default function RegistrationNewForm({ sponsorCode }: RegistrationNewForm
             <p className="text-xs text-gray-400 mt-1">Pre-filled with your referral code.</p>
           </div>
 
-          {/* Registration Code */}
+          {/* Activation Code */}
           <div>
             <label
-              htmlFor="registrationCode"
+              htmlFor="activationCode"
               className="block text-sm font-semibold text-gray-700 mb-1.5"
             >
-              Registration Activation Code
+              Activation Code
             </label>
             <input
               type="text"
-              id="registrationCode"
-              name="registrationCode"
-              value={formData.registrationCode}
+              id="activationCode"
+              name="activationCode"
+              value={formData.activationCode}
               onChange={handleChange}
-              placeholder="e.g. REG-XXXX-XXXX"
+              placeholder="e.g. GMA-123456"
               className={`w-full bg-gray-50 border rounded-xl p-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all font-mono uppercase ${
-                validationErrors.registrationCode
+                validationErrors.activationCode
                   ? 'border-red-300 focus:border-red-500'
                   : 'border-gray-200 focus:border-indigo-500'
               }`}
             />
-            {validationErrors.registrationCode && (
-              <p className="text-xs text-red-500 mt-1">{validationErrors.registrationCode}</p>
+            {validationErrors.activationCode && (
+              <p className="text-xs text-red-500 mt-1">{validationErrors.activationCode}</p>
             )}
-            <p className="text-xs text-gray-400 mt-1">Provide a valid, unused registration code.</p>
+            <p className="text-xs text-gray-400 mt-1">Provide a valid, unused activation code.</p>
           </div>
         </div>
 

@@ -23,6 +23,8 @@ export async function POST(req: NextRequest) {
       password,
       phone,
       sponsorCode,
+      activationCode,
+      registrationCode,
     } = await req.json();
 
     // Fallback split name into firstName and lastName if only name is provided
@@ -128,6 +130,44 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const rawCode = activationCode || registrationCode;
+    const codeToValidate = (typeof rawCode === 'string' && rawCode.trim()) ? rawCode.trim().toUpperCase() : null;
+
+    let dbCode = null;
+    if (codeToValidate) {
+      if (!/^GMA-\d{6}$/.test(codeToValidate)) {
+        return NextResponse.json(
+          { message: 'Invalid activation code format. Required format: GMA-123456' },
+          { status: 400 }
+        );
+      }
+
+      dbCode = await prisma.activationCode.findUnique({
+        where: { code: codeToValidate },
+      });
+
+      if (!dbCode) {
+        return NextResponse.json(
+          { message: 'Invalid activation code' },
+          { status: 400 }
+        );
+      }
+
+      if (dbCode.status !== 'UNUSED') {
+        return NextResponse.json(
+          { message: `Activation code is already ${dbCode.status.toLowerCase()}` },
+          { status: 400 }
+        );
+      }
+
+      if (dbCode.expirationDate && new Date(dbCode.expirationDate) < new Date()) {
+        return NextResponse.json(
+          { message: 'Activation code has expired' },
+          { status: 400 }
+        );
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log("[AUTH DEBUG] Password hashed for user:", email);
     const referralCode = await generateUniqueReferralCode(prisma);
@@ -135,7 +175,9 @@ export async function POST(req: NextRequest) {
     let user;
     try {
       user = await prisma.$transaction(async (tx) => {
-        // 1. Create User (Active immediately, but incomplete onboarding status)
+        const now = new Date();
+
+        // 1. Create User
         const createdUser = await tx.user.create({
           data: {
             name: `${firstName.trim()} ${lastName.trim()}`,
@@ -143,7 +185,7 @@ export async function POST(req: NextRequest) {
             username: username.toLowerCase().trim(),
             password: hashedPassword,
             role: 'MEMBER',
-            status: 'INACTIVE',
+            status: codeToValidate ? 'ACTIVE' : 'INACTIVE',
             onboardingStatus: 'INCOMPLETE',
             autoPlacement: true,
             referralCode,
@@ -196,6 +238,40 @@ export async function POST(req: NextRequest) {
           },
         });
 
+        // 3. Guarded activation code redemption
+        if (codeToValidate && dbCode) {
+          const redeemResult = await tx.activationCode.updateMany({
+            where: {
+              id: dbCode.id,
+              code: codeToValidate,
+              status: 'UNUSED',
+              redeemedBy: null,
+              OR: [
+                { expirationDate: null },
+                { expirationDate: { gt: now } },
+              ],
+            },
+            data: {
+              status: 'USED',
+              redeemedBy: createdUser.id,
+              redeemedDate: now,
+            },
+          });
+
+          if (redeemResult.count !== 1) {
+            throw new Error('Invalid or already used activation code.');
+          }
+
+          // 3.1 Distribute multi-level commission
+          const { distributeMultiLevelCommission } = await import('@/lib/wallet/service');
+          await distributeMultiLevelCommission(tx, {
+            buyerId: createdUser.id,
+            amountPerLevel: [10000, 5000, 3000, 1000, 1000],
+            orderId: dbCode.id,
+            description: `Activation Commission for User ${createdUser.id}`
+          });
+        }
+
         console.log("[AUTH DEBUG] User created successfully in database:", createdUser.id);
         return createdUser;
       }, {
@@ -204,7 +280,7 @@ export async function POST(req: NextRequest) {
     } catch (createError: any) {
       console.error('Base user creation failed:', createError);
       return NextResponse.json(
-        { message: 'Database is busy. Base user account creation failed. Please try again.' },
+        { message: createError.message || 'Database is busy. Base user account creation failed. Please try again.' },
         { status: 500 }
       );
     }

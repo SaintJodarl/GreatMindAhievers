@@ -13,6 +13,7 @@ interface RegisterFormData {
   email: string;
   phone: string;
   sponsorCode: string;
+  activationCode?: string;
   password: string;
   confirmPassword: string;
   agreeTerms: boolean;
@@ -40,7 +41,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     setValue,
     formState: { errors },
   } = useForm<RegisterFormData>({
-    defaultValues: { sponsorCode: '' },
+    defaultValues: { sponsorCode: '', activationCode: '' },
   });
 
   const password = watch('password');
@@ -69,7 +70,8 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           username: data.username,
           email: data.email,
           phone: data.phone,
-          sponsorCode: data.sponsorCode || null,
+          sponsorCode: data.sponsorCode ? data.sponsorCode.toUpperCase().trim() : null,
+          activationCode: data.activationCode ? data.activationCode.toUpperCase().trim() : null,
           password: data.password,
         }),
       });
@@ -213,10 +215,26 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Sponsor Code (Optional)</label>
           <input
             type="text"
-            placeholder="e.g. GMA-XXXXX"
+            placeholder="e.g. X8Y7Z6W5"
             className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 font-mono uppercase tracking-wider"
             {...register('sponsorCode')}
           />
+        </div>
+
+        {/* Activation Code */}
+        <div className="space-y-1">
+          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Activation Code (Optional)</label>
+          <input
+            type="text"
+            placeholder="e.g. GMA-123456"
+            className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 font-mono uppercase tracking-wider"
+            {...register('activationCode', {
+              validate: (val) => !val || /^GMA-\d{6}$/i.test(val) || 'Must follow format: GMA-123456',
+            })}
+          />
+          {errors.activationCode && (
+            <p className="text-[10px] font-semibold text-rose-600 mt-0.5">{errors.activationCode.message}</p>
+          )}
         </div>
 
         {/* Passwords */}

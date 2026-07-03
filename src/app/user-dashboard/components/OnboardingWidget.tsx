@@ -939,7 +939,7 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
                 <input
                   type="text"
                   name="code"
-                  placeholder="GMA-ACTXXXXXXXX"
+                  placeholder="e.g. GMA-123456"
                   value={formData.code}
                   onChange={handleInputChange}
                   className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 font-mono uppercase tracking-wider"
