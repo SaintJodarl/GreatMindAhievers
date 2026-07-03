@@ -17,7 +17,8 @@ import {
   Calendar,
   User,
   ShieldCheck,
-  X
+  X,
+  Copy
 } from 'lucide-react';
 
 interface CodeUser {
@@ -76,6 +77,33 @@ export default function AdminCodesClient() {
   // Action status loading tracker (stores code ID being toggled)
   const [updatingCodeId, setUpdatingCodeId] = useState<string | null>(null);
 
+  // Copy success tracker
+  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
+
+  const handleCopy = async (codeStr: string, codeId: string) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(codeStr);
+      } else {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = codeStr;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedCodeId(codeId);
+      setTimeout(() => {
+        setCopiedCodeId(null);
+      }, 1500);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -132,7 +160,6 @@ export default function AdminCodesClient() {
         body: JSON.stringify({
           type: generateForm.type,
           count: parseInt(generateForm.count.toString()),
-          prefix: generateForm.prefix,
           expirationDays: generateForm.expirationDays ? parseInt(generateForm.expirationDays) : null,
         }),
       });
@@ -143,7 +170,7 @@ export default function AdminCodesClient() {
         throw new Error(data.message || 'Failed to generate codes');
       }
 
-      setSuccessMsg(data.message || `Successfully generated ${generateForm.count} codes`);
+      setSuccessMsg(data.message || `${generateForm.count} activation codes generated successfully.`);
       setShowGenerateModal(false);
       // Reset form
       setGenerateForm({
@@ -393,8 +420,23 @@ export default function AdminCodesClient() {
                     <tr key={code.id} className="hover:bg-gray-50/30 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 font-mono font-bold text-indigo-700 text-sm">
-                          <KeyRound size={15} className="text-indigo-400" />
-                          {code.code}
+                          <KeyRound size={15} className="text-indigo-400 flex-shrink-0" />
+                          <span>{code.code}</span>
+                          <button
+                            onClick={() => handleCopy(code.code, code.id)}
+                            className="p-1 hover:bg-gray-150 rounded text-gray-400 hover:text-indigo-600 transition-colors flex items-center justify-center"
+                            aria-label={`Copy activation code ${code.code}`}
+                            title="Copy Code"
+                          >
+                            {copiedCodeId === code.id ? (
+                              <span className="text-[10px] text-emerald-600 font-sans font-bold flex items-center gap-0.5">
+                                <CheckCircle2 size={12} className="text-emerald-600" />
+                                Copied
+                              </span>
+                            ) : (
+                              <Copy size={13} />
+                            )}
+                          </button>
                         </div>
                         <div className="text-[10px] text-gray-400 font-medium mt-0.5">
                           Created by: {code.createdBy}
@@ -539,32 +581,20 @@ export default function AdminCodesClient() {
 
                 {/* Count */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Count (Bulk quantity)</label>
+                  <label className="text-xs font-bold text-gray-700 uppercase">Number of Codes to Generate</label>
                   <input
                     type="number"
                     min="1"
                     max="100"
+                    placeholder="e.g. 20"
                     value={generateForm.count}
                     onChange={(e) =>
                       setGenerateForm((prev) => ({ ...prev, count: parseInt(e.target.value) || 1 }))
                     }
-                    className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                     required
                   />
-                  <p className="text-[10px] text-gray-400">Generate up to 100 codes in a single request.</p>
-                </div>
-
-                {/* Prefix */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Code Prefix</label>
-                  <input
-                    type="text"
-                    value={generateForm.prefix}
-                    onChange={(e) => setGenerateForm((prev) => ({ ...prev, prefix: e.target.value }))}
-                    placeholder="e.g. GMA-"
-                    className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    required
-                  />
+                  <p className="text-[10px] text-gray-500">Each code will be generated automatically as GMA-123456.</p>
                 </div>
 
                 {/* Expiration Days */}

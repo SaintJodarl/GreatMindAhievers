@@ -81,14 +81,31 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { count = 1, prefix = 'GMA-', expirationDays } = body;
+    const { count = 1, expirationDays } = body;
+
+    // Validate count safely
+    const parsedCount = parseInt(count);
+    if (
+      (typeof count !== 'number' && typeof count !== 'string') ||
+      isNaN(parsedCount) ||
+      !Number.isInteger(Number(count)) ||
+      parsedCount < 1 ||
+      parsedCount > 100
+    ) {
+      return NextResponse.json(
+        { message: 'Code count must be a whole number between 1 and 100.' },
+        { status: 400 }
+      );
+    }
+
+    const prefix = 'GMA-';
 
     const generatedCodes = [];
     const expirationDate = expirationDays ? new Date(Date.now() + parseInt(expirationDays) * 24 * 60 * 60 * 1000) : null;
 
     const batchCodes = new Set<string>();
 
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < parsedCount; i++) {
       let codeStr = '';
       let attempts = 0;
       let isUnique = false;
@@ -137,13 +154,13 @@ export async function POST(req: NextRequest) {
         adminId: auth.user!.id,
         action: 'GENERATE_CODES',
         targetType: 'ActivationCode',
-        details: `Generated ${count} Activation codes with prefix ${prefix}`,
+        details: `Generated ${parsedCount} Activation codes with prefix ${prefix}`,
       },
     });
 
     return NextResponse.json(
       {
-        message: `Successfully generated ${count} codes`,
+        message: `Successfully generated ${parsedCount} codes`,
         codes: generatedCodes.map((c) => ({ code: c.code, type: 'ACTIVATION', status: c.status })),
       },
       { status: 201 }
