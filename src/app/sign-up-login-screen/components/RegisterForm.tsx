@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Loader2, UserCheck, AlertTriangle } from 'lucide-react';
 
 interface RegisterFormData {
@@ -12,8 +12,6 @@ interface RegisterFormData {
   username: string;
   email: string;
   phone: string;
-  sponsorCode: string;
-  activationCode?: string;
   password: string;
   confirmPassword: string;
   agreeTerms: boolean;
@@ -31,49 +29,41 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   const [authError, setAuthError] = useState('');
   const { login } = useAuth();
 
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const {
     register,
     handleSubmit,
     watch,
-    setValue,
     formState: { errors },
-  } = useForm<RegisterFormData>({
-    defaultValues: { sponsorCode: '', activationCode: '' },
-  });
+  } = useForm<RegisterFormData>();
 
   const password = watch('password');
-
-  // Prefill Sponsor from URL query params
-  useEffect(() => {
-    if (searchParams) {
-      const sponsor = searchParams.get('ref') || searchParams.get('sponsor');
-      if (sponsor) {
-        setValue('sponsorCode', sponsor.toUpperCase().trim());
-      }
-    }
-  }, [searchParams, setValue]);
 
   const onSubmit = async (data: RegisterFormData) => {
     if (isLoading) return;
     setIsLoading(true);
     setAuthError('');
     try {
+      const sponsor = searchParams?.get('ref') || searchParams?.get('sponsor');
+      const sponsorCode = sponsor?.trim().toUpperCase();
+      const payload: Record<string, string> = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username: data.username,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+      };
+
+      if (sponsorCode) {
+        payload.sponsorCode = sponsorCode;
+      }
+
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          username: data.username,
-          email: data.email,
-          phone: data.phone,
-          sponsorCode: data.sponsorCode ? data.sponsorCode.toUpperCase().trim() : null,
-          activationCode: data.activationCode ? data.activationCode.toUpperCase().trim() : null,
-          password: data.password,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const resData = await res.json();
@@ -207,33 +197,6 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           />
           {errors.phone && (
             <p className="text-[10px] font-semibold text-rose-600 mt-0.5">{errors.phone.message}</p>
-          )}
-        </div>
-
-        {/* Optional Sponsor field */}
-        <div className="space-y-1">
-          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Sponsor Code (Optional)</label>
-          <input
-            type="text"
-            placeholder="e.g. X8Y7Z6W5"
-            className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 font-mono uppercase tracking-wider"
-            {...register('sponsorCode')}
-          />
-        </div>
-
-        {/* Activation Code */}
-        <div className="space-y-1">
-          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Activation Code (Optional)</label>
-          <input
-            type="text"
-            placeholder="e.g. GMA-123456"
-            className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 font-mono uppercase tracking-wider"
-            {...register('activationCode', {
-              validate: (val) => !val || /^GMA-\d{6}$/i.test(val) || 'Must follow format: GMA-123456',
-            })}
-          />
-          {errors.activationCode && (
-            <p className="text-[10px] font-semibold text-rose-600 mt-0.5">{errors.activationCode.message}</p>
           )}
         </div>
 

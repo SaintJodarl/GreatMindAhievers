@@ -28,9 +28,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const lastCheckRef = React.useRef<number>(0);
+  const isCheckingRef = React.useRef<boolean>(false);
+
   // Verifies session purely via the /me endpoint
-  const checkSession = async () => {
+  const checkSession = async (force = false) => {
+    if (isCheckingRef.current) {
+      return;
+    }
+
+    const now = Date.now();
+    // Throttle focus checks to at most once per 60 seconds unless forced
+    if (!force && now - lastCheckRef.current < 60000) {
+      return;
+    }
+
     try {
+      isCheckingRef.current = true;
       const meRes = await fetch(`${BASE_URL}/api/auth/me`, {
         credentials: 'include'
       });
@@ -41,18 +55,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await meRes.json();
       setUser(data.user);
+      lastCheckRef.current = Date.now();
     } catch (err) {
       forceLogout();
     } finally {
+      isCheckingRef.current = false;
       setLoading(false);
     }
   };
 
   // Run session check on mount and bind tab focus listener
   useEffect(() => {
-    checkSession();
-    window.addEventListener('focus', checkSession);
-    return () => window.removeEventListener('focus', checkSession);
+    checkSession(true); // Force session check on mount
+    const handleFocus = () => {
+      checkSession(false);
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const login = async (email: string, password: string) => {

@@ -36,53 +36,47 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
-    // Direct referrals count
-    const directReferrals = await prisma.user.count({
-      where: { sponsorId: userId },
-    });
-
-    // Sum up lifetime earnings (referral, pairing, and leadership bonuses)
-    let lifetimeEarnings = 0;
-    if (user.wallet) {
-      const earnings = await prisma.walletTransaction.aggregate({
+    // Run independent counts and aggregates in parallel after user details are retrieved
+    const [directReferrals, earnings, withdrawals, openTicketsCount, announcementsCount] = await Promise.all([
+      prisma.user.count({
+        where: { sponsorId: userId },
+      }),
+      user.wallet
+        ? prisma.walletTransaction.aggregate({
+            where: {
+              walletId: user.wallet.id,
+              status: 'COMPLETED',
+              type: {
+                in: ['REFERRAL_BONUS', 'PAIRING_BONUS', 'LEADERSHIP_BONUS'],
+              },
+            },
+            _sum: {
+              amount: true,
+            },
+          })
+        : Promise.resolve({ _sum: { amount: null } }),
+      prisma.withdrawal.aggregate({
         where: {
-          walletId: user.wallet.id,
-          status: 'COMPLETED',
-          type: {
-            in: ['REFERRAL_BONUS', 'PAIRING_BONUS', 'LEADERSHIP_BONUS'],
-          },
+          userId,
+          status: 'PENDING',
         },
         _sum: {
           amount: true,
         },
-      });
-      lifetimeEarnings = earnings._sum.amount || 0;
-    }
+      }),
+      prisma.ticket.count({
+        where: { userId, status: { in: ['OPEN', 'IN_PROGRESS'] } },
+      }),
+      prisma.content.count({
+        where: { isPublished: true },
+      }),
+    ]);
 
-    // Sum up pending withdrawals
-    const withdrawals = await prisma.withdrawal.aggregate({
-      where: {
-        userId,
-        status: 'PENDING',
-      },
-      _sum: {
-        amount: true,
-      },
-    });
-    const pendingWithdrawals = withdrawals._sum.amount || 0;
+    const lifetimeEarnings = Number(earnings._sum.amount || 0);
+    const pendingWithdrawals = Number(withdrawals._sum.amount || 0);
 
-    // Support tickets count (open or in progress)
-    const openTicketsCount = await prisma.ticket.count({
-      where: { userId, status: { in: ['OPEN', 'IN_PROGRESS'] } },
-    });
-
-    // Published content news count
-    const announcementsCount = await prisma.content.count({
-      where: { isPublished: true },
-    });
-
-    const leftVol = user.binaryTree?.leftVolume || 0;
-    const rightVol = user.binaryTree?.rightVolume || 0;
+    const leftVol = Number(user.binaryTree?.leftVolume || 0);
+    const rightVol = Number(user.binaryTree?.rightVolume || 0);
     const minVolume = Math.min(leftVol, rightVol);
     let rank = 'Entry';
     if (minVolume >= 100000) rank = 'Diamond';
