@@ -38,46 +38,13 @@ export async function POST(
       return NextResponse.json({ message: 'Rejection reason is required' }, { status: 400 });
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Update KYCSubmission
-      const updatedSubmission = await tx.kYCSubmission.update({
-        where: { id },
-        data: {
-          status: 'REJECTED',
-          adminNote: reason,
-          reviewedBy: auth.user!.id,
-          reviewedAt: new Date(),
-        },
-      });
-
-      // 2. Update User kycStatus
-      await tx.user.update({
-        where: { id: submission.userId },
-        data: {
-          kycStatus: 'REJECTED',
-          kycRejectedAt: new Date(),
-          kycRejectionReason: reason,
-        },
-      });
-
-      // 3. Create Audit Log
-      await tx.auditLog.create({
-        data: {
-          adminId: auth.user!.id,
-          action: 'REJECT_KYC',
-          targetType: 'KYCSubmission',
-          targetId: submission.id,
-          details: `Rejected KYC submission for user ${submission.userId}. Reason: ${reason}`,
-        },
-      });
-
-      return updatedSubmission;
-    });
-
-    return NextResponse.json({
-      message: 'KYC submission successfully rejected',
-      submission: result,
-    });
+    return NextResponse.json(
+      {
+        message:
+          'Reject a specific KYC document from the document review endpoint instead of rejecting the whole submission.',
+      },
+      { status: 400 }
+    );
   } catch (error: any) {
     console.error('Reject KYC error:', error);
     return NextResponse.json(

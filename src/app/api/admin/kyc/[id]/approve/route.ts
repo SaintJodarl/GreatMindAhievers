@@ -24,9 +24,24 @@ export async function POST(
       return NextResponse.json({ message: 'KYC submission not found' }, { status: 404 });
     }
 
-    if (submission.status !== 'SUBMITTED') {
+    if (!['SUBMITTED', 'COMPLETE'].includes(submission.status)) {
       return NextResponse.json(
         { message: 'KYC submission has already been reviewed' },
+        { status: 400 }
+      );
+    }
+
+    const allRequiredDocumentsApproved =
+      Boolean(submission.governmentIdUrl || submission.idDocument) &&
+      Boolean(submission.selfieUrl || submission.selfie) &&
+      Boolean(submission.addressProofUrl || submission.proofOfAddress) &&
+      submission.govIdStatus === 'APPROVED' &&
+      submission.selfieStatus === 'APPROVED' &&
+      submission.addressStatus === 'APPROVED';
+
+    if (!allRequiredDocumentsApproved) {
+      return NextResponse.json(
+        { message: 'Approve each required document before approving overall KYC.' },
         { status: 400 }
       );
     }

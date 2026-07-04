@@ -1,12 +1,140 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Files, Loader2, Calendar, ShieldCheck, HelpCircle, FileText } from 'lucide-react';
+import {
+  AlertCircle,
+  Calendar,
+  CheckCircle2,
+  ExternalLink,
+  FileText,
+  Files,
+  HelpCircle,
+  Loader2,
+  ShieldCheck,
+} from 'lucide-react';
+
+type DocumentStatus = 'MISSING' | 'UPLOADED' | 'APPROVED' | 'REJECTED' | string;
+type StatusField = 'govIdStatus' | 'selfieStatus' | 'addressStatus';
+type UrlField =
+  | 'governmentIdUrl'
+  | 'idDocument'
+  | 'selfieUrl'
+  | 'selfie'
+  | 'addressProofUrl'
+  | 'proofOfAddress';
+
+interface KycSubmission {
+  id: string;
+  fullName: string;
+  phone: string;
+  address: string;
+  state: string;
+  lga: string;
+  idType: string;
+  idNumber: string;
+  idDocument: string | null;
+  governmentIdUrl: string | null;
+  selfie: string | null;
+  selfieUrl: string | null;
+  proofOfAddress: string | null;
+  addressProofUrl: string | null;
+  govIdStatus: DocumentStatus;
+  selfieStatus: DocumentStatus;
+  addressStatus: DocumentStatus;
+  status: string;
+  adminNote: string | null;
+  createdAt: string;
+}
+
+const REQUIRED_DOCUMENTS: {
+  label: string;
+  description: string;
+  statusField: StatusField;
+  primaryUrlField: UrlField;
+  fallbackUrlField: UrlField;
+}[] = [
+  {
+    label: 'Government ID',
+    description: 'National ID, passport, driver license, or other government-issued identity document.',
+    statusField: 'govIdStatus',
+    primaryUrlField: 'governmentIdUrl',
+    fallbackUrlField: 'idDocument',
+  },
+  {
+    label: 'Selfie',
+    description: 'Recent user selfie for identity matching.',
+    statusField: 'selfieStatus',
+    primaryUrlField: 'selfieUrl',
+    fallbackUrlField: 'selfie',
+  },
+  {
+    label: 'Proof of Address',
+    description: 'Utility bill, bank statement, or official document showing current residential address.',
+    statusField: 'addressStatus',
+    primaryUrlField: 'addressProofUrl',
+    fallbackUrlField: 'proofOfAddress',
+  },
+];
+
+const getDocumentUrl = (
+  submission: KycSubmission,
+  document: (typeof REQUIRED_DOCUMENTS)[number]
+) => submission[document.primaryUrlField] || submission[document.fallbackUrlField];
+
+const isPreviewableImage = (url: string) => {
+  const cleanUrl = url.split('?')[0].split('#')[0].toLowerCase();
+  return /\.(jpg|jpeg|png|webp|gif)$/.test(cleanUrl);
+};
+
+const getEffectiveDocumentStatus = (
+  submission: KycSubmission,
+  document: (typeof REQUIRED_DOCUMENTS)[number]
+) => {
+  const url = getDocumentUrl(submission, document);
+  const status = submission[document.statusField] || 'MISSING';
+
+  if (!url) {
+    return 'MISSING';
+  }
+  if (status === 'MISSING') {
+    return 'UPLOADED';
+  }
+  return status;
+};
+
+const getStatusBadge = (status: string) => {
+  if (status === 'APPROVED') {
+    return {
+      label: 'Approved',
+      className: 'bg-green-50 text-green-700 border-green-200',
+      icon: CheckCircle2,
+    };
+  }
+  if (status === 'REJECTED') {
+    return {
+      label: 'Rejected',
+      className: 'bg-red-50 text-red-700 border-red-200',
+      icon: AlertCircle,
+    };
+  }
+  if (status === 'MISSING') {
+    return {
+      label: 'Missing',
+      className: 'bg-gray-50 text-gray-600 border-gray-200',
+      icon: HelpCircle,
+    };
+  }
+  return {
+    label: status === 'UPLOADED' ? 'Pending Review' : status,
+    className: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    icon: ShieldCheck,
+  };
+};
 
 export default function KycDocumentsPage() {
   const router = useRouter();
-  const [submission, setSubmission] = useState<any>(null);
+  const [submission, setSubmission] = useState<KycSubmission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +147,7 @@ export default function KycDocumentsPage() {
         throw new Error('Failed to fetch documents');
       }
       const data = await res.json();
-      setSubmission(data.submission);
+      setSubmission(data.submission || null);
     } catch (err: any) {
       setError(err.message || 'Error loading documents');
     } finally {
@@ -59,7 +187,7 @@ export default function KycDocumentsPage() {
           <p className="text-gray-500 mt-1">View your submitted verification documents.</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center min-h-[400px] text-center max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center min-h-[400px] text-center max-w-2xl mx-auto">
           <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-4">
             <Files size={32} />
           </div>
@@ -79,31 +207,11 @@ export default function KycDocumentsPage() {
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return (
-          <span className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold rounded-full">
-            APPROVED
-          </span>
-        );
-      case 'REJECTED':
-        return (
-          <span className="px-2.5 py-1 bg-red-50 text-red-700 border border-red-200 text-xs font-semibold rounded-full">
-            REJECTED
-          </span>
-        );
-      default:
-        return (
-          <span className="px-2.5 py-1 bg-yellow-50 text-yellow-700 border border-yellow-200 text-xs font-semibold rounded-full">
-            PENDING REVIEW
-          </span>
-        );
-    }
-  };
+  const overallBadge = getStatusBadge(submission.status);
+  const OverallIcon = overallBadge.icon;
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-6xl">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">KYC Documents</h1>
@@ -111,12 +219,16 @@ export default function KycDocumentsPage() {
             Review details and files submitted for identity verification.
           </p>
         </div>
-        <div>{getStatusBadge(submission.status)}</div>
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 border text-xs font-semibold rounded-full ${overallBadge.className}`}
+        >
+          <OverallIcon size={14} />
+          {overallBadge.label}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Personal Details Summary */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-1 h-fit space-y-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 lg:col-span-1 h-fit space-y-4">
           <h2 className="text-lg font-bold text-gray-900 border-b pb-3 border-gray-100">
             Personal Details
           </h2>
@@ -175,54 +287,96 @@ export default function KycDocumentsPage() {
           )}
         </div>
 
-        {/* Files Previews */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
               <FileText className="text-indigo-600" size={20} />
               Uploaded Documents
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* ID Document Preview */}
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 block">
-                  Government ID Document
-                </span>
-                <div className="border border-gray-200 rounded-xl overflow-hidden bg-gray-50 aspect-[4/3] flex items-center justify-center relative shadow-inner">
-                  {submission.idDocument ? (
-                    <img
-                      src={submission.idDocument}
-                      alt="ID Document"
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="text-center p-4">
-                      <HelpCircle className="mx-auto text-gray-400 mb-2" size={28} />
-                      <span className="text-xs text-gray-400">No Image Uploaded</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {REQUIRED_DOCUMENTS.map((document) => {
+                const url = getDocumentUrl(submission, document);
+                const status = getEffectiveDocumentStatus(submission, document);
+                const statusBadge = getStatusBadge(status);
+                const StatusIcon = statusBadge.icon;
 
-              {/* Selfie Preview */}
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 block">Selfie with ID</span>
-                <div className="border border-gray-200 rounded-xl overflow-hidden bg-gray-50 aspect-[4/3] flex items-center justify-center relative shadow-inner">
-                  {submission.selfie ? (
-                    <img
-                      src={submission.selfie}
-                      alt="Selfie"
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="text-center p-4">
-                      <HelpCircle className="mx-auto text-gray-400 mb-2" size={28} />
-                      <span className="text-xs text-gray-400">No Image Uploaded</span>
+                return (
+                  <div
+                    key={document.statusField}
+                    className="border border-gray-200 rounded-lg bg-white p-4 space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">{document.label}</p>
+                        <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                          {document.description}
+                        </p>
+                      </div>
+                      <span
+                        className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBadge.className}`}
+                      >
+                        <StatusIcon size={12} />
+                        {statusBadge.label}
+                      </span>
                     </div>
-                  )}
-                </div>
-              </div>
+
+                    {url ? (
+                      <div className="border border-gray-200 rounded-lg overflow-hidden aspect-video bg-gray-50 flex items-center justify-center">
+                        {isPreviewableImage(url) ? (
+                          <img
+                            src={url}
+                            alt={document.label}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-center gap-2 px-4 text-gray-500">
+                            <FileText size={26} />
+                            <span className="text-xs font-bold text-gray-700">Document file</span>
+                            <span className="text-[11px]">
+                              Open the document to preview the uploaded file.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="border border-dashed border-gray-200 rounded-lg aspect-video bg-gray-50 flex items-center justify-center text-center p-4">
+                        <div>
+                          <HelpCircle className="mx-auto text-gray-400 mb-2" size={28} />
+                          <span className="text-xs text-gray-400 font-semibold">
+                            Not uploaded yet
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-gray-500">Upload status</span>
+                        <span className="font-bold text-gray-900">
+                          {url ? 'Uploaded' : 'Missing'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-gray-500">Review status</span>
+                        <span className="font-bold text-gray-900">{statusBadge.label}</span>
+                      </div>
+                    </div>
+
+                    {url && (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold"
+                      >
+                        <ExternalLink size={13} />
+                        Open Document
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -17,8 +17,31 @@ export async function GET(
 
     const submission = await prisma.kYCSubmission.findUnique({
       where: { id },
-      include: {
-        user: true,
+      select: {
+        id: true,
+        userId: true,
+        idDocument: true,
+        governmentIdUrl: true,
+        proofOfAddress: true,
+        addressProofUrl: true,
+        selfie: true,
+        selfieUrl: true,
+        govIdStatus: true,
+        addressStatus: true,
+        selfieStatus: true,
+        status: true,
+        adminNote: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            username: true,
+            kycStatus: true,
+          },
+        },
       },
     });
 
@@ -58,9 +81,9 @@ export async function POST(
       return NextResponse.json({ message: 'KYC submission not found' }, { status: 404 });
     }
 
-    if (submission.status !== 'SUBMITTED') {
+    if (!['SUBMITTED', 'COMPLETE'].includes(submission.status)) {
       return NextResponse.json(
-        { message: 'KYC submission has already been reviewed' },
+        { message: 'KYC submission is not currently reviewable' },
         { status: 400 }
       );
     }
@@ -72,8 +95,31 @@ export async function POST(
       return NextResponse.json({ message: 'Invalid decision' }, { status: 400 });
     }
 
-    if (decision === 'REJECTED' && !reason) {
-      return NextResponse.json({ message: 'Rejection reason is required' }, { status: 400 });
+    if (decision === 'REJECTED') {
+      return NextResponse.json(
+        {
+          message:
+            'Reject a specific KYC document from the document review endpoint instead of rejecting the whole submission.',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      decision === 'APPROVED' &&
+      !(
+        (submission.governmentIdUrl || submission.idDocument) &&
+        (submission.addressProofUrl || submission.proofOfAddress) &&
+        (submission.selfieUrl || submission.selfie) &&
+        submission.govIdStatus === 'APPROVED' &&
+        submission.addressStatus === 'APPROVED' &&
+        submission.selfieStatus === 'APPROVED'
+      )
+    ) {
+      return NextResponse.json(
+        { message: 'Approve each required document before approving overall KYC.' },
+        { status: 400 }
+      );
     }
 
     const result = await prisma.$transaction(async (tx) => {
