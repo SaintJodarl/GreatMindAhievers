@@ -3,6 +3,119 @@ import { v2 as cloudinary } from 'cloudinary';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 
+const DOCUMENT_CONFIG = {
+  government_id: {
+    label: 'Government ID',
+    statusField: 'govIdStatus',
+    primaryUrlField: 'governmentIdUrl',
+    fallbackUrlField: 'idDocument',
+  },
+  selfie: {
+    label: 'Photograph',
+    statusField: 'selfieStatus',
+    primaryUrlField: 'selfieUrl',
+    fallbackUrlField: 'selfie',
+  },
+  photograph: {
+    label: 'Photograph',
+    statusField: 'selfieStatus',
+    primaryUrlField: 'selfieUrl',
+    fallbackUrlField: 'selfie',
+  },
+  address_proof: {
+    label: 'Proof of Address Document',
+    statusField: 'addressStatus',
+    primaryUrlField: 'addressProofUrl',
+    fallbackUrlField: 'proofOfAddress',
+  },
+} as const;
+
+type UploadDocumentType = keyof typeof DOCUMENT_CONFIG;
+
+const isUploadDocumentType = (value: unknown): value is UploadDocumentType =>
+  typeof value === 'string' && value in DOCUMENT_CONFIG;
+
+const hasDocumentUrl = (
+  submission: {
+    idDocument?: string | null;
+    governmentIdUrl?: string | null;
+    proofOfAddress?: string | null;
+    addressProofUrl?: string | null;
+    selfie?: string | null;
+    selfieUrl?: string | null;
+  },
+  primaryUrlField: string,
+  fallbackUrlField: string
+) => Boolean((submission as any)[primaryUrlField] || (submission as any)[fallbackUrlField]);
+
+const deriveOverallStatus = (submission: {
+  idDocument?: string | null;
+  governmentIdUrl?: string | null;
+  proofOfAddress?: string | null;
+  addressProofUrl?: string | null;
+  selfie?: string | null;
+  selfieUrl?: string | null;
+  govIdStatus: string;
+  addressStatus: string;
+  selfieStatus: string;
+}) => {
+  const documents = [
+    {
+      status: submission.govIdStatus,
+      hasUrl: hasDocumentUrl(submission, 'governmentIdUrl', 'idDocument'),
+    },
+    {
+      status: submission.addressStatus,
+      hasUrl: hasDocumentUrl(submission, 'addressProofUrl', 'proofOfAddress'),
+    },
+    {
+      status: submission.selfieStatus,
+      hasUrl: hasDocumentUrl(submission, 'selfieUrl', 'selfie'),
+    },
+  ];
+
+  if (documents.every((document) => document.hasUrl && document.status === 'APPROVED')) {
+    return 'APPROVED';
+  }
+  if (documents.some((document) => document.status === 'REJECTED')) {
+    return 'REJECTED';
+  }
+  if (
+    documents.every(
+      (document) =>
+        document.hasUrl &&
+        (document.status === 'UPLOADED' || document.status === 'APPROVED')
+    )
+  ) {
+    return 'SUBMITTED';
+  }
+  return 'PENDING';
+};
+
+const buildUserKycUpdateData = (status: string, now: Date) => {
+  const data: any = { kycStatus: status };
+
+  if (status === 'APPROVED') {
+    data.kycApprovedAt = now;
+    data.kycRejectedAt = null;
+    data.kycRejectionReason = null;
+  } else if (status === 'REJECTED') {
+    data.kycRejectedAt = now;
+    data.kycApprovedAt = null;
+  } else if (status === 'SUBMITTED') {
+    data.kycSubmittedAt = now;
+    data.kycApprovedAt = null;
+    data.kycRejectedAt = null;
+    data.kycRejectionReason = null;
+  } else {
+    data.kycApprovedAt = null;
+    data.kycRejectedAt = null;
+    data.kycRejectionReason = null;
+  }
+
+  return data;
+};
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME?.replace(/['"]/g, '').trim(),
   api_key: process.env.CLOUDINARY_API_KEY?.replace(/['"]/g, '').trim(),
@@ -31,12 +144,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (
-      !docType ||
-      !['government_id', 'selfie', 'address_proof'].includes(docType)
-    ) {
+    if (!isUploadDocumentType(docType)) {
       return NextResponse.json(
         { message: 'Invalid document type' },
+        { status: 400 }
+      );
+    }
+
+    const config = DOCUMENT_CONFIG[docType];
+    const [user, existingSubmission] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: currentUser.id },
+        include: { profile: true },
+      }),
+      prisma.kYCSubmission.findUnique({
+        where: { userId: currentUser.id },
+        select: {
+          id: true,
+          idDocument: true,
+          governmentIdUrl: true,
+          proofOfAddress: true,
+          addressProofUrl: true,
+          selfie: true,
+          selfieUrl: true,
+          govIdStatus: true,
+          addressStatus: true,
+          selfieStatus: true,
+          status: true,
+        },
+      }),
+    ]);
+
+    if (!user) {
+      return NextResponse.json({ message: 'User not found.' }, { status: 404 });
+    }
+
+    if ((existingSubmission as any)?.[config.statusField] === 'APPROVED') {
+      return NextResponse.json(
+        { message: `${config.label} is already approved and cannot be re-uploaded.` },
         { status: 400 }
       );
     }
@@ -104,12 +249,6 @@ export async function POST(req: NextRequest) {
 
     const secureUrl = uploadResult.secure_url;
 
-    // Retrieve or initialize KYC submission
-    const user = await prisma.user.findUnique({
-      where: { id: currentUser.id },
-      include: { profile: true },
-    });
-
     const fullName =
       user?.name ||
       `${user?.profile?.firstName || ''} ${user?.profile?.lastName || ''}`.trim() ||
@@ -120,22 +259,11 @@ export async function POST(req: NextRequest) {
     const state = user?.profile?.state || 'Not Provided';
     const lga = user?.profile?.lga || 'Not Provided';
 
-    // Update fields based on document type
-    const updateData: any = {};
-
-    if (docType === 'government_id') {
-      updateData.governmentIdUrl = secureUrl;
-      updateData.govIdStatus = 'UPLOADED';
-      updateData.idDocument = secureUrl;
-    } else if (docType === 'selfie') {
-      updateData.selfieUrl = secureUrl;
-      updateData.selfieStatus = 'UPLOADED';
-      updateData.selfie = secureUrl;
-    } else if (docType === 'address_proof') {
-      updateData.addressProofUrl = secureUrl;
-      updateData.addressStatus = 'UPLOADED';
-      updateData.proofOfAddress = secureUrl;
-    }
+    const updateData: any = {
+      [config.primaryUrlField]: secureUrl,
+      [config.fallbackUrlField]: secureUrl,
+      [config.statusField]: 'UPLOADED',
+    };
 
     const kycSub = await prisma.kYCSubmission.upsert({
       where: {
@@ -156,30 +284,27 @@ export async function POST(req: NextRequest) {
       update: updateData,
     });
 
-    const isComplete =
-      kycSub.govIdStatus === 'UPLOADED' &&
-      kycSub.selfieStatus === 'UPLOADED' &&
-      kycSub.addressStatus === 'UPLOADED';
+    const nextOverallStatus = deriveOverallStatus(kycSub);
+    const isComplete = nextOverallStatus === 'SUBMITTED' || nextOverallStatus === 'APPROVED';
 
-    if (isComplete && kycSub.status === 'PENDING') {
-      await prisma.kYCSubmission.update({
-        where: {
-          userId: currentUser.id,
-        },
-        data: {
-          status: 'COMPLETE',
-        },
-      });
-
-      await prisma.user.update({
-        where: {
-          id: currentUser.id,
-        },
-        data: {
-          kycStatus: 'SUBMITTED',
-          kycSubmittedAt: new Date(),
-        },
-      });
+    if (nextOverallStatus !== kycSub.status || user?.kycStatus !== nextOverallStatus) {
+      const now = new Date();
+      await prisma.$transaction([
+        prisma.kYCSubmission.update({
+          where: {
+            userId: currentUser.id,
+          },
+          data: {
+            status: nextOverallStatus,
+          },
+        }),
+        prisma.user.update({
+          where: {
+            id: currentUser.id,
+          },
+          data: buildUserKycUpdateData(nextOverallStatus, now),
+        }),
+      ]);
     }
 
     return NextResponse.json({
@@ -191,6 +316,7 @@ export async function POST(req: NextRequest) {
       bytes: uploadResult.bytes,
       documentType: docType,
       isComplete,
+      status: nextOverallStatus,
     });
   } catch (error: any) {
     console.error('KYC upload error:', error);

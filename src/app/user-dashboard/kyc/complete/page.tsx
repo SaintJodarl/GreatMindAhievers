@@ -1,8 +1,44 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
+import {
+  ShieldCheck,
+  Loader2,
+  AlertCircle,
+  Upload,
+  CheckCircle2,
+  Lock,
+} from 'lucide-react';
+
+type DocumentField = 'idDocument' | 'selfie' | 'proofOfAddress';
+type StatusField = 'govIdStatus' | 'selfieStatus' | 'addressStatus';
+
+const DOCUMENTS: {
+  field: DocumentField;
+  statusField: StatusField;
+  label: string;
+  helper: string;
+}[] = [
+  {
+    field: 'idDocument',
+    statusField: 'govIdStatus',
+    label: 'Government ID',
+    helper: 'National ID, passport, driver license, or other government-issued document.',
+  },
+  {
+    field: 'selfie',
+    statusField: 'selfieStatus',
+    label: 'Photograph/Selfie',
+    helper: 'A clear recent photograph for identity matching.',
+  },
+  {
+    field: 'proofOfAddress',
+    statusField: 'addressStatus',
+    label: 'Proof of Address',
+    helper: 'Utility bill, bank statement, or official address document.',
+  },
+];
 
 export default function CompleteKycPage() {
   const router = useRouter();
@@ -12,7 +48,17 @@ export default function CompleteKycPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
 
-  // Form State
+  const [documentStatuses, setDocumentStatuses] = useState<Record<StatusField, string>>({
+    govIdStatus: 'MISSING',
+    selfieStatus: 'MISSING',
+    addressStatus: 'MISSING',
+  });
+  const [selectedFiles, setSelectedFiles] = useState<Record<DocumentField, File | null>>({
+    idDocument: null,
+    selfie: null,
+    proofOfAddress: null,
+  });
+
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -21,25 +67,47 @@ export default function CompleteKycPage() {
     lga: '',
     idType: 'NIN',
     idNumber: '',
-    idDocument: '',
-    selfie: '',
   });
 
   const fetchKycStatus = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/user/kyc/status');
-      if (!res.ok) {
+      const [statusRes, documentsRes] = await Promise.all([
+        fetch('/api/user/kyc/status'),
+        fetch('/api/user/kyc/documents'),
+      ]);
+
+      if (!statusRes.ok) {
         throw new Error('Failed to fetch KYC status');
       }
-      const data = await res.json();
-      setKycData(data);
-      // Pre-fill name and phone if available
-      if (data) {
+      if (!documentsRes.ok) {
+        throw new Error('Failed to fetch KYC documents');
+      }
+
+      const statusData = await statusRes.json();
+      const documentsData = await documentsRes.json();
+      const submission = documentsData.submission || null;
+
+      setKycData({ ...statusData, submission });
+      setDocumentStatuses({
+        govIdStatus: submission?.govIdStatus || 'MISSING',
+        selfieStatus: submission?.selfieStatus || 'MISSING',
+        addressStatus: submission?.addressStatus || 'MISSING',
+      });
+
+      if (submission) {
         setFormData((prev) => ({
           ...prev,
-          fullName: data.fullName || '',
-          phone: data.phone || '',
+          fullName: submission.fullName || prev.fullName,
+          phone: submission.phone || prev.phone,
+          address: submission.address || prev.address,
+          state: submission.state || prev.state,
+          lga: submission.lga || prev.lga,
+          idType: submission.idType || prev.idType,
+          idNumber:
+            submission.idNumber && submission.idNumber !== 'NOT_PROVIDED'
+              ? submission.idNumber
+              : prev.idNumber,
         }));
       }
     } catch (err: any) {
@@ -53,22 +121,34 @@ export default function CompleteKycPage() {
     fetchKycStatus();
   }, []);
 
+  const isDocumentApproved = (document: (typeof DOCUMENTS)[number]) =>
+    documentStatuses[document.statusField] === 'APPROVED';
+
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    field: 'idDocument' | 'selfie'
+    field: DocumentField
   ) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('File size exceeds 2MB limit.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, [field]: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    const validExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'webp'];
+    const extension = file.name.split('.').pop()?.toLowerCase();
+
+    if (!extension || !validExtensions.includes(extension)) {
+      setError('Invalid file type. Only PDF, JPG, PNG, HEIC, and WEBP are allowed.');
+      e.target.value = '';
+      return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size exceeds the 5MB limit.');
+      e.target.value = '';
+      return;
+    }
+
+    setError(null);
+    setSelectedFiles((prev) => ({ ...prev, [field]: file }));
+    e.target.value = '';
   };
 
   const handleTextChange = (
@@ -78,22 +158,70 @@ export default function CompleteKycPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const uploadFile = async (file: File) => {
+    const uploadData = new FormData();
+    uploadData.append('file', file);
+
+    const res = await fetch('/api/user/kyc/upload', {
+      method: 'POST',
+      body: uploadData,
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || 'File upload failed');
+    }
+    if (typeof data.secure_url !== 'string' || !data.secure_url) {
+      throw new Error('Upload succeeded but no secure URL was returned');
+    }
+
+    return data.secure_url;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSubmitting(true);
+    setSuccess(false);
 
-    if (!formData.idDocument || !formData.selfie) {
-      setError('Please upload both your ID Document and a Selfie.');
-      setSubmitting(false);
+    const missingDocuments = DOCUMENTS.filter(
+      (document) => !isDocumentApproved(document) && !selectedFiles[document.field]
+    );
+
+    if (missingDocuments.length > 0) {
+      setError(
+        `Please select: ${missingDocuments.map((document) => document.label).join(', ')}.`
+      );
       return;
     }
 
+    setSubmitting(true);
+
     try {
+      const payload: Record<string, string> = {
+        fullName: formData.fullName.trim(),
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+        state: formData.state.trim(),
+        lga: formData.lga.trim(),
+        idType: formData.idType,
+        idNumber: formData.idNumber.trim() || 'NOT_PROVIDED',
+      };
+
+      for (const document of DOCUMENTS) {
+        if (isDocumentApproved(document)) {
+          continue;
+        }
+
+        const file = selectedFiles[document.field];
+        if (file) {
+          payload[document.field] = await uploadFile(file);
+        }
+      }
+
       const res = await fetch('/api/user/kyc/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const result = await res.json();
@@ -103,6 +231,7 @@ export default function CompleteKycPage() {
       }
 
       setSuccess(true);
+      setSelectedFiles({ idDocument: null, selfie: null, proofOfAddress: null });
       setTimeout(() => {
         router.push('/user-dashboard/kyc/status');
       }, 2000);
@@ -111,6 +240,51 @@ export default function CompleteKycPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const renderDocumentInput = (document: (typeof DOCUMENTS)[number], index: number) => {
+    const approved = isDocumentApproved(document);
+    const selectedFile = selectedFiles[document.field];
+    const status = documentStatuses[document.statusField] || 'MISSING';
+
+    return (
+      <div key={document.field} className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">
+          {index + 1}. {document.label}
+        </label>
+        <label
+          className={`border border-gray-200 rounded-lg p-4 bg-gray-50 flex flex-col items-center justify-center min-h-[136px] text-center transition ${
+            approved ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-gray-100'
+          }`}
+        >
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png,.heic,.webp"
+            disabled={approved || submitting}
+            onChange={(e) => handleFileChange(e, document.field)}
+            className="sr-only"
+          />
+          {approved ? (
+            <>
+              <Lock className="h-7 w-7 text-green-600 mb-2" />
+              <span className="text-xs font-bold text-green-700">Approved and locked</span>
+            </>
+          ) : selectedFile ? (
+            <>
+              <CheckCircle2 className="h-7 w-7 text-green-600 mb-2" />
+              <span className="text-xs font-bold text-green-700">{selectedFile.name}</span>
+            </>
+          ) : (
+            <>
+              <Upload className="h-7 w-7 text-indigo-500 mb-2" />
+              <span className="text-xs font-semibold text-gray-700">Click to select file</span>
+            </>
+          )}
+          <span className="text-[11px] text-gray-400 mt-2">{document.helper}</span>
+        </label>
+        <p className="text-[11px] font-semibold text-gray-400 uppercase">Status: {status}</p>
+      </div>
+    );
   };
 
   if (loading) {
@@ -122,8 +296,7 @@ export default function CompleteKycPage() {
     );
   }
 
-  // Prevent resubmission logic
-  if (kycData?.kycStatus === 'SUBMITTED') {
+  if (kycData?.kycStatus === 'SUBMITTED' || kycData?.kycStatus === 'COMPLETE') {
     return (
       <div className="space-y-6">
         <div>
@@ -180,7 +353,7 @@ export default function CompleteKycPage() {
         <p className="text-gray-500 mt-1">Submit your identity documents for verification.</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-2xl">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-4xl">
         <h2 className="text-xl font-bold text-gray-900 mb-6">KYC Submission Form</h2>
 
         {error && (
@@ -295,46 +468,12 @@ export default function CompleteKycPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                ID Document Image
-              </label>
-              <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 flex flex-col gap-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'idDocument')}
-                  className="text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                />
-                {formData.idDocument && (
-                  <span className="text-[10px] text-green-600 font-medium">
-                    ✓ Uploaded & Compressed
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Selfie with ID</label>
-              <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 flex flex-col gap-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'selfie')}
-                  className="text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                />
-                {formData.selfie && (
-                  <span className="text-[10px] text-green-600 font-medium">
-                    ✓ Uploaded & Compressed
-                  </span>
-                )}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            {DOCUMENTS.map(renderDocumentInput)}
           </div>
 
           <div className="text-xs text-gray-400 mt-2">
-            * Max file size: 2MB. Only image formats (PNG, JPG, JPEG) are supported.
+            Max file size: 5MB. Supported formats: PDF, JPG, PNG, HEIC, and WEBP.
           </div>
 
           <button
@@ -345,7 +484,7 @@ export default function CompleteKycPage() {
             {submitting ? (
               <>
                 <Loader2 className="animate-spin h-5 w-5" />
-                Submitting...
+                Uploading and submitting...
               </>
             ) : (
               'Submit Documents'

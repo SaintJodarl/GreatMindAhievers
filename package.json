@@ -12,7 +12,9 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
     "serve": "next start",
     "type-check": "tsc --noEmit",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "clean:handover:dry-run": "tsx scripts/clean-handover-data.ts",
+    "clean:handover": "tsx scripts/clean-handover-data.ts --execute"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

@@ -1,20 +1,21 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { type ChangeEvent, useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api-client';
-import { ShieldCheck, Upload, Loader2, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { ShieldCheck, Upload, Loader2, CheckCircle2, AlertCircle, Clock3 } from 'lucide-react';
+
+type UploadDocumentType = 'government_id' | 'selfie' | 'address_proof';
+type DocumentStatus = 'MISSING' | 'UPLOADED' | 'APPROVED' | 'REJECTED' | string;
 
 export default function KYCDashboard() {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [kycData, setKycData] = useState<{
-    govIdStatus: string;
-    selfieStatus: string;
-    addressStatus: string;
+    govIdStatus: DocumentStatus;
+    selfieStatus: DocumentStatus;
+    addressStatus: DocumentStatus;
     status: string;
   }>({
     govIdStatus: 'MISSING',
@@ -55,21 +56,30 @@ export default function KYCDashboard() {
     fetchKycStatus();
   }, []);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, docType: string) => {
+  const documentLabels: Record<UploadDocumentType, string> = {
+    government_id: 'Government ID',
+    selfie: 'Photograph',
+    address_proof: 'Proof of Address Document',
+  };
+
+  const handleUpload = async (
+    e: ChangeEvent<HTMLInputElement>,
+    docType: UploadDocumentType
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate type
     const validExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'webp'];
     const extension = file.name.split('.').pop()?.toLowerCase();
     if (!extension || !validExtensions.includes(extension)) {
-      setError(`Invalid file type for ${docType}. Only PDF, JPG, PNG, HEIC, and WEBP are allowed.`);
+      setError(
+        `Invalid file type for ${documentLabels[docType]}. Only PDF, JPG, PNG, HEIC, and WEBP are allowed.`
+      );
       return;
     }
 
-    // Validate size (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('File exceeds 10MB limit.');
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File exceeds the 5MB limit.');
       return;
     }
 
@@ -87,25 +97,97 @@ export default function KYCDashboard() {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         throw new Error(data.message || 'Upload failed');
       }
 
-      // Refresh KYC status from DB after successful upload
       await fetchKycStatus();
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'File upload failed');
     } finally {
       setUploading(null);
-      e.target.value = ''; // Reset input
+      e.target.value = '';
     }
   };
 
   const completedCount = [kycData.govIdStatus, kycData.selfieStatus, kycData.addressStatus].filter(
-    (s) => s === 'UPLOADED' || s === 'APPROVED'
+    (status) => status === 'UPLOADED' || status === 'APPROVED'
   ).length;
+  const allApproved =
+    kycData.govIdStatus === 'APPROVED' &&
+    kycData.selfieStatus === 'APPROVED' &&
+    kycData.addressStatus === 'APPROVED';
+  const hasRejected = [kycData.govIdStatus, kycData.selfieStatus, kycData.addressStatus].some(
+    (status) => status === 'REJECTED'
+  );
+
+  const progressCopy = allApproved
+    ? 'KYC verified.'
+    : hasRejected
+      ? 'One or more documents need to be re-uploaded.'
+      : completedCount === 3
+        ? 'All required documents are uploaded. Awaiting admin review.'
+        : 'Complete all 3 steps to finish verification.';
+
+  const documents = [
+    {
+      title: 'Government ID',
+      description: "Valid National ID (NIN), Passport, or Driver's License. Must be clear and readable.",
+      status: kycData.govIdStatus,
+      docType: 'government_id' as UploadDocumentType,
+      uploadLabel: 'Upload Government ID',
+      reuploadLabel: 'Re-upload Government ID',
+      inputRef: idDocumentRef,
+    },
+    {
+      title: 'Photograph',
+      description: 'A clear, recent photo of your face. Please ensure good lighting and no accessories obscure your face.',
+      status: kycData.selfieStatus,
+      docType: 'selfie' as UploadDocumentType,
+      uploadLabel: 'Upload Photograph',
+      reuploadLabel: 'Re-upload Photograph',
+      inputRef: selfieRef,
+    },
+    {
+      title: 'Proof of Address Document',
+      description: 'Utility bill, bank statement, or official letter showing your name and residential address.',
+      status: kycData.addressStatus,
+      docType: 'address_proof' as UploadDocumentType,
+      uploadLabel: 'Upload Proof of Address',
+      reuploadLabel: 'Re-upload Proof of Address Document',
+      inputRef: proofOfAddressRef,
+    },
+  ];
+
+  const getStatusPanel = (status: DocumentStatus) => {
+    if (status === 'APPROVED') {
+      return {
+        icon: <CheckCircle2 className="text-emerald-500" size={20} />,
+        className: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+        label: 'Approved',
+      };
+    }
+    if (status === 'UPLOADED') {
+      return {
+        icon: <Clock3 className="text-blue-400" size={20} />,
+        className: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
+        label: 'Awaiting admin review',
+      };
+    }
+    if (status === 'REJECTED') {
+      return {
+        icon: <AlertCircle className="text-red-400" size={20} />,
+        className: 'bg-red-500/10 border-red-500/25 text-red-300',
+        label: 'Rejected - re-upload required',
+      };
+    }
+    return {
+      icon: <div className="w-2 h-2 rounded-full bg-amber-500" />,
+      className: 'bg-slate-800 border-slate-700 text-slate-300',
+      label: 'Not uploaded',
+    };
+  };
 
   if (loading) {
     return (
@@ -124,7 +206,7 @@ export default function KYCDashboard() {
           <h1 className="text-3xl font-extrabold text-white">KYC Verification</h1>
         </div>
         <p className="text-slate-400">
-          Upload your documents to verify your identity. You can complete this progressively.
+          Upload your documents to verify your identity. Re-upload only documents that need action.
         </p>
       </div>
 
@@ -135,153 +217,75 @@ export default function KYCDashboard() {
         </div>
       )}
 
-      {/* Progress Card */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
         <div>
           <h2 className="text-lg font-bold text-white mb-1">Verification Progress</h2>
-          <p className="text-sm text-slate-400">
-            {completedCount === 3
-              ? 'All documents uploaded successfully. Awaiting admin review.'
-              : 'Complete all 3 steps to finish verification.'}
-          </p>
+          <p className="text-sm text-slate-400">{progressCopy}</p>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-2xl font-black text-indigo-400">{completedCount} <span className="text-slate-600">/ 3</span></span>
+          <span className="text-2xl font-black text-indigo-400">
+            {completedCount} <span className="text-slate-600">/ 3</span>
+          </span>
           <div className="w-32 h-3 bg-slate-800 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-indigo-500 transition-all duration-500" 
+            <div
+              className="h-full bg-indigo-500 transition-all duration-500"
               style={{ width: `${(completedCount / 3) * 100}%` }}
             />
           </div>
         </div>
       </div>
 
-      {/* Upload Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Government ID */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white">Government ID</h3>
-              {kycData.govIdStatus === 'UPLOADED' || kycData.govIdStatus === 'APPROVED' ? (
-                <CheckCircle2 className="text-emerald-500" size={20} />
-              ) : (
-                <div className="w-2 h-2 rounded-full bg-amber-500" />
-              )}
-            </div>
-            <p className="text-xs text-slate-400 mb-6">
-              Valid National ID (NIN), Passport, or Driver's License. Must be clear and readable.
-            </p>
-          </div>
-          
-          <div className="mt-auto">
-            {kycData.govIdStatus === 'UPLOADED' || kycData.govIdStatus === 'APPROVED' ? (
-              <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                <span className="text-sm font-semibold">{kycData.govIdStatus === 'APPROVED' ? 'Approved' : 'Uploaded successfully'}</span>
-              </div>
-            ) : (
-              <button
-                onClick={() => idDocumentRef.current?.click()}
-                disabled={uploading !== null}
-                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors disabled:opacity-50"
-              >
-                {uploading === 'government_id' ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                {uploading === 'government_id' ? 'Uploading...' : 'Upload ID'}
-              </button>
-            )}
-            <input
-              type="file"
-              ref={idDocumentRef}
-              onChange={(e) => handleUpload(e, 'government_id')}
-              accept=".pdf,.jpg,.jpeg,.png,.heic,.webp"
-              className="hidden"
-            />
-          </div>
-        </div>
+        {documents.map((document) => {
+          const statusPanel = getStatusPanel(document.status);
+          const canUpload = document.status !== 'UPLOADED' && document.status !== 'APPROVED';
+          const isUploading = uploading === document.docType;
 
-        {/* Selfie */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white">Selfie Verification</h3>
-              {kycData.selfieStatus === 'UPLOADED' || kycData.selfieStatus === 'APPROVED' ? (
-                <CheckCircle2 className="text-emerald-500" size={20} />
-              ) : (
-                <div className="w-2 h-2 rounded-full bg-amber-500" />
-              )}
-            </div>
-            <p className="text-xs text-slate-400 mb-6">
-              A clear, recent photo of your face. Please ensure good lighting and no accessories obscuring your face.
-            </p>
-          </div>
-          
-          <div className="mt-auto">
-            {kycData.selfieStatus === 'UPLOADED' || kycData.selfieStatus === 'APPROVED' ? (
-              <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                <span className="text-sm font-semibold">{kycData.selfieStatus === 'APPROVED' ? 'Approved' : 'Uploaded successfully'}</span>
+          return (
+            <div
+              key={document.docType}
+              className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-white">{document.title}</h3>
+                  {statusPanel.icon}
+                </div>
+                <p className="text-xs text-slate-400 mb-6">{document.description}</p>
               </div>
-            ) : (
-              <button
-                onClick={() => selfieRef.current?.click()}
-                disabled={uploading !== null}
-                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors disabled:opacity-50"
-              >
-                {uploading === 'selfie' ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                {uploading === 'selfie' ? 'Uploading...' : 'Upload Selfie'}
-              </button>
-            )}
-            <input
-              type="file"
-              ref={selfieRef}
-              onChange={(e) => handleUpload(e, 'selfie')}
-              accept=".pdf,.jpg,.jpeg,.png,.heic,.webp"
-              className="hidden"
-            />
-          </div>
-        </div>
 
-        {/* Proof of Address */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white">Proof of Address</h3>
-              {kycData.addressStatus === 'UPLOADED' || kycData.addressStatus === 'APPROVED' ? (
-                <CheckCircle2 className="text-emerald-500" size={20} />
-              ) : (
-                <div className="w-2 h-2 rounded-full bg-amber-500" />
-              )}
-            </div>
-            <p className="text-xs text-slate-400 mb-6">
-              Utility bill, bank statement, or official letter showing your name and residential address (Not older than 3 months).
-            </p>
-          </div>
-          
-          <div className="mt-auto">
-            {kycData.addressStatus === 'UPLOADED' || kycData.addressStatus === 'APPROVED' ? (
-              <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                <span className="text-sm font-semibold">{kycData.addressStatus === 'APPROVED' ? 'Approved' : 'Uploaded successfully'}</span>
+              <div className="mt-auto">
+                {canUpload ? (
+                  <button
+                    onClick={() => document.inputRef.current?.click()}
+                    disabled={uploading !== null}
+                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors disabled:opacity-50"
+                  >
+                    {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                    {isUploading
+                      ? 'Uploading...'
+                      : document.status === 'REJECTED'
+                        ? document.reuploadLabel
+                        : document.uploadLabel}
+                  </button>
+                ) : (
+                  <div
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border ${statusPanel.className}`}
+                  >
+                    <span className="text-sm font-semibold">{statusPanel.label}</span>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  ref={document.inputRef}
+                  onChange={(e) => handleUpload(e, document.docType)}
+                  accept=".pdf,.jpg,.jpeg,.png,.heic,.webp"
+                  className="hidden"
+                />
               </div>
-            ) : (
-              <button
-                onClick={() => proofOfAddressRef.current?.click()}
-                disabled={uploading !== null}
-                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors disabled:opacity-50"
-              >
-                {uploading === 'address_proof' ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                {uploading === 'address_proof' ? 'Uploading...' : 'Upload Document'}
-              </button>
-            )}
-            <input
-              type="file"
-              ref={proofOfAddressRef}
-              onChange={(e) => handleUpload(e, 'address_proof')}
-              accept=".pdf,.jpg,.jpeg,.png,.heic,.webp"
-              className="hidden"
-            />
-          </div>
-        </div>
-
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -53,6 +53,25 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
   // States list from locations helper
   const statesList = getStates();
 
+  const isKycDocumentApproved = (field: 'idDocument' | 'selfie' | 'proofOfAddress') => {
+    const submission = summary?.kycSubmission;
+    if (field === 'idDocument') return submission?.govIdStatus === 'APPROVED';
+    if (field === 'selfie') return submission?.selfieStatus === 'APPROVED';
+    return submission?.addressStatus === 'APPROVED';
+  };
+
+  const getApprovedKycDocumentUrl = (
+    statusField: 'govIdStatus' | 'selfieStatus' | 'addressStatus',
+    primaryUrlField: 'governmentIdUrl' | 'selfieUrl' | 'addressProofUrl',
+    fallbackUrlField: 'idDocument' | 'selfie' | 'proofOfAddress'
+  ) => {
+    const submission = summary?.kycSubmission;
+    if (submission?.[statusField] !== 'APPROVED') {
+      return '';
+    }
+    return submission?.[primaryUrlField] || submission?.[fallbackUrlField] || '';
+  };
+
   // Form states mapping Step 1, 2, 3, 4, 5
   const [formData, setFormData] = useState({
     // Prefilled (Stage 1 / User)
@@ -125,9 +144,13 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
         bankName: summary.bankName || '',
         accountNumber: summary.accountNumber || '',
         accountName: summary.accountName || '',
-        idDocument: summary.kycSubmission?.idDocument || '',
-        selfie: summary.kycSubmission?.selfie || '',
-        proofOfAddress: summary.kycSubmission?.proofOfAddress || '',
+        idDocument: getApprovedKycDocumentUrl('govIdStatus', 'governmentIdUrl', 'idDocument'),
+        selfie: getApprovedKycDocumentUrl('selfieStatus', 'selfieUrl', 'selfie'),
+        proofOfAddress: getApprovedKycDocumentUrl(
+          'addressStatus',
+          'addressProofUrl',
+          'proofOfAddress'
+        ),
       }));
 
       const serverStep = summary.onboardingStep ?? 1;
@@ -240,6 +263,9 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
           throw new Error(errData.message || 'Upload failed');
         }
         const data = await res.json();
+        if (typeof data.secure_url !== 'string' || !data.secure_url) {
+          throw new Error('Upload succeeded but no secure URL was returned');
+        }
         return data.secure_url;
       };
 
@@ -260,6 +286,11 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          fullName: `${formData.firstName} ${formData.lastName}`.trim(),
+          phone: formData.phone,
+          address: formData.address,
+          state: formData.state,
+          lga: formData.lga,
           idType: formData.idType,
           idNumber: formData.idNumber || 'NOT_PROVIDED',
           idDocument: idDocumentUrl,
@@ -384,6 +415,12 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
     { id: 4, label: 'Identity Verification', icon: ShieldCheck },
     { id: 5, label: 'Activation', icon: KeyRound },
   ];
+
+  const approvedDocuments = {
+    idDocument: isKycDocumentApproved('idDocument'),
+    selfie: isKycDocumentApproved('selfie'),
+    proofOfAddress: isKycDocumentApproved('proofOfAddress'),
+  };
 
   return (
     <div className="bg-white rounded-3xl border border-indigo-150 shadow-md shadow-indigo-600/5 overflow-hidden animate-fade-in space-y-6">
@@ -833,8 +870,21 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
                 <label className={`flex flex-col items-center justify-center border-2 border-dashed p-6 rounded-2xl cursor-pointer hover:bg-gray-50/50 transition-all ${
                   (formData.idDocument || selectedFiles.idDocument) ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-200'
                 }`}>
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => handleFileChange(e, 'idDocument')} />
-                  {(formData.idDocument || selectedFiles.idDocument) ? (
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="sr-only"
+                    disabled={approvedDocuments.idDocument}
+                    onChange={(e) => handleFileChange(e, 'idDocument')}
+                  />
+                  {approvedDocuments.idDocument ? (
+                    <div className="text-center space-y-1">
+                      <Lock className="text-emerald-500 mx-auto" size={24} />
+                      <span className="text-xs text-emerald-700 font-bold block">
+                        Government ID approved and locked
+                      </span>
+                    </div>
+                  ) : (formData.idDocument || selectedFiles.idDocument) ? (
                     <div className="text-center space-y-1">
                       <CheckCircle2 className="text-emerald-500 mx-auto" size={24} />
                       <span className="text-xs text-emerald-700 font-bold block">ID Document Attached {selectedFiles.idDocument && `(${selectedFiles.idDocument.name})`}</span>
@@ -848,22 +898,35 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
                 </label>
               </div>
 
-              {/* Selfie */}
+              {/* Photograph */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-700">2. Selfie Photo holding ID</label>
+                <label className="block text-xs font-bold text-gray-700">2. Photograph</label>
                 <label className={`flex flex-col items-center justify-center border-2 border-dashed p-6 rounded-2xl cursor-pointer hover:bg-gray-50/50 transition-all ${
                   (formData.selfie || selectedFiles.selfie) ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-200'
                 }`}>
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => handleFileChange(e, 'selfie')} />
-                  {(formData.selfie || selectedFiles.selfie) ? (
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="sr-only"
+                    disabled={approvedDocuments.selfie}
+                    onChange={(e) => handleFileChange(e, 'selfie')}
+                  />
+                  {approvedDocuments.selfie ? (
+                    <div className="text-center space-y-1">
+                      <Lock className="text-emerald-500 mx-auto" size={24} />
+                      <span className="text-xs text-emerald-700 font-bold block">
+                        Photograph approved and locked
+                      </span>
+                    </div>
+                  ) : (formData.selfie || selectedFiles.selfie) ? (
                     <div className="text-center space-y-1">
                       <CheckCircle2 className="text-emerald-500 mx-auto" size={24} />
-                      <span className="text-xs text-emerald-700 font-bold block">Selfie Attached {selectedFiles.selfie && `(${selectedFiles.selfie.name})`}</span>
+                      <span className="text-xs text-emerald-700 font-bold block">Photograph Attached {selectedFiles.selfie && `(${selectedFiles.selfie.name})`}</span>
                     </div>
                   ) : (
                     <div className="text-center space-y-2 text-gray-400">
                       <Upload className="mx-auto" size={24} />
-                      <span className="text-xs font-semibold block">Click to select selfie</span>
+                      <span className="text-xs font-semibold block">Click to select photograph</span>
                     </div>
                   )}
                 </label>
@@ -875,8 +938,21 @@ export default function OnboardingWidget({ summary, onRefresh, initialStep, onCl
                 <label className={`flex flex-col items-center justify-center border-2 border-dashed p-6 rounded-2xl cursor-pointer hover:bg-gray-50/50 transition-all ${
                   (formData.proofOfAddress || selectedFiles.proofOfAddress) ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-200'
                 }`}>
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => handleFileChange(e, 'proofOfAddress')} />
-                  {(formData.proofOfAddress || selectedFiles.proofOfAddress) ? (
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="sr-only"
+                    disabled={approvedDocuments.proofOfAddress}
+                    onChange={(e) => handleFileChange(e, 'proofOfAddress')}
+                  />
+                  {approvedDocuments.proofOfAddress ? (
+                    <div className="text-center space-y-1">
+                      <Lock className="text-emerald-500 mx-auto" size={24} />
+                      <span className="text-xs text-emerald-700 font-bold block">
+                        Proof of Address approved and locked
+                      </span>
+                    </div>
+                  ) : (formData.proofOfAddress || selectedFiles.proofOfAddress) ? (
                     <div className="text-center space-y-1">
                       <CheckCircle2 className="text-emerald-500 mx-auto" size={24} />
                       <span className="text-xs text-emerald-700 font-bold block">Proof of Address Attached {selectedFiles.proofOfAddress && `(${selectedFiles.proofOfAddress.name})`}</span>
