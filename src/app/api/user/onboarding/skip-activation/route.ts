@@ -21,12 +21,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'User not found.' }, { status: 404 });
     }
 
-    // Update User record: onboardingStep to 6, onboardingStatus to COMPLETE
+    // Update User record: activation is the final onboarding step in the simplified flow.
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
-        onboardingStep: 6,
+        onboardingStep: 4,
         onboardingStatus: 'COMPLETE',
+        kycStatus: 'COMPLETE',
+        kycSubmittedAt: new Date(),
+        kycRejectedAt: null,
+        kycRejectionReason: null,
       },
     });
 

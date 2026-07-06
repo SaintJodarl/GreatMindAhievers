@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth/session';
 import { signAccessToken } from '@/lib/auth/jwt';
-import { getLgasForState } from '@/lib/nigeria-locations';
+
+const cleanText = (value: unknown) =>
+  typeof value === 'string' ? value.trim() : '';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,48 +16,31 @@ export async function POST(req: NextRequest) {
     const userId = currentUser.id;
     const body = await req.json();
 
-    const {
-      // Step 1: Personal Info
-      gender,
-      dob,
-      country = 'Nigeria',
-      state,
-      stateOfOrigin,
-      lga,
-      city,
-      address,
+    const firstName = cleanText(body.firstName);
+    const lastName = cleanText(body.lastName);
+    const email = cleanText(body.email);
+    const phone = cleanText(body.phone);
+    const gender = cleanText(body.gender);
+    const dob = cleanText(body.dob);
+    const address = cleanText(body.address);
+    const bankName = cleanText(body.bankName);
+    const accountNumber = cleanText(body.accountNumber);
+    const accountName = cleanText(body.accountName);
 
-      // Step 2: Next of Kin
-      nextOfKinName,
-      nextOfKinPhone,
-      relationship,
-      nextOfKinAddress,
-
-      // Step 3: Bank Details
-      bankName,
-      accountNumber,
-      accountName,
-    } = body;
-
-    // Validate essential profile fields
     if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !phone ||
       !gender ||
       !dob ||
-      !state ||
-      !stateOfOrigin ||
-      !lga ||
-      !city ||
       !address ||
-      !nextOfKinName ||
-      !nextOfKinPhone ||
-      !relationship ||
-      !nextOfKinAddress ||
       !bankName ||
       !accountNumber ||
       !accountName
     ) {
       return NextResponse.json(
-        { message: 'All profile, next of kin, and banking fields are required.' },
+        { message: 'All personal information and banking fields are required.' },
         { status: 400 }
       );
     }
@@ -67,19 +52,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Backend validation: Verify LGA belongs to the selected state of origin
-    const validLgas = getLgasForState(stateOfOrigin);
-    if (!validLgas.includes(lga)) {
+    const parsedDob = new Date(dob);
+    if (Number.isNaN(parsedDob.getTime())) {
       return NextResponse.json(
-        { message: 'Invalid LGA for selected State of Origin.' },
+        { message: 'Date of birth must be a valid date.' },
         { status: 400 }
       );
     }
 
-    // Fetch user details to get Name for KYC
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { profile: true },
+      select: { id: true, email: true, onboardingStatus: true },
     });
 
     if (!user) {
@@ -90,79 +73,72 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Onboarding is already complete.' }, { status: 400 });
     }
 
-    const fullName = user.name || `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}`.trim() || 'Unknown Member';
-    const phone = user.profile?.phone || 'Not Provided';
+    const normalizedEmail = email.toLowerCase();
+    if (user.email && user.email.toLowerCase() !== normalizedEmail) {
+      return NextResponse.json(
+        { message: 'Email address must match the registered account email.' },
+        { status: 400 }
+      );
+    }
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Upsert MemberProfile
       await tx.memberProfile.upsert({
         where: { userId },
         create: {
           userId,
+          firstName,
+          lastName,
+          phone,
           gender,
-          dob: new Date(dob),
-          country,
-          state,
-          stateOfOrigin,
-          lga,
-          city,
+          dob: parsedDob,
           address,
-          nextOfKinName,
-          nextOfKinPhone,
-          relationship,
-          nextOfKinAddress,
         },
         update: {
+          firstName,
+          lastName,
+          phone,
           gender,
-          dob: new Date(dob),
-          country,
-          state,
-          stateOfOrigin,
-          lga,
-          city,
+          dob: parsedDob,
           address,
-          nextOfKinName,
-          nextOfKinPhone,
-          relationship,
-          nextOfKinAddress,
         },
       });
 
-      // 3. Create Wallet if it doesn't exist
       await tx.wallet.upsert({
         where: { userId },
         create: {
           userId,
           balance: 0,
         },
-        update: {}, // No updates if it already exists
+        update: {},
       });
 
-      // 4. Update User record with bank details, KYC status, and complete onboarding
-      const updatedUser = await tx.user.update({
+      return tx.user.update({
         where: { id: userId },
         data: {
+          email: user.email || normalizedEmail,
           bankName,
           accountNumber,
           accountName,
+          onboardingStep: 4,
           onboardingStatus: 'COMPLETE',
+          kycStatus: 'COMPLETE',
+          kycSubmittedAt: new Date(),
+          kycRejectedAt: null,
+          kycRejectionReason: null,
         },
       });
-
-      return updatedUser;
     });
 
-    // Generate a new Access Token (JWT) with updated onboardingStatus
     const accessToken = await signAccessToken({
       sub: result.id,
       role: result.role,
       status: result.status,
-      onboardingStatus: 'COMPLETE',
+      onboardingStatus: result.onboardingStatus,
       sessionVersion: result.sessionVersion,
     });
 
     const response = NextResponse.json({
-      message: 'Onboarding completed successfully',
+      message: 'Registration completed successfully.',
       accessToken,
       user: {
         id: result.id,
@@ -170,17 +146,16 @@ export async function POST(req: NextRequest) {
         email: result.email,
         role: result.role,
         status: result.status,
-        onboardingStatus: 'COMPLETE',
+        onboardingStatus: result.onboardingStatus,
       },
     });
 
-    // Write updated cookie for middleware page reload compatibility
     response.cookies.set('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
-      maxAge: 15 * 60, // 15 minutes
+      maxAge: 15 * 60,
     });
 
     return response;

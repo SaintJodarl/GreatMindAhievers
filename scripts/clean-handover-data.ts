@@ -4,6 +4,11 @@ const prisma = new PrismaClient();
 
 const MEMBER_ROLE = 'MEMBER';
 const PROTECTED_ROLES = ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'];
+const PROTECTED_ADMIN_EMAILS = [
+  'makatablessing2026@gmail.com',
+  'gmanetworkng@gmail.com',
+  'stellarmediang@gmail.com',
+];
 const CONFIRM_ENV = 'CONFIRM_CLEAN_HANDOVER_DATA';
 const EXECUTE_FLAG = '--execute';
 
@@ -62,7 +67,12 @@ const printUsers = (
 
 async function buildCleanupPlan(db: PrismaClientOrTx) {
   const protectedUsers = await db.user.findMany({
-    where: { role: { in: PROTECTED_ROLES } },
+    where: {
+      OR: [
+        { role: { in: PROTECTED_ROLES } },
+        { email: { in: PROTECTED_ADMIN_EMAILS } },
+      ],
+    },
     select: {
       id: true,
       email: true,
@@ -75,7 +85,10 @@ async function buildCleanupPlan(db: PrismaClientOrTx) {
   });
 
   const memberUsers = await db.user.findMany({
-    where: { role: MEMBER_ROLE },
+    where: {
+      role: MEMBER_ROLE,
+      NOT: { email: { in: PROTECTED_ADMIN_EMAILS } },
+    },
     select: {
       id: true,
       email: true,
@@ -92,6 +105,7 @@ async function buildCleanupPlan(db: PrismaClientOrTx) {
       role: {
         notIn: [...PROTECTED_ROLES, MEMBER_ROLE],
       },
+      NOT: { email: { in: PROTECTED_ADMIN_EMAILS } },
     },
     select: {
       id: true,
@@ -317,6 +331,7 @@ async function deleteHandoverData(plan: CleanupPlan) {
         where: {
           id: inIds(memberIds),
           role: MEMBER_ROLE,
+          NOT: { email: { in: PROTECTED_ADMIN_EMAILS } },
         },
       });
     },

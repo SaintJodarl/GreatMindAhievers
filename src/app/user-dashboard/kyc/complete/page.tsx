@@ -3,341 +3,231 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ShieldCheck,
-  Loader2,
   AlertCircle,
-  Upload,
+  ArrowLeft,
+  ArrowRight,
   CheckCircle2,
-  Lock,
+  CreditCard,
+  Loader2,
+  User,
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
-type DocumentField = 'idDocument' | 'selfie' | 'proofOfAddress';
-type StatusField = 'govIdStatus' | 'selfieStatus' | 'addressStatus';
-
-const DOCUMENTS: {
-  field: DocumentField;
-  statusField: StatusField;
-  label: string;
-  helper: string;
-}[] = [
-  {
-    field: 'idDocument',
-    statusField: 'govIdStatus',
-    label: 'Government ID',
-    helper: 'National ID, passport, driver license, or other government-issued document.',
-  },
-  {
-    field: 'selfie',
-    statusField: 'selfieStatus',
-    label: 'Photograph/Selfie',
-    helper: 'A clear recent photograph for identity matching.',
-  },
-  {
-    field: 'proofOfAddress',
-    statusField: 'addressStatus',
-    label: 'Proof of Address',
-    helper: 'Utility bill, bank statement, or official address document.',
-  },
+const BANKS = [
+  'Alpha Morgan Bank',
+  'Access Bank',
+  'Citibank Nigeria',
+  'Ecobank Nigeria',
+  'FCMB (First City Monument Bank)',
+  'Fidelity Bank',
+  'First Bank of Nigeria',
+  'Globus Bank',
+  'Guaranty Trust Bank (GTCO)',
+  'Keystone Bank',
+  'Nova Commercial Bank',
+  'Optimus Bank',
+  'Parallex Bank',
+  'Polaris Bank',
+  'PremiumTrust Bank',
+  'Providus Bank',
+  'Stanbic IBTC Bank',
+  'Standard Chartered Bank Nigeria',
+  'Sterling Bank',
+  'Titan Trust Bank',
+  'Union Bank of Nigeria',
+  'United Bank for Africa (UBA)',
+  'Unity Bank',
+  'Wema Bank',
+  'Zenith Bank',
+  'Kuda Bank',
+  'Moniepoint Microfinance Bank',
+  'OPay',
+  'PalmPay',
+  'Dot Microfinance Bank',
+  'VFD Microfinance Bank',
 ];
 
 export default function CompleteKycPage() {
   const router = useRouter();
-  const [kycData, setKycData] = useState<any>(null);
+  const { checkSession } = useAuth();
+  const [activeStep, setActiveStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
-
-  const [documentStatuses, setDocumentStatuses] = useState<Record<StatusField, string>>({
-    govIdStatus: 'MISSING',
-    selfieStatus: 'MISSING',
-    addressStatus: 'MISSING',
-  });
-  const [selectedFiles, setSelectedFiles] = useState<Record<DocumentField, File | null>>({
-    idDocument: null,
-    selfie: null,
-    proofOfAddress: null,
-  });
+  const [isComplete, setIsComplete] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
+    email: '',
     phone: '',
+    gender: '',
+    dob: '',
     address: '',
-    state: '',
-    lga: '',
-    idType: 'NIN',
-    idNumber: '',
+    bankName: '',
+    accountNumber: '',
+    accountName: '',
   });
 
-  const fetchKycStatus = async () => {
-    try {
-      setLoading(true);
-      const [statusRes, documentsRes] = await Promise.all([
-        fetch('/api/user/kyc/status'),
-        fetch('/api/user/kyc/documents'),
-      ]);
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      if (!statusRes.ok) {
-        throw new Error('Failed to fetch KYC status');
-      }
-      if (!documentsRes.ok) {
-        throw new Error('Failed to fetch KYC documents');
-      }
+        const res = await fetch('/api/user/dashboard-summary');
+        if (!res.ok) {
+          throw new Error('Failed to load registration details.');
+        }
 
-      const statusData = await statusRes.json();
-      const documentsData = await documentsRes.json();
-      const submission = documentsData.submission || null;
+        const summary = await res.json();
+        const parts = (summary.name || '').split(' ');
 
-      setKycData({ ...statusData, submission });
-      setDocumentStatuses({
-        govIdStatus: submission?.govIdStatus || 'MISSING',
-        selfieStatus: submission?.selfieStatus || 'MISSING',
-        addressStatus: submission?.addressStatus || 'MISSING',
-      });
+        setIsComplete(
+          summary.kycStatus === 'COMPLETE' ||
+            summary.kycStatus === 'APPROVED' ||
+            summary.onboardingStatus === 'COMPLETE'
+        );
 
-      if (submission) {
         setFormData((prev) => ({
           ...prev,
-          fullName: submission.fullName || prev.fullName,
-          phone: submission.phone || prev.phone,
-          address: submission.address || prev.address,
-          state: submission.state || prev.state,
-          lga: submission.lga || prev.lga,
-          idType: submission.idType || prev.idType,
-          idNumber:
-            submission.idNumber && submission.idNumber !== 'NOT_PROVIDED'
-              ? submission.idNumber
-              : prev.idNumber,
+          firstName: summary.profile?.firstName || parts[0] || '',
+          lastName: summary.profile?.lastName || parts.slice(1).join(' ') || '',
+          email: summary.email || '',
+          phone: summary.profile?.phone || summary.phone || '',
+          gender: summary.profile?.gender || '',
+          dob: summary.profile?.dob
+            ? new Date(summary.profile.dob).toISOString().split('T')[0]
+            : '',
+          address: summary.profile?.address || '',
+          bankName: summary.bankName || '',
+          accountNumber: summary.accountNumber || '',
+          accountName: summary.accountName || '',
         }));
+      } catch (err: any) {
+        setError(err.message || 'Error loading registration details.');
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      setError(err.message || 'Error loading KYC status');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => {
-    fetchKycStatus();
+    fetchSummary();
   }, []);
 
-  const isDocumentApproved = (document: (typeof DOCUMENTS)[number]) =>
-    documentStatuses[document.statusField] === 'APPROVED';
-
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    field: DocumentField
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const validExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'webp'];
-    const extension = file.name.split('.').pop()?.toLowerCase();
-
-    if (!extension || !validExtensions.includes(extension)) {
-      setError('Invalid file type. Only PDF, JPG, PNG, HEIC, and WEBP are allowed.');
-      e.target.value = '';
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File size exceeds the 5MB limit.');
-      e.target.value = '';
-      return;
-    }
-
-    setError(null);
-    setSelectedFiles((prev) => ({ ...prev, [field]: file }));
-    e.target.value = '';
-  };
-
-  const handleTextChange = (
+  const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const uploadFile = async (file: File) => {
-    const uploadData = new FormData();
-    uploadData.append('file', file);
-
-    const res = await fetch('/api/user/kyc/upload', {
-      method: 'POST',
-      body: uploadData,
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || 'File upload failed');
-    }
-    if (typeof data.secure_url !== 'string' || !data.secure_url) {
-      throw new Error('Upload succeeded but no secure URL was returned');
+  const validateStep = (step: number) => {
+    if (step === 1) {
+      return Boolean(
+        formData.firstName &&
+          formData.lastName &&
+          formData.email &&
+          formData.phone &&
+          formData.gender &&
+          formData.dob &&
+          formData.address
+      );
     }
 
-    return data.secure_url;
+    if (step === 2) {
+      return Boolean(formData.bankName && formData.accountNumber && formData.accountName);
+    }
+
+    return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const goToNextStep = () => {
     setError(null);
-    setSuccess(false);
 
-    const missingDocuments = DOCUMENTS.filter(
-      (document) => !isDocumentApproved(document) && !selectedFiles[document.field]
-    );
-
-    if (missingDocuments.length > 0) {
+    if (!validateStep(activeStep)) {
       setError(
-        `Please select: ${missingDocuments.map((document) => document.label).join(', ')}.`
+        activeStep === 1
+          ? 'Please complete all personal information fields.'
+          : 'Please complete all banking information fields.'
       );
+      return;
+    }
+
+    setActiveStep((step) => Math.min(step + 1, 3));
+  };
+
+  const completeRegistration = async () => {
+    setError(null);
+
+    if (!validateStep(1) || !validateStep(2)) {
+      setError('Please complete all required fields before continuing.');
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const payload: Record<string, string> = {
-        fullName: formData.fullName.trim(),
-        phone: formData.phone.trim(),
-        address: formData.address.trim(),
-        state: formData.state.trim(),
-        lga: formData.lga.trim(),
-        idType: formData.idType,
-        idNumber: formData.idNumber.trim() || 'NOT_PROVIDED',
-      };
-
-      for (const document of DOCUMENTS) {
-        if (isDocumentApproved(document)) {
-          continue;
-        }
-
-        const file = selectedFiles[document.field];
-        if (file) {
-          payload[document.field] = await uploadFile(file);
-        }
-      }
-
       const res = await fetch('/api/user/kyc/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          completeRegistration: true,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          gender: formData.gender,
+          dob: formData.dob,
+          address: formData.address,
+          bankName: formData.bankName,
+          accountNumber: formData.accountNumber,
+          accountName: formData.accountName,
+        }),
       });
 
       const result = await res.json();
-
       if (!res.ok) {
-        throw new Error(result.message || 'Failed to submit KYC details');
+        throw new Error(result.message || 'Failed to complete registration.');
       }
 
-      setSuccess(true);
-      setSelectedFiles({ idDocument: null, selfie: null, proofOfAddress: null });
-      setTimeout(() => {
-        router.push('/user-dashboard/kyc/status');
-      }, 2000);
+      await checkSession(true);
+      window.dispatchEvent(new Event('dashboard-refresh'));
+      router.push('/user-dashboard');
     } catch (err: any) {
-      setError(err.message || 'An error occurred during submission.');
+      setError(err.message || 'An error occurred while completing registration.');
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const renderDocumentInput = (document: (typeof DOCUMENTS)[number], index: number) => {
-    const approved = isDocumentApproved(document);
-    const selectedFile = selectedFiles[document.field];
-    const status = documentStatuses[document.statusField] || 'MISSING';
-
-    return (
-      <div key={document.field} className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          {index + 1}. {document.label}
-        </label>
-        <label
-          className={`border border-gray-200 rounded-lg p-4 bg-gray-50 flex flex-col items-center justify-center min-h-[136px] text-center transition ${
-            approved ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-gray-100'
-          }`}
-        >
-          <input
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.heic,.webp"
-            disabled={approved || submitting}
-            onChange={(e) => handleFileChange(e, document.field)}
-            className="sr-only"
-          />
-          {approved ? (
-            <>
-              <Lock className="h-7 w-7 text-green-600 mb-2" />
-              <span className="text-xs font-bold text-green-700">Approved and locked</span>
-            </>
-          ) : selectedFile ? (
-            <>
-              <CheckCircle2 className="h-7 w-7 text-green-600 mb-2" />
-              <span className="text-xs font-bold text-green-700">{selectedFile.name}</span>
-            </>
-          ) : (
-            <>
-              <Upload className="h-7 w-7 text-indigo-500 mb-2" />
-              <span className="text-xs font-semibold text-gray-700">Click to select file</span>
-            </>
-          )}
-          <span className="text-[11px] text-gray-400 mt-2">{document.helper}</span>
-        </label>
-        <p className="text-[11px] font-semibold text-gray-400 uppercase">Status: {status}</p>
-      </div>
-    );
   };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
         <Loader2 className="animate-spin h-8 w-8 text-indigo-600" />
-        <p className="text-sm text-gray-500">Checking verification status...</p>
+        <p className="text-sm text-gray-500">Loading registration details...</p>
       </div>
     );
   }
 
-  if (kycData?.kycStatus === 'SUBMITTED' || kycData?.kycStatus === 'COMPLETE') {
+  if (isComplete) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Complete KYC</h1>
-          <p className="text-gray-500 mt-1">Submit your identity documents for verification.</p>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            Complete Registration
+          </h1>
+          <p className="text-gray-500 mt-1">Your registration details are complete.</p>
         </div>
-        <div className="bg-white rounded-2xl shadow-sm border border-yellow-100 p-8 max-w-2xl text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">KYC Under Review</h2>
-          <p className="text-gray-500 mb-6">
-            Your verification documents have already been submitted and are pending review by our
-            compliance team. You cannot resubmit at this time.
-          </p>
-          <button
-            onClick={() => router.push('/user-dashboard/kyc/status')}
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition duration-150"
-          >
-            Check Status Details
-          </button>
-        </div>
-      </div>
-    );
-  }
 
-  if (kycData?.kycStatus === 'APPROVED') {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Complete KYC</h1>
-          <p className="text-gray-500 mt-1">Submit your identity documents for verification.</p>
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-8 max-w-2xl text-center">
-          <ShieldCheck className="mx-auto h-12 w-12 text-green-500 mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">KYC Verified</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-green-100 p-8 max-w-2xl text-center">
+          <CheckCircle2 className="mx-auto h-12 w-12 text-green-600 mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Registration Complete</h2>
           <p className="text-gray-500 mb-6">
-            Congratulations! Your account KYC status is verified. All platform features, including
-            withdrawals and commissions, are fully unlocked.
+            Your personal and banking information has been saved.
           </p>
           <button
             onClick={() => router.push('/user-dashboard')}
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition duration-150"
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition"
           >
             Go to Dashboard
           </button>
@@ -346,15 +236,50 @@ export default function CompleteKycPage() {
     );
   }
 
+  const steps = [
+    { id: 1, label: 'Personal Information', icon: User },
+    { id: 2, label: 'Banking Information', icon: CreditCard },
+    { id: 3, label: 'Complete Registration', icon: CheckCircle2 },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Complete KYC</h1>
-        <p className="text-gray-500 mt-1">Submit your identity documents for verification.</p>
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+          Complete Registration
+        </h1>
+        <p className="text-gray-500 mt-1">
+          Confirm your personal details and banking information.
+        </p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-4xl">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">KYC Submission Form</h2>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-4xl">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4 mb-6">
+          {steps.map((step) => {
+            const StepIcon = step.icon;
+            const isActive = activeStep === step.id;
+            const isDone = activeStep > step.id;
+
+            return (
+              <button
+                key={step.id}
+                type="button"
+                disabled={step.id > activeStep}
+                onClick={() => setActiveStep(step.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition ${
+                  isActive
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : isDone
+                      ? 'bg-green-50 text-green-700 border-green-100'
+                      : 'bg-gray-50 text-gray-400 border-gray-100'
+                }`}
+              >
+                <StepIcon size={16} />
+                {step.label}
+              </button>
+            );
+          })}
+        </div>
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded flex items-center gap-2">
@@ -363,133 +288,207 @@ export default function CompleteKycPage() {
           </div>
         )}
 
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm rounded flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 flex-shrink-0" />
-            <span>Documents submitted successfully! Redirecting...</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Legal Name</label>
-            <input
-              type="text"
-              name="fullName"
-              required
-              value={formData.fullName}
-              onChange={handleTextChange}
-              className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="As it appears on your ID"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-              <input
-                type="text"
-                name="phone"
-                required
-                value={formData.phone}
-                onChange={handleTextChange}
-                className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Phone number"
-              />
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (activeStep < 3) {
+              goToNextStep();
+            } else {
+              completeRegistration();
+            }
+          }}
+          className="space-y-5"
+        >
+          {activeStep === 1 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  required
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  required
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  required
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                <select
+                  name="gender"
+                  required
+                  value={formData.gender}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  name="dob"
+                  required
+                  value={formData.dob}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <textarea
+                  name="address"
+                  required
+                  rows={3}
+                  value={formData.address}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-              <input
-                type="text"
-                name="address"
-                required
-                value={formData.address}
-                onChange={handleTextChange}
-                className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Street address"
-              />
-            </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-              <input
-                type="text"
-                name="state"
-                required
-                value={formData.state}
-                onChange={handleTextChange}
-                className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="State of residence"
-              />
+          {activeStep === 2 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+                <select
+                  name="bankName"
+                  required
+                  value={formData.bankName}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Select bank</option>
+                  {BANKS.map((bank) => (
+                    <option key={bank} value={bank}>
+                      {bank}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Account Number
+                </label>
+                <input
+                  type="text"
+                  name="accountNumber"
+                  required
+                  value={formData.accountNumber}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Account Name
+                </label>
+                <input
+                  type="text"
+                  name="accountName"
+                  required
+                  value={formData.accountName}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">LGA</label>
-              <input
-                type="text"
-                name="lga"
-                required
-                value={formData.lga}
-                onChange={handleTextChange}
-                className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Local Government Area"
-              />
+          )}
+
+          {activeStep === 3 && (
+            <div className="rounded-lg border border-green-100 bg-green-50 p-5">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5" />
+                <div>
+                  <h2 className="text-base font-bold text-green-950">
+                    Ready to complete registration
+                  </h2>
+                  <p className="text-sm text-green-800 mt-1">
+                    Your personal and banking details will be saved, then you will return to the
+                    dashboard overview.
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ID Type</label>
-              <select
-                name="idType"
-                required
-                value={formData.idType}
-                onChange={handleTextChange}
-                className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="NIN">National Identification Number (NIN)</option>
-                <option value="BVN">Bank Verification Number (BVN)</option>
-                <option value="PASSPORT">International Passport</option>
-                <option value="DRIVERS_LICENSE">Driver's License</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ID Number</label>
-              <input
-                type="text"
-                name="idNumber"
-                required
-                value={formData.idNumber}
-                onChange={handleTextChange}
-                className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Enter document number"
-              />
-            </div>
-          </div>
+          <div className="flex flex-col sm:flex-row gap-3 justify-between pt-4 border-t border-gray-100">
+            <button
+              type="button"
+              disabled={activeStep === 1 || submitting}
+              onClick={() => {
+                setError(null);
+                setActiveStep((step) => Math.max(step - 1, 1));
+              }}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-gray-600 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              <ArrowLeft size={16} />
+              Back
+            </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-            {DOCUMENTS.map(renderDocumentInput)}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="animate-spin h-4 w-4" />
+                  Completing...
+                </>
+              ) : activeStep < 3 ? (
+                <>
+                  Continue
+                  <ArrowRight size={16} />
+                </>
+              ) : (
+                'Complete Registration'
+              )}
+            </button>
           </div>
-
-          <div className="text-xs text-gray-400 mt-2">
-            Max file size: 5MB. Supported formats: PDF, JPG, PNG, HEIC, and WEBP.
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="animate-spin h-5 w-5" />
-                Uploading and submitting...
-              </>
-            ) : (
-              'Submit Documents'
-            )}
-          </button>
         </form>
       </div>
     </div>

@@ -134,7 +134,7 @@ export default function MemberSidebar({
               </span>
               <span
                 className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-md border ${
-                  kycStatus === 'APPROVED'
+                  kycStatus === 'APPROVED' || kycStatus === 'COMPLETE'
                     ? 'bg-green-50 text-green-700 border-green-200'
                     : kycStatus === 'REJECTED'
                       ? 'bg-red-50 text-red-700 border-red-200'

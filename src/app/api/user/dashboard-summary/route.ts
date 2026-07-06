@@ -4,6 +4,22 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 
+const getSimplifiedOnboardingStep = (
+  step: number | null | undefined,
+  onboardingStatus: string | null | undefined
+) => {
+  if (onboardingStatus === 'COMPLETE') {
+    return 4;
+  }
+  if (!step || step < 1) {
+    return 1;
+  }
+  if (step >= 3) {
+    return 3;
+  }
+  return step;
+};
+
 export async function GET(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
@@ -90,6 +106,7 @@ export async function GET(req: NextRequest) {
       email: user.email,
       role: user.role,
       status: user.status,
+      onboardingStatus: user.onboardingStatus,
       kycStatus: user.kycStatus,
       kycSubmittedAt: user.kycSubmittedAt,
       kycApprovedAt: user.kycApprovedAt,
@@ -113,8 +130,14 @@ export async function GET(req: NextRequest) {
       bankName: user.bankName || '',
       accountNumber: user.accountNumber || '',
       accountName: user.accountName || '',
-      onboardingStep: user.onboardingStep,
-      kycCompleted: user.kycStatus === 'APPROVED' || user.kycStatus === 'SUBMITTED',
+      onboardingStep: getSimplifiedOnboardingStep(
+        user.onboardingStep,
+        user.onboardingStatus
+      ),
+      kycCompleted:
+        user.kycStatus === 'APPROVED' ||
+        user.kycStatus === 'SUBMITTED' ||
+        user.kycStatus === 'COMPLETE',
       activationStatus: user.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING',
       accountStatus: user.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
       activationCode: user.activationCode ? {

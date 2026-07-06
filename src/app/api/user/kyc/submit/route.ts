@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { signAccessToken } from '@/lib/auth/jwt';
 
 const DOCUMENT_CONFIG = {
   government_id: {
@@ -118,6 +119,9 @@ const isCloudinarySecureUrl = (value: unknown, cloudName: string) => {
 const cleanText = (value: unknown) =>
   typeof value === 'string' && value.trim() ? value.trim() : null;
 
+const cleanRequiredText = (value: unknown) =>
+  typeof value === 'string' ? value.trim() : '';
+
 const buildUserKycUpdateData = (status: string, now: Date) => {
   const data: any = { kycStatus: status };
 
@@ -133,7 +137,6 @@ const buildUserKycUpdateData = (status: string, now: Date) => {
     data.kycApprovedAt = null;
     data.kycRejectedAt = null;
     data.kycRejectionReason = null;
-    data.onboardingStep = 5;
   } else {
     data.kycApprovedAt = null;
     data.kycRejectedAt = null;
@@ -152,6 +155,143 @@ export async function POST(req: NextRequest) {
 
     const userId = currentUser.id;
     const body = await req.json();
+
+    if (body.completeRegistration === true) {
+      const firstName = cleanRequiredText(body.firstName);
+      const lastName = cleanRequiredText(body.lastName);
+      const email = cleanRequiredText(body.email);
+      const phone = cleanRequiredText(body.phone);
+      const gender = cleanRequiredText(body.gender);
+      const dob = cleanRequiredText(body.dob);
+      const address = cleanRequiredText(body.address);
+      const bankName = cleanRequiredText(body.bankName);
+      const accountNumber = cleanRequiredText(body.accountNumber);
+      const accountName = cleanRequiredText(body.accountName);
+
+      if (
+        !firstName ||
+        !lastName ||
+        !email ||
+        !phone ||
+        !gender ||
+        !dob ||
+        !address ||
+        !bankName ||
+        !accountNumber ||
+        !accountName
+      ) {
+        return NextResponse.json(
+          { message: 'All personal information and banking fields are required.' },
+          { status: 400 }
+        );
+      }
+
+      if (gender !== 'Male' && gender !== 'Female') {
+        return NextResponse.json(
+          { message: 'Gender must be either Male or Female.' },
+          { status: 400 }
+        );
+      }
+
+      const parsedDob = new Date(dob);
+      if (Number.isNaN(parsedDob.getTime())) {
+        return NextResponse.json(
+          { message: 'Date of birth must be a valid date.' },
+          { status: 400 }
+        );
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          status: true,
+          kycStatus: true,
+          sessionVersion: true,
+        },
+      });
+
+      if (!user) {
+        return NextResponse.json({ message: 'User not found.' }, { status: 404 });
+      }
+
+      const normalizedEmail = email.toLowerCase();
+      if (user.email && user.email.toLowerCase() !== normalizedEmail) {
+        return NextResponse.json(
+          { message: 'Email address must match the registered account email.' },
+          { status: 400 }
+        );
+      }
+
+      const now = new Date();
+      const nextKycStatus = user.kycStatus === 'APPROVED' ? 'APPROVED' : 'COMPLETE';
+
+      const updatedUser = await prisma.$transaction(async (tx) => {
+        await tx.memberProfile.upsert({
+          where: { userId },
+          create: {
+            userId,
+            firstName,
+            lastName,
+            phone,
+            gender,
+            dob: parsedDob,
+            address,
+          },
+          update: {
+            firstName,
+            lastName,
+            phone,
+            gender,
+            dob: parsedDob,
+            address,
+          },
+        });
+
+        return tx.user.update({
+          where: { id: userId },
+          data: {
+            email: user.email || normalizedEmail,
+            bankName,
+            accountNumber,
+            accountName,
+            onboardingStep: 4,
+            onboardingStatus: 'COMPLETE',
+            kycStatus: nextKycStatus,
+            kycSubmittedAt: now,
+            kycRejectedAt: null,
+            kycRejectionReason: null,
+          },
+        });
+      });
+
+      const accessToken = await signAccessToken({
+        sub: updatedUser.id,
+        role: updatedUser.role,
+        status: updatedUser.status,
+        onboardingStatus: updatedUser.onboardingStatus,
+        sessionVersion: updatedUser.sessionVersion,
+      });
+
+      const response = NextResponse.json({
+        message: 'Registration completed successfully.',
+        isComplete: true,
+        status: nextKycStatus,
+        onboardingStatus: updatedUser.onboardingStatus,
+      });
+
+      response.cookies.set('accessToken', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 15 * 60,
+      });
+
+      return response;
+    }
 
     const {
       fullName: submittedFullName,

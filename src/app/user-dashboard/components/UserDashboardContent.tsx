@@ -420,12 +420,14 @@ export default function UserDashboardContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-xl border border-gray-150 border-t-4 border-t-cyan-500 p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex flex-col justify-between">
               <div>
-                <h3 className="font-bold text-gray-900 text-sm">KYC Verification</h3>
-                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">Complete your identity validation to unlock withdrawals and commissions.</p>
+                <h3 className="font-bold text-gray-900 text-sm">Registration Completion</h3>
+                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">Confirm your personal and banking details for handover-ready access.</p>
               </div>
               <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
-                  summary.kycStatus === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
+                  summary.kycStatus === 'APPROVED' || summary.kycStatus === 'COMPLETE'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                    : 'bg-amber-50 text-amber-700 border-amber-100'
                 }`}>
                   {summary.kycStatus}
                 </span>
@@ -433,7 +435,7 @@ export default function UserDashboardContent() {
                   href="/user-dashboard/kyc/complete"
                   className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-0.5 hover:underline"
                 >
-                  Manage KYC <ChevronRight size={14} />
+                  Manage <ChevronRight size={14} />
                 </Link>
               </div>
             </div>

@@ -33,7 +33,7 @@ const sidebarLinks = [
   { href: '/admin-dashboard/wallet', label: 'Wallet & Finance', icon: Wallet },
   { href: '/admin-dashboard/withdrawals', label: 'Withdrawals', icon: ArrowDownToLine },
   { href: '/admin-dashboard/commissions', label: 'Commission Settings', icon: Percent },
-  { href: '/admin-dashboard/kyc', label: 'KYC Management', icon: ShieldCheck },
+  { href: '/admin-dashboard/kyc', label: 'Registration Status', icon: ShieldCheck },
   { href: '/admin-dashboard/support', label: 'Support Management', icon: LifeBuoy },
   { href: '/admin-dashboard/content', label: 'Content Management', icon: FileText },
   { href: '/admin-dashboard/welcome', label: 'Welcome Messages', icon: Mail },

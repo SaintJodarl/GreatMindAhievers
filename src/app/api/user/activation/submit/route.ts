@@ -123,7 +123,9 @@ export async function POST(req: NextRequest) {
       // Update user status to ACTIVE unconditionally upon valid code
       const updatedUser = await tx.user.update({
         where: { id: userId },
-        data: { status: 'ACTIVE', onboardingStep: 6 },
+        data: {
+          status: 'ACTIVE',
+        },
       });
 
       // Distribute multi-level commission if not previously distributed

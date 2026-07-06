@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { ShieldAlert, ShieldCheck, KeyRound, CheckCircle2, ChevronRight } from 'lucide-react';
 
 interface UserActionRequiredCardsProps {
@@ -10,7 +11,9 @@ interface UserActionRequiredCardsProps {
 
 export default function UserActionRequiredCards({ summary, onOpenAction }: UserActionRequiredCardsProps) {
   const isKycVerified = summary.kycStatus === 'APPROVED';
-  const isKycSubmitted = summary.kycStatus === 'SUBMITTED' || summary.kycStatus === 'COMPLETE';
+  const isRegistrationComplete =
+    summary.kycStatus === 'COMPLETE' || summary.onboardingStatus === 'COMPLETE';
+  const isKycSubmitted = summary.kycStatus === 'SUBMITTED';
   const isKycRejected = summary.kycStatus === 'REJECTED';
   const isActivated = summary.status === 'ACTIVE';
   const kycTone = isKycVerified
@@ -21,7 +24,7 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
         body: 'text-emerald-700/80',
         button: 'bg-emerald-600 hover:bg-emerald-700',
       }
-    : isKycSubmitted
+    : isRegistrationComplete || isKycSubmitted
       ? {
           card: 'bg-blue-50/40 border-blue-200/60',
           icon: 'bg-blue-100/50 text-blue-600',
@@ -47,6 +50,8 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
 
   const kycTitle = isKycVerified
     ? 'KYC Verified'
+    : isRegistrationComplete
+      ? 'Registration Complete'
     : isKycSubmitted
       ? 'KYC Submitted'
       : isKycRejected
@@ -55,11 +60,13 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
 
   const kycCopy = isKycVerified
     ? 'Your identity has been fully verified. All features are unlocked.'
+    : isRegistrationComplete
+      ? 'Your registration details are complete. Account activation remains separate.'
     : isKycSubmitted
-      ? 'Your documents have been submitted and are under compliance review.'
+      ? 'Your registration information has been submitted and is under compliance review.'
       : isKycRejected
-        ? 'One or more KYC documents need to be re-uploaded before approval.'
-        : 'Submit your identity documents to unlock withdrawals and full features.';
+        ? 'Your registration details need to be re-submitted. Please complete registration again.'
+        : 'Complete your registration to save personal and banking information.';
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -75,7 +82,7 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
               kycTone.icon
             }`}
           >
-            {isKycVerified || isKycSubmitted ? <ShieldCheck size={24} strokeWidth={2.5} /> : <ShieldAlert size={24} strokeWidth={2.5} />}
+            {isKycVerified || isRegistrationComplete || isKycSubmitted ? <ShieldCheck size={24} strokeWidth={2.5} /> : <ShieldAlert size={24} strokeWidth={2.5} />}
           </div>
           <div>
             <h3
@@ -95,15 +102,15 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
           </div>
         </div>
 
-        {!isKycVerified && !isKycSubmitted && (
+        {!isKycVerified && !isRegistrationComplete && !isKycSubmitted && (
           <div className="mt-5 flex justify-end">
-            <button
-              onClick={() => onOpenAction(summary.onboardingStep || 1)}
+            <Link
+              href="/user-dashboard/kyc/complete"
               className={`flex items-center gap-1.5 ${kycTone.button} text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors`}
             >
-              {isKycRejected ? 'Review KYC Now' : 'Complete KYC Now'}
+              Complete Registration
               <ChevronRight size={16} strokeWidth={2.5} />
-            </button>
+            </Link>
           </div>
         )}
       </div>
@@ -147,7 +154,7 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
         {!isActivated && (
           <div className="mt-5 flex justify-end">
             <button
-              onClick={() => onOpenAction(5)}
+              onClick={() => onOpenAction(3)}
               className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
             >
               Activate Now

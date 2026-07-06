@@ -10,6 +10,13 @@ import { emitOutboxEvent } from '@/lib/events/outbox';
 
 export const maxDuration = 60; // Allow enough time for Neon cold starts and MLM placement
 
+const ADMIN_ROLES = ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'];
+const PROTECTED_ADMIN_EMAILS = new Set([
+  'makatablessing2026@gmail.com',
+  'gmanetworkng@gmail.com',
+  'stellarmediang@gmail.com',
+]);
+
 export async function POST(req: NextRequest) {
   console.log("[AUTH DEBUG] Registration started");
   console.log("SIGNUP START - Request received");
@@ -41,6 +48,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    email = email.toLowerCase().trim();
+    firstName = firstName.trim();
+    lastName = lastName.trim();
+    phone = typeof phone === 'string' ? phone.trim() : phone;
+
     // Fallback username if missing
     if (!username) {
       username = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + Math.floor(1000 + Math.random() * 9000);
@@ -56,11 +68,26 @@ export async function POST(req: NextRequest) {
     // Check unique email
     const exists = await prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        status: true,
+      },
     });
 
     if (exists) {
+      const isProtectedAdminEmail =
+        Boolean(exists.email) && PROTECTED_ADMIN_EMAILS.has(exists.email!.toLowerCase());
+      const isAdminAccount = ADMIN_ROLES.includes(exists.role);
+
       return NextResponse.json(
-        { message: 'An account with this email already exists' },
+        {
+          message:
+            isProtectedAdminEmail || isAdminAccount
+              ? 'This email is reserved for an administrator account'
+              : 'An account with this email already exists',
+        },
         { status: 400 }
       );
     }
@@ -180,8 +207,8 @@ export async function POST(req: NextRequest) {
         // 1. Create User
         const createdUser = await tx.user.create({
           data: {
-            name: `${firstName.trim()} ${lastName.trim()}`,
-            email: email.toLowerCase().trim(),
+            name: `${firstName} ${lastName}`,
+            email,
             username: username.toLowerCase().trim(),
             password: hashedPassword,
             role: 'MEMBER',
@@ -232,9 +259,9 @@ export async function POST(req: NextRequest) {
         await tx.memberProfile.create({
           data: {
             userId: createdUser.id,
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            phone: phone ? phone.trim() : '',
+            firstName,
+            lastName,
+            phone: phone || '',
           },
         });
 
@@ -279,6 +306,17 @@ export async function POST(req: NextRequest) {
       });
     } catch (createError: any) {
       console.error('Base user creation failed:', createError);
+      if (
+        createError.code === 'P2002' &&
+        Array.isArray(createError.meta?.target) &&
+        createError.meta.target.includes('email')
+      ) {
+        return NextResponse.json(
+          { message: 'An account with this email already exists' },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json(
         { message: createError.message || 'Database is busy. Base user account creation failed. Please try again.' },
         { status: 500 }
