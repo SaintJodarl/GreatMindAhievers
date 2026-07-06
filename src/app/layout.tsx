@@ -24,9 +24,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Great Mind Achievers — Binary MLM Network Platform',
+  title: 'Great Mind Achievers — Empowering Nigerians Through Teamwork & Shared Prosperity',
   description:
-    'Great Mind Achievers empowers network marketers to build binary downlines, track earnings, manage KYC, and withdraw commissions from one powerful dashboard.',
+    'Great Mind Achievers is a Nigerian empowerment community helping everyday Nigerians build income, access business support, participate in agricultural partnerships, and grow through teamwork and shared prosperity.',
   icons: {
     icon: [{ url: '/assets/images/app_logo.png', type: 'image/png' }],
   },

@@ -5,8 +5,8 @@ let isLoggingOut = false;
 export function forceLogout() {
   if (isLoggingOut || typeof window === 'undefined') return;
   
-  if (window.location.pathname === '/sign-up-login-screen') {
-    return; // Already on login screen, do not refresh
+  if (window.location.pathname === '/sign-up-login-screen' || window.location.pathname === '/') {
+    return; // Already on login screen or public landing page, do not refresh
   }
 
   isLoggingOut = true;
