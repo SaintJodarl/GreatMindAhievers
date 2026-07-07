@@ -199,9 +199,9 @@ export async function POST(req: NextRequest) {
     console.log("[AUTH DEBUG] Password hashed for user:", email);
     const referralCode = await generateUniqueReferralCode(prisma);
 
-    let user;
+    let result;
     try {
-      user = await prisma.$transaction(async (tx) => {
+      result = await prisma.$transaction(async (tx) => {
         const now = new Date();
 
         // 1. Create User
@@ -299,8 +299,43 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        console.log("[AUTH DEBUG] User created successfully in database:", createdUser.id);
-        return createdUser;
+        // 4. MLM Placement Logic
+        let placement = null;
+        if (MLM_EVENT_MODE) {
+          // GREEN MODE: Emit event, respond instantly
+          await emitOutboxEvent(tx, "MLM_DEFERRED_OPERATION", createdUser.id, {
+            source: "register",
+            originalFunction: "spilloverSearch",
+            sponsorId,
+            preferredPosition: autoCalculatedPosition
+          }, `reg_spillover_${createdUser.id}`);
+        } else {
+          // BLUE MODE (LEGACY): Block request, calculate synchronously
+          if (LEGACY_WRITE_DISABLED) {
+            throw new Error("Legacy financial writes disabled");
+          }
+          placement = await executePlacementWithTx(tx, {
+            sponsorId,
+            preferredPosition: autoCalculatedPosition as BinaryPosition,
+            userId: createdUser.id,
+          });
+        }
+
+        // 5. Log standard successful USER_REGISTER audit event
+        await tx.auditLog.create({
+          data: {
+            adminId: createdUser.id,
+            action: 'USER_REGISTER',
+            targetType: 'User',
+            targetId: createdUser.id,
+            details: `User registered successfully: ${createdUser.email}`,
+            ipAddress,
+            userAgent: req.headers.get('user-agent') || null,
+          },
+        });
+
+        console.log("[AUTH DEBUG] User created and placed successfully in database:", createdUser.id);
+        return { user: createdUser, placement };
       }, {
         timeout: 20000 // 20s timeout safety for user creation
       });
@@ -323,67 +358,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let placementResult = null;
-    try {
-      placementResult = await prisma.$transaction(async (tx) => {
-        let placement = null;
-        if (MLM_EVENT_MODE) {
-          // GREEN MODE: Emit event, respond instantly
-          await emitOutboxEvent(tx, "MLM_DEFERRED_OPERATION", user.id, {
-            source: "register",
-            originalFunction: "spilloverSearch",
-            sponsorId,
-            preferredPosition: autoCalculatedPosition
-          }, `reg_spillover_${user.id}`);
-        } else {
-          // BLUE MODE (LEGACY): Block request, calculate synchronously
-          if (LEGACY_WRITE_DISABLED) {
-            throw new Error("Legacy financial writes disabled");
-          }
-          placement = await executePlacementWithTx(tx, {
-            sponsorId,
-            preferredPosition: autoCalculatedPosition as BinaryPosition,
-            userId: user.id,
-          });
-        }
-
-        // 4. Log standard successful USER_REGISTER audit event
-        await tx.auditLog.create({
-          data: {
-            adminId: user.id,
-            action: 'USER_REGISTER',
-            targetType: 'User',
-            targetId: user.id,
-            details: `User registered successfully: ${user.email}`,
-            ipAddress,
-            userAgent: req.headers.get('user-agent') || null,
-          },
-        });
-
-        return placement;
-      }, {
-        timeout: 30000 // 30s timeout safety for binary placement
-      });
-    } catch (placementError: any) {
-      console.error('Placement transaction failed, logging and applying fallback:', placementError);
-      
-      // Fallback Safety: Log audit trail so that placement can be retried / inspected manually.
-      try {
-        await prisma.auditLog.create({
-          data: {
-            adminId: 'SYSTEM',
-            action: 'USER_PLACEMENT_PENDING_RETRY',
-            targetType: 'User',
-            targetId: user.id,
-            details: `User registration succeeded, but MLM placement failed with error: ${placementError.message}. Set to pending retry.`,
-            ipAddress,
-            userAgent: req.headers.get('user-agent') || null,
-          },
-        });
-      } catch (logErr) {
-        console.error('Failed to log placement pending alert:', logErr);
-      }
-    }
+    let placementResult = result.placement;
+    let user = result.user;
 
     return NextResponse.json(
       {
