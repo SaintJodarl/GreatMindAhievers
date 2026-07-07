@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
       rejectedAmount: 0,
     };
     for (const w of withdrawalsSummary) {
-      const amt = w._sum.amount || 0;
+      const amt = w._sum.amount ? Number(w._sum.amount) : 0;
       const count = w._count || 0;
       if (w.status === 'PENDING') {
         withdrawals.pendingCount = count;
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
       total: 0,
     };
     for (const comm of commissionsSummary) {
-      const amt = comm._sum.amount || 0;
+      const amt = comm._sum.amount ? Number(comm._sum.amount) : 0;
       commissions.total += amt;
       if (comm.type === 'REFERRAL_BONUS') commissions.referral = amt;
       if (comm.type === 'PAIRING_BONUS') commissions.pairing = amt;
@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
       },
       kyc: kycStats,
       wallet: {
-        totalCachedBalance: walletSum._sum.balance || 0,
+        totalCachedBalance: walletSum._sum.balance ? Number(walletSum._sum.balance) : 0,
       },
       withdrawals,
       commissions,

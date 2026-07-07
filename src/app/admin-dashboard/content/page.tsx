@@ -2,6 +2,9 @@ import { prisma } from '@/lib/prisma';
 import React from 'react';
 import AdminContentClient from './components/AdminContentClient';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Content Management | Admin',
 };

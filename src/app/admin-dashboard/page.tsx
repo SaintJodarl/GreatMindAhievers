@@ -3,6 +3,9 @@ import React from 'react';
 import { Users, Wallet, CreditCard, Activity } from 'lucide-react';
 import AdminOverviewClient from './components/AdminOverviewClient';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Admin Overview | GMA Network',
 };

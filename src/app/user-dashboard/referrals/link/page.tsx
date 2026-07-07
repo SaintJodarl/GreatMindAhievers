@@ -6,6 +6,9 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import ReferralLinkClient from './ReferralLinkClient';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Referral Link | GMA Network',
 };

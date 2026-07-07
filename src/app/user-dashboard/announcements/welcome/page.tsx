@@ -6,6 +6,9 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { Mail, Calendar, MailOpen } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Welcome Messages | Announcements',
 };

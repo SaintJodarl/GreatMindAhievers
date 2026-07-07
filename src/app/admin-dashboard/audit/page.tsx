@@ -2,6 +2,9 @@ import { prisma } from '@/lib/prisma';
 import React from 'react';
 import AdminAuditClient from './components/AdminAuditClient';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Audit Logs | Admin',
 };

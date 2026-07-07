@@ -2,6 +2,9 @@ import { prisma } from '@/lib/prisma';
 import React from 'react';
 import AdminWithdrawalsClient from './components/AdminWithdrawalsClient';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Withdrawals | Admin',
 };

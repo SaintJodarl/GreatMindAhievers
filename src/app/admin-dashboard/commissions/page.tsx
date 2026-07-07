@@ -2,6 +2,9 @@ import { prisma } from '@/lib/prisma';
 import React from 'react';
 import AdminCommissionsClient from './components/AdminCommissionsClient';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Commissions | Admin',
 };

@@ -2,6 +2,9 @@ import { prisma } from '@/lib/prisma';
 import React from 'react';
 import AdminWalletClient from './components/AdminWalletClient';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Wallet & Finance | Admin',
 };

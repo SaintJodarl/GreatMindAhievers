@@ -33,6 +33,8 @@ import {
 } from 'lucide-react';
 import LoginForm from '../sign-up-login-screen/components/LoginForm';
 import RegisterForm from '../sign-up-login-screen/components/RegisterForm';
+import { CompensationPlanSection } from './CompensationPlanSection';
+import { CeoMessageSection } from './CeoMessageSection';
 
 type AuthMode = null | 'login' | 'register';
 type IconComponent = typeof Users;
@@ -840,6 +842,8 @@ export default function LandingPageClient() {
             </div>
           </Section>
 
+          <CeoMessageSection />
+
           <Section id="services" className="border-y border-border bg-secondary">
             <SectionHeader
               eyebrow="Member programs"
@@ -852,6 +856,8 @@ export default function LandingPageClient() {
               ))}
             </div>
           </Section>
+
+          <CompensationPlanSection />
 
           <Section id="how-it-works">
             <div className="grid gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">

@@ -2,6 +2,9 @@ import { prisma } from '@/lib/prisma';
 import React from 'react';
 import AdminRolesClient from './components/AdminRolesClient';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Admin Roles | Admin',
 };

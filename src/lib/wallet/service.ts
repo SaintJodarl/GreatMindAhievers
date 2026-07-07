@@ -283,7 +283,7 @@ export async function debitWallet(
   }
 
   // Check balance before debit
-  if (wallet.balance < amount) {
+  if (wallet.balance.toNumber() < amount) {
     throw new Error('Insufficient balance');
   }
 
@@ -305,7 +305,7 @@ export async function debitWallet(
   });
 
   // Double check balance under concurrency
-  if (updatedWallet.balance < 0) {
+  if (updatedWallet.balance.toNumber() < 0) {
     throw new Error('Insufficient balance');
   }
 
@@ -348,7 +348,7 @@ export async function debitWallet(
 export async function recordCommission(
   tx: Prisma.TransactionClient,
   input: CommissionRecordInput
-): Promise<WalletTransaction> {
+): Promise<WalletTransaction | void> {
   const { userId, amount, commissionType, description, reference, metadata } = input;
 
   if (amount <= 0) {
@@ -455,7 +455,7 @@ export async function adjustBalance(
     throw new Error('Wallet not found');
   }
 
-  const difference = newBalance - wallet.balance;
+  const difference = newBalance - wallet.balance.toNumber();
   const type = 'ADJUSTMENT';
 
   // 2. Create FinancialEvent
@@ -602,7 +602,7 @@ export async function reverseTransaction(
       where: { id: originalTxn.walletId },
       data: { balance: { decrement: reverseAmount } },
     });
-    if (updatedWallet.balance < 0) {
+    if (updatedWallet.balance.toNumber() < 0) {
       throw new Error('Reversal would result in negative balance');
     }
   } else {
@@ -852,7 +852,9 @@ export async function distributeMultiLevelCommission(
         }
       });
 
-      transactions.push(txn);
+      if (txn) {
+        transactions.push(txn);
+      }
     }
   }
 

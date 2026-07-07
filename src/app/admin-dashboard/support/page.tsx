@@ -2,6 +2,9 @@ import { prisma } from '@/lib/prisma';
 import React from 'react';
 import AdminSupportClient from './components/AdminSupportClient';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Support Management | Admin',
 };

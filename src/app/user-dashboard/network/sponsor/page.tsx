@@ -6,6 +6,9 @@ import { prisma } from '@/lib/prisma';
 import { UserCheck, Mail, Calendar, Award, Shield, User as UserIcon } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Sponsor Info | My Network',
 };

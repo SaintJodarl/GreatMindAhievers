@@ -35,8 +35,6 @@ jest-test-results.json
 
 # Optional: if using TurboRepo or monorepo
 turbo/
-.vercel
-.vercel/
 
 # Databases and Environment Variables
 .env
@@ -46,6 +44,4 @@ turbo/
 .env.production.local
 *.db
 *.db-journal
-
-.vercel
 .env*

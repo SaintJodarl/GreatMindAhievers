@@ -2,6 +2,9 @@ import { prisma } from '@/lib/prisma';
 import React from 'react';
 import AdminWelcomeClient from './components/AdminWelcomeClient';
 
+export const dynamic = 'force-dynamic';
+
+
 export const metadata = {
   title: 'Welcome Messages | Admin',
 };
