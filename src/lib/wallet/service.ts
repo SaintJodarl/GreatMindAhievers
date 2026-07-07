@@ -212,7 +212,7 @@ export async function creditWallet(
     },
   });
 
-  await (global as any).verifyWalletIntegrity(tx, walletId);
+  await verifyWalletIntegrity(tx, walletId);
 
   return castTransaction(transaction);
 }
