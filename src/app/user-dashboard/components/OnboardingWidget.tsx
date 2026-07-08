@@ -22,13 +22,13 @@ interface OnboardingWidgetProps {
 
 const getActiveOnboardingStep = (step?: number | null) => {
   if (!step || step < 1) return 1;
-  if (step >= 3) return 3;
+  if (step >= 2) return 2;
   return step;
 };
 
 const getOnboardingProgressStep = (step?: number | null) => {
   if (!step || step < 1) return 1;
-  if (step >= 4) return 4;
+  if (step >= 3) return 3;
   return step;
 };
 
@@ -55,7 +55,6 @@ export default function OnboardingWidget({
     bankName: '',
     accountNumber: '',
     accountName: '',
-    code: '',
   });
 
   useEffect(() => {
@@ -72,9 +71,7 @@ export default function OnboardingWidget({
       email: summary.email || '',
       phone: summary.profile?.phone || summary.phone || '',
       gender: summary.profile?.gender || '',
-      dob: summary.profile?.dob
-        ? new Date(summary.profile.dob).toISOString().split('T')[0]
-        : '',
+      dob: summary.profile?.dob ? new Date(summary.profile.dob).toISOString().split('T')[0] : '',
       address: summary.profile?.address || '',
       bankName: summary.bankName || '',
       accountNumber: summary.accountNumber || '',
@@ -135,65 +132,6 @@ export default function OnboardingWidget({
     }
   };
 
-  const handleSubmitActivation = async () => {
-    if (!formData.code.trim()) return;
-
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const res = await api('/api/user/activation/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: formData.code.trim() }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to submit activation code');
-      }
-
-      setSuccess(data.message || 'Account successfully activated!');
-      onRefresh();
-      if (onClose) {
-        setTimeout(onClose, 1500);
-      }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during account activation.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSkipActivation = async () => {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const res = await api('/api/user/onboarding/skip-activation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to skip activation');
-      }
-
-      setSuccess('Onboarding completed. Activation skipped.');
-      onRefresh();
-      if (onClose) {
-        setTimeout(onClose, 1500);
-      }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while skipping activation.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const validateStep = (stepNumber: number) => {
     if (stepNumber === 1) {
       return !!(
@@ -217,7 +155,6 @@ export default function OnboardingWidget({
   const stepsList = [
     { id: 1, label: 'Personal Information', icon: User },
     { id: 2, label: 'Banking Information', icon: CreditCard },
-    { id: 3, label: 'Activation', icon: KeyRound },
   ];
 
   const progressStep = getOnboardingProgressStep(summary.onboardingStep ?? 1);
@@ -516,70 +453,6 @@ export default function OnboardingWidget({
                 {loading && <Loader2 className="animate-spin" size={14} />}
                 Save and Continue <ArrowRight size={14} />
               </button>
-            </div>
-          </div>
-        )}
-
-        {activeStep === 3 && (
-          <div className="space-y-5 animate-fade-in">
-            <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">
-              Step 3 - Activation
-            </h3>
-
-            <div className="p-4 bg-indigo-50/30 border border-indigo-100 rounded-2xl flex items-start gap-2.5 text-xs text-indigo-900 font-semibold leading-relaxed">
-              <KeyRound className="text-indigo-600 mt-0.5 flex-shrink-0" size={16} />
-              <div>
-                <p className="font-bold">Provide Activation Pin</p>
-                <p className="text-gray-500 mt-1">
-                  Please enter the security activation code issued to you by the admin desk to
-                  complete registration and unlock full membership features.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="block text-[10px] font-bold text-gray-400 uppercase">
-                  Activation Code
-                </label>
-                <input
-                  type="text"
-                  name="code"
-                  placeholder="e.g. GMA-123456"
-                  value={formData.code}
-                  onChange={handleInputChange}
-                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 font-mono uppercase tracking-wider"
-                />
-              </div>
-
-              <div className="flex justify-between pt-4 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setActiveStep(2)}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-5 rounded-xl transition-all text-xs"
-                >
-                  Back
-                </button>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={handleSkipActivation}
-                    className="text-gray-500 hover:text-gray-700 font-semibold py-2 px-4 rounded-xl transition-all text-xs border border-gray-200 hover:bg-gray-50"
-                  >
-                    Skip for now
-                  </button>
-                  <button
-                    type="button"
-                    disabled={loading || !formData.code.trim()}
-                    onClick={handleSubmitActivation}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-5 rounded-xl transition-all text-xs disabled:opacity-50 inline-flex items-center gap-1.5"
-                  >
-                    {loading && <Loader2 className="animate-spin" size={14} />}
-                    Redeem and Activate
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         )}

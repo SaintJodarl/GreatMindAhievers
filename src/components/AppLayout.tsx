@@ -137,16 +137,31 @@ export default function AppLayout({ children, role = 'user' }: AppLayoutProps) {
             {isLocked ? (
               <div className="max-w-xl mx-auto mt-12 p-8 bg-white border border-gray-150 rounded-3xl shadow-sm text-center space-y-6">
                 <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mx-auto text-indigo-600 shadow-sm">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                   </svg>
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Access Restricted</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+                    Access Restricted
+                  </h2>
                   <p className="text-sm text-gray-500 leading-relaxed max-w-sm mx-auto">
-                    Your account is currently in a <span className="font-semibold text-indigo-600">{status?.replace('_', ' ')}</span> status. 
-                    Please return to the Dashboard Overview to complete your KYC verification and submit your Activation Code.
+                    Your account is currently in a{' '}
+                    <span className="font-semibold text-indigo-600">
+                      {status?.replace('_', ' ')}
+                    </span>{' '}
+                    status. Please return to the Dashboard Overview to complete your KYC
+                    verification and submit your Activation Code.
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">

@@ -26,7 +26,7 @@ export async function processReferralUpdate(event: any) {
     where: { id: userId },
     data: {
       path: newPath,
-      depth: newDepth
-    }
+      depth: newDepth,
+    },
   });
 }

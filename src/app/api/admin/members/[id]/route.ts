@@ -3,10 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
 
 // GET: Profile details with sponsor, placement, wallet, KYC
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await verifyAdminPermission('member:read');
     if (!auth.authorized) {
@@ -46,10 +43,7 @@ export async function GET(
 }
 
 // PATCH: General update (e.g. status or details)
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await verifyAdminPermission('member:write');
     if (!auth.authorized) {
@@ -68,7 +62,10 @@ export async function PATCH(
     }
 
     if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
-      return NextResponse.json({ message: 'Forbidden: Cannot manage administrator accounts via member endpoints' }, { status: 403 });
+      return NextResponse.json(
+        { message: 'Forbidden: Cannot manage administrator accounts via member endpoints' },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();

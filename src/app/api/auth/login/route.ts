@@ -14,9 +14,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
     }
 
-    const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
-                      req.headers.get('x-real-ip')?.trim() || 
-                      '127.0.0.1';
+    const ipAddress =
+      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      req.headers.get('x-real-ip')?.trim() ||
+      '127.0.0.1';
 
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -39,7 +40,9 @@ export async function POST(req: NextRequest) {
       if (timeDiff < lockDurationMs) {
         const remainingMin = Math.ceil((lockDurationMs - timeDiff) / 60000);
         return NextResponse.json(
-          { message: `Too many failed login attempts. Locked out. Try again in ${remainingMin} minutes.` },
+          {
+            message: `Too many failed login attempts. Locked out. Try again in ${remainingMin} minutes.`,
+          },
           { status: 429 }
         );
       }
@@ -62,7 +65,10 @@ export async function POST(req: NextRequest) {
 
     // Verify account status
     if (user.status === 'SUSPENDED') {
-      return NextResponse.json({ message: 'Account suspended. Please contact support.' }, { status: 403 });
+      return NextResponse.json(
+        { message: 'Account suspended. Please contact support.' },
+        { status: 403 }
+      );
     }
 
     // Verify password
@@ -91,10 +97,10 @@ export async function POST(req: NextRequest) {
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { id: user.id, sessionVersion: newSessionVersion }
+        data: { id: user.id, sessionVersion: newSessionVersion },
       }),
       prisma.refreshToken.deleteMany({
-        where: { userId: user.id }
+        where: { userId: user.id },
       }),
       prisma.refreshToken.create({
         data: {
@@ -116,7 +122,7 @@ export async function POST(req: NextRequest) {
           ipAddress: req.headers.get('x-forwarded-for') || null,
           userAgent: req.headers.get('user-agent') || null,
         },
-      })
+      }),
     ]);
 
     // 1. Generate short-lived Access Token (JWT)

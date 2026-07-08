@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
 
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
     const cachedAggregate = await prisma.wallet.aggregate({
       _sum: { balance: true },
     });
-    const totalCachedBalance = cachedAggregate._sum.balance || 0;
+    const totalCachedBalance = cachedAggregate._sum.balance?.toNumber() || 0;
 
     // 2. Fetch all transactions to compute derived balance and inflow/outflow
     const allTxns = await prisma.walletTransaction.findMany({
@@ -31,28 +32,28 @@ export async function GET(req: NextRequest) {
       select: { type: true, amount: true, walletId: true },
     });
 
-    let totalDerivedInflow = 0;
-    let totalDerivedOutflow = 0;
-    const derivedWalletBalances: Record<string, number> = {};
+    let totalDerivedInflow = new Prisma.Decimal(0);
+    let totalDerivedOutflow = new Prisma.Decimal(0);
+    const derivedWalletBalances: Record<string, Prisma.Decimal> = {};
 
     for (const txn of allTxns) {
       const isCredit = CREDIT_TYPES.includes(txn.type);
       const isDebit = DEBIT_TYPES.includes(txn.type);
 
       if (!derivedWalletBalances[txn.walletId]) {
-        derivedWalletBalances[txn.walletId] = 0;
+        derivedWalletBalances[txn.walletId] = new Prisma.Decimal(0);
       }
 
       if (isCredit) {
-        totalDerivedInflow += txn.amount;
-        derivedWalletBalances[txn.walletId] += txn.amount;
+        totalDerivedInflow = totalDerivedInflow.plus(txn.amount);
+        derivedWalletBalances[txn.walletId] = derivedWalletBalances[txn.walletId].plus(txn.amount);
       } else if (isDebit) {
-        totalDerivedOutflow += txn.amount;
-        derivedWalletBalances[txn.walletId] -= txn.amount;
+        totalDerivedOutflow = totalDerivedOutflow.plus(txn.amount);
+        derivedWalletBalances[txn.walletId] = derivedWalletBalances[txn.walletId].minus(txn.amount);
       }
     }
 
-    const totalDerivedBalance = totalDerivedInflow - totalDerivedOutflow;
+    const totalDerivedBalance = totalDerivedInflow.minus(totalDerivedOutflow);
 
     // 3. Find mismatches
     const wallets = await prisma.wallet.findMany({
@@ -65,25 +66,27 @@ export async function GET(req: NextRequest) {
 
     const mismatches = [];
     for (const wallet of wallets) {
-      const derived = derivedWalletBalances[wallet.id] || 0;
-      if (Math.abs(wallet.balance - derived) > 0.01) {
+      const derived = derivedWalletBalances[wallet.id] || new Prisma.Decimal(0);
+      const difference = wallet.balance.minus(derived);
+
+      if (difference.abs().gt(0.01)) {
         mismatches.push({
           walletId: wallet.id,
           userId: wallet.userId,
           name: wallet.user.name || 'Unknown',
           email: wallet.user.email || '',
-          cachedBalance: wallet.balance,
-          derivedBalance: derived,
-          difference: wallet.balance - derived,
+          cachedBalance: wallet.balance.toNumber(),
+          derivedBalance: derived.toNumber(),
+          difference: difference.toNumber(),
         });
       }
     }
 
     return NextResponse.json({
       systemCachedBalance: totalCachedBalance,
-      systemDerivedBalance: totalDerivedBalance,
-      inflow: totalDerivedInflow,
-      outflow: totalDerivedOutflow,
+      systemDerivedBalance: totalDerivedBalance.toNumber(),
+      inflow: totalDerivedInflow.toNumber(),
+      outflow: totalDerivedOutflow.toNumber(),
       reconciliationStatus: mismatches.length === 0 ? 'CLEAN' : 'MISMATCHED',
       mismatchCount: mismatches.length,
       mismatches,

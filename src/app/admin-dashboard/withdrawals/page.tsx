@@ -4,7 +4,6 @@ import AdminWithdrawalsClient from './components/AdminWithdrawalsClient';
 
 export const dynamic = 'force-dynamic';
 
-
 export const metadata = {
   title: 'Withdrawals | Admin',
 };
@@ -34,4 +33,3 @@ export default async function WithdrawalsPage() {
 
   return <AdminWithdrawalsClient initialWithdrawals={serializedWithdrawals as any} />;
 }
-

@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 export type TransactionType =
   | 'CREDIT'
   | 'DEBIT'
@@ -16,7 +18,7 @@ export type CommissionType = 'REFERRAL_BONUS' | 'PAIRING_BONUS' | 'LEADERSHIP_BO
 export interface Wallet {
   id: string;
   userId: string;
-  balance: number;
+  balance: Prisma.Decimal;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,8 +27,8 @@ export interface WalletTransaction {
   id: string;
   walletId: string;
   type: TransactionType;
-  amount: number;
-  balanceAfter: number;
+  amount: Prisma.Decimal;
+  balanceAfter: Prisma.Decimal;
   description: string;
   reference: string | null;
   metadata: string | null;
@@ -36,12 +38,12 @@ export interface WalletTransaction {
 
 export interface CreateWalletInput {
   userId: string;
-  initialBalance?: number;
+  initialBalance?: Prisma.Decimal | number;
 }
 
 export interface CreditDebitInput {
   walletId: string;
-  amount: number;
+  amount: Prisma.Decimal;
   type: TransactionType;
   description: string;
   reference?: string;
@@ -50,7 +52,7 @@ export interface CreditDebitInput {
 
 export interface CommissionRecordInput {
   userId: string;
-  amount: number;
+  amount: Prisma.Decimal;
   commissionType: CommissionType;
   description: string;
   reference?: string;
@@ -60,7 +62,7 @@ export interface CommissionRecordInput {
 export interface WalletBalance {
   walletId: string;
   userId: string;
-  balance: number;
+  balance: Prisma.Decimal;
   currency: string;
   lastUpdated: Date;
 }

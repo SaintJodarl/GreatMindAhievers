@@ -101,7 +101,9 @@ export async function POST(req: NextRequest) {
     const prefix = 'GMA-';
 
     const generatedCodes = [];
-    const expirationDate = expirationDays ? new Date(Date.now() + parseInt(expirationDays) * 24 * 60 * 60 * 1000) : null;
+    const expirationDate = expirationDays
+      ? new Date(Date.now() + parseInt(expirationDays) * 24 * 60 * 60 * 1000)
+      : null;
 
     const batchCodes = new Set<string>();
 

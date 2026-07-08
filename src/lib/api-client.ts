@@ -4,7 +4,7 @@ let isLoggingOut = false;
 
 export function forceLogout() {
   if (isLoggingOut || typeof window === 'undefined') return;
-  
+
   if (window.location.pathname === '/sign-up-login-screen' || window.location.pathname === '/') {
     return; // Already on login screen or public landing page, do not refresh
   }
@@ -36,7 +36,7 @@ export async function api(url: string, options: RequestInit = {}): Promise<Respo
 
   const finalUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
 
-  let response = await fetch(finalUrl, finalOptions);
+  const response = await fetch(finalUrl, finalOptions);
 
   // Intercept 401 Unauthorized and attempt silent refresh cleanly
   if (response.status === 401) {
@@ -44,7 +44,7 @@ export async function api(url: string, options: RequestInit = {}): Promise<Respo
       const refreshUrl = `${BASE_URL}/api/auth/refresh`;
       const refreshRes = await fetch(refreshUrl, {
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include',
       });
 
       if (refreshRes.ok) {

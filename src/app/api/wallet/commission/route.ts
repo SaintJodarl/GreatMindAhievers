@@ -1,7 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 
-
 import { prisma } from '@/lib/prisma';
 import { recordCommission } from '@/lib/wallet/service';
 import { CommissionType } from '@/lib/wallet/types';
@@ -22,7 +21,10 @@ export async function POST(req: NextRequest) {
     const { userId, amount, commissionType, description, reference, metadata } = body;
 
     if (!reference || typeof reference !== 'string' || !reference.trim()) {
-      return NextResponse.json({ message: 'reference (eventId) is required for idempotency' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'reference (eventId) is required for idempotency' },
+        { status: 400 }
+      );
     }
 
     if (!userId) {

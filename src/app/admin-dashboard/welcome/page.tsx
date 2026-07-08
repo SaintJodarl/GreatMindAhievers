@@ -4,7 +4,6 @@ import AdminWelcomeClient from './components/AdminWelcomeClient';
 
 export const dynamic = 'force-dynamic';
 
-
 export const metadata = {
   title: 'Welcome Messages | Admin',
 };
@@ -23,4 +22,3 @@ export default async function WelcomeMessagesPage() {
 
   return <AdminWelcomeClient initialMessages={serializedMessages} />;
 }
-

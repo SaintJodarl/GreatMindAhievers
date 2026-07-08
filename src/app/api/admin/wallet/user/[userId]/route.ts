@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
 
@@ -12,10 +13,7 @@ const CREDIT_TYPES = [
 ];
 const DEBIT_TYPES = ['DEBIT', 'WITHDRAWAL', 'FEE'];
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const auth = await verifyAdminPermission('wallet:read');
     if (!auth.authorized) {
@@ -48,20 +46,29 @@ export async function GET(
     });
 
     // Derive balance
-    let derivedBalance = 0;
+    let derivedBalance = new Prisma.Decimal(0);
     for (const txn of transactions) {
       if (CREDIT_TYPES.includes(txn.type)) {
-        derivedBalance += txn.amount;
+        derivedBalance = derivedBalance.plus(txn.amount);
       } else if (DEBIT_TYPES.includes(txn.type)) {
-        derivedBalance -= txn.amount;
+        derivedBalance = derivedBalance.minus(txn.amount);
       }
     }
 
+    const difference = wallet.balance.minus(derivedBalance).abs();
+
     return NextResponse.json({
-      wallet,
-      derivedBalance,
-      reconciled: Math.abs(wallet.balance - derivedBalance) < 0.01,
-      transactions,
+      wallet: {
+        ...wallet,
+        balance: wallet.balance.toNumber(), // API formatting boundary
+      },
+      derivedBalance: derivedBalance.toNumber(),
+      reconciled: difference.lt(0.01),
+      transactions: transactions.map((t) => ({
+        ...t,
+        amount: t.amount.toNumber(),
+        balanceAfter: t.balanceAfter.toNumber(),
+      })),
     });
   } catch (error: any) {
     console.error('Get user wallet error:', error);

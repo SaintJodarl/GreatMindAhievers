@@ -10,15 +10,17 @@ export async function emitOutboxEvent(
 ) {
   // Fully transactional + idempotent via DB constraints without transaction poisoning
   await tx.outboxEvent.createMany({
-    data: [{
-      type,
-      userId,
-      payload,
-      idempotencyKey,
-      executionMode,
-      status: 'OUTBOX_PENDING',
-      nextRetryAt: new Date(),
-    }],
-    skipDuplicates: true
+    data: [
+      {
+        type,
+        userId,
+        payload,
+        idempotencyKey,
+        executionMode,
+        status: 'OUTBOX_PENDING',
+        nextRetryAt: new Date(),
+      },
+    ],
+    skipDuplicates: true,
   });
 }

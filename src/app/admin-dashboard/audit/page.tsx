@@ -4,7 +4,6 @@ import AdminAuditClient from './components/AdminAuditClient';
 
 export const dynamic = 'force-dynamic';
 
-
 export const metadata = {
   title: 'Audit Logs | Admin',
 };
@@ -23,4 +22,3 @@ export default async function AuditPage() {
 
   return <AdminAuditClient initialLogs={serializedLogs} />;
 }
-

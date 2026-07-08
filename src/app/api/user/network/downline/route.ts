@@ -1,7 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 
-
 import { prisma } from '@/lib/prisma';
 
 function determineRank(leftVolume: number, rightVolume: number): string {
@@ -74,8 +73,8 @@ export async function GET(req: NextRequest) {
     ]);
 
     const downlines = nodes.map((node) => {
-      const leftVol = node.leftVolume || 0;
-      const rightVol = node.rightVolume || 0;
+      const leftVol = node.leftVolume?.toNumber() || 0;
+      const rightVol = node.rightVolume?.toNumber() || 0;
 
       return {
         id: node.user.id,

@@ -52,9 +52,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('Cloudinary server upload error:', error);
-    return NextResponse.json(
-      { message: error.message || 'File upload failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: error.message || 'File upload failed' }, { status: 500 });
   }
 }

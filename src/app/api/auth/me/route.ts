@@ -34,7 +34,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (user.sessionVersion !== payload.sessionVersion) {
-      return NextResponse.json({ message: 'Session expired or invalidated by new login' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Session expired or invalidated by new login' },
+        { status: 401 }
+      );
     }
 
     if (user.status === 'SUSPENDED') {

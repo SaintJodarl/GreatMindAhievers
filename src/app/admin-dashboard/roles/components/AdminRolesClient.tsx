@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Users, ShieldAlert, X, Loader2, AlertCircle, CheckCircle2, KeyRound } from 'lucide-react';
+import {
+  Plus,
+  Users,
+  ShieldAlert,
+  X,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  KeyRound,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
@@ -67,7 +76,10 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
     for (let i = 0; i < 6; i++) {
       pass += chars[Math.floor(Math.random() * chars.length)];
     }
-    pass = pass.split('').sort(() => 0.5 - Math.random()).join('');
+    pass = pass
+      .split('')
+      .sort(() => 0.5 - Math.random())
+      .join('');
     setResetNewPassword(pass);
     setResetConfirmPassword(pass);
   };
@@ -89,7 +101,10 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
       const res = await fetch(`/api/admin/members/${selectedAdmin.id}/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword: resetNewPassword, confirmPassword: resetConfirmPassword }),
+        body: JSON.stringify({
+          newPassword: resetNewPassword,
+          confirmPassword: resetConfirmPassword,
+        }),
       });
 
       const data = await res.json();
@@ -187,7 +202,7 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
       setIsManageOpen(false);
       router.refresh();
 
-      setAdmins(admins.map(a => a.id === selectedAdmin.id ? data.admin : a));
+      setAdmins(admins.map((a) => (a.id === selectedAdmin.id ? data.admin : a)));
     } catch (err: any) {
       showNotification(err.message || 'Something went wrong', 'error');
     } finally {
@@ -214,7 +229,9 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Roles</h1>
-          <p className="text-gray-500 mt-1">Manage administrative access levels and configure user permissions.</p>
+          <p className="text-gray-500 mt-1">
+            Manage administrative access levels and configure user permissions.
+          </p>
         </div>
         <button
           onClick={openInviteModal}
@@ -234,7 +251,9 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Role Level</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Status</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Joined Date</th>
-                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">Actions</th>
+                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -293,7 +312,10 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
           <div className="bg-white rounded-2xl max-w-md w-full shadow-xl border border-gray-100 p-6 space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
               <h3 className="text-xl font-bold text-gray-900">Invite Admin User</h3>
-              <button onClick={() => setIsInviteOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setIsInviteOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -311,7 +333,9 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   required
@@ -323,7 +347,9 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Secure Password</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Secure Password
+                </label>
                 <input
                   type="password"
                   required
@@ -335,7 +361,9 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Access Role Level</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Access Role Level
+                </label>
                 <select
                   value={adminRole}
                   onChange={(e) => setAdminRole(e.target.value)}
@@ -377,18 +405,29 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
           <div className="bg-white rounded-2xl max-w-md w-full shadow-xl border border-gray-100 p-6 space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
               <h3 className="text-xl font-bold text-gray-900">Manage Privileges</h3>
-              <button onClick={() => setIsManageOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setIsManageOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleManage} className="space-y-4">
               <div className="text-sm text-gray-600">
-                <p>Modify status and privileges for <span className="font-semibold text-gray-900">{selectedAdmin.name || selectedAdmin.email}</span>.</p>
+                <p>
+                  Modify status and privileges for{' '}
+                  <span className="font-semibold text-gray-900">
+                    {selectedAdmin.name || selectedAdmin.email}
+                  </span>
+                  .
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Access Role Level</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Access Role Level
+                </label>
                 <select
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value)}
@@ -403,7 +442,9 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Account Status</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Account Status
+                </label>
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
@@ -422,7 +463,9 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
                     Reset Admin Password
                   </h4>
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">New Password</label>
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                      New Password
+                    </label>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -441,7 +484,9 @@ export default function AdminRolesClient({ initialAdmins, roles }: AdminRolesCli
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Confirm Password</label>
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                      Confirm Password
+                    </label>
                     <input
                       type="text"
                       placeholder="Repeat new password..."

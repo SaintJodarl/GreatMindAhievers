@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await verifyAdminPermission('member:read');
     if (!auth.authorized) {
@@ -34,10 +31,7 @@ export async function GET(
 }
 
 // PUT / PATCH: Update content block
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await verifyAdminPermission('member:write');
     if (!auth.authorized) {
@@ -94,10 +88,7 @@ export async function PUT(
 }
 
 // DELETE: Delete content block
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await verifyAdminPermission('member:write');
     if (!auth.authorized) {

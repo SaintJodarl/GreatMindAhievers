@@ -29,7 +29,9 @@ interface AdminWithdrawalsClientProps {
   initialWithdrawals: Withdrawal[];
 }
 
-export default function AdminWithdrawalsClient({ initialWithdrawals }: AdminWithdrawalsClientProps) {
+export default function AdminWithdrawalsClient({
+  initialWithdrawals,
+}: AdminWithdrawalsClientProps) {
   const router = useRouter();
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>(initialWithdrawals);
 
@@ -96,7 +98,13 @@ export default function AdminWithdrawalsClient({ initialWithdrawals }: AdminWith
       router.refresh();
 
       // Update local state
-      setWithdrawals(withdrawals.map(w => w.id === selectedWithdrawal.id ? { ...w, status: 'APPROVED', adminNote: 'Approved by admin' } : w));
+      setWithdrawals(
+        withdrawals.map((w) =>
+          w.id === selectedWithdrawal.id
+            ? { ...w, status: 'APPROVED', adminNote: 'Approved by admin' }
+            : w
+        )
+      );
     } catch (err: any) {
       showNotification(err.message || 'Something went wrong', 'error');
     } finally {
@@ -131,7 +139,11 @@ export default function AdminWithdrawalsClient({ initialWithdrawals }: AdminWith
       router.refresh();
 
       // Update local state
-      setWithdrawals(withdrawals.map(w => w.id === selectedWithdrawal.id ? { ...w, status: 'REJECTED', adminNote: rejectReason } : w));
+      setWithdrawals(
+        withdrawals.map((w) =>
+          w.id === selectedWithdrawal.id ? { ...w, status: 'REJECTED', adminNote: rejectReason } : w
+        )
+      );
     } catch (err: any) {
       showNotification(err.message || 'Something went wrong', 'error');
     } finally {
@@ -172,7 +184,9 @@ export default function AdminWithdrawalsClient({ initialWithdrawals }: AdminWith
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Amount (₦)</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Method & Details</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Status</th>
-                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">Actions</th>
+                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -268,7 +282,9 @@ export default function AdminWithdrawalsClient({ initialWithdrawals }: AdminWith
               <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                 <p className="font-semibold text-gray-900">{selectedWithdrawal.user.name}</p>
                 <p className="font-mono text-xs text-gray-500">{selectedWithdrawal.user.email}</p>
-                <p className="mt-2 font-bold text-gray-900">Amount: ₦{selectedWithdrawal.amount.toLocaleString()}</p>
+                <p className="mt-2 font-bold text-gray-900">
+                  Amount: ₦{selectedWithdrawal.amount.toLocaleString()}
+                </p>
                 <p className="text-xs text-gray-500 mt-1">Method: {selectedWithdrawal.method}</p>
               </div>
 
@@ -276,12 +292,14 @@ export default function AdminWithdrawalsClient({ initialWithdrawals }: AdminWith
                 <div className="bg-red-50 text-red-700 border border-red-200 p-3 rounded-xl flex items-start gap-2.5 mt-2">
                   <AlertCircle className="flex-shrink-0 mt-0.5" size={16} />
                   <p className="text-xs font-semibold">
-                    Warning: User KYC is not approved. System security constraints prevent approving payouts for unverified users.
+                    Warning: User KYC is not approved. System security constraints prevent approving
+                    payouts for unverified users.
                   </p>
                 </div>
               ) : (
                 <p className="text-xs text-gray-500 pt-1">
-                  Confirming this action will debit the member's wallet balance and mark this request as completed.
+                  Confirming this action will debit the member's wallet balance and mark this
+                  request as completed.
                 </p>
               )}
             </div>
@@ -318,7 +336,17 @@ export default function AdminWithdrawalsClient({ initialWithdrawals }: AdminWith
 
             <form onSubmit={handleReject} className="space-y-4">
               <div className="text-sm text-gray-600">
-                <p>You are rejecting the withdrawal of <span className="font-bold text-gray-900">₦{selectedWithdrawal.amount.toLocaleString()}</span> for <span className="font-semibold text-gray-900">{selectedWithdrawal.user.name}</span>.</p>
+                <p>
+                  You are rejecting the withdrawal of{' '}
+                  <span className="font-bold text-gray-900">
+                    ₦{selectedWithdrawal.amount.toLocaleString()}
+                  </span>{' '}
+                  for{' '}
+                  <span className="font-semibold text-gray-900">
+                    {selectedWithdrawal.user.name}
+                  </span>
+                  .
+                </p>
               </div>
 
               <div>

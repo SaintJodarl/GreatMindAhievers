@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
 import { creditWallet } from '@/lib/wallet/service';
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
     const pairingSetting = await prisma.commissionSetting.findFirst({
       where: { type: 'PAIRING', isActive: true },
     });
-    const pairingPercentage = pairingSetting?.percentage ? Number(pairingSetting.percentage) : 5; // default 5% matching
+    const pairingPercentage = pairingSetting?.percentage ?? new Prisma.Decimal(5); // default 5% matching
 
     // 2. Fetch all nodes with positive volumes on both legs
     const nodes = await prisma.binaryTree.findMany({
@@ -43,19 +44,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    let totalPayout = 0;
+    let totalPayout = new Prisma.Decimal(0);
     let payoutCount = 0;
     const startDate = new Date(); // Start tracking cycle execution time
 
     const result = await prisma.$transaction(async (tx) => {
       for (const node of nodes) {
-        const leftVol = Number(node.leftVolume);
-        const rightVol = Number(node.rightVolume);
-        const matchable = Math.min(leftVol, rightVol);
-        if (matchable <= 0) continue;
+        const leftVol = node.leftVolume;
+        const rightVol = node.rightVolume;
+        const matchable = Prisma.Decimal.min(leftVol, rightVol);
+        if (matchable.lte(0)) continue;
 
-        const payout = matchable * (pairingPercentage / 100);
-        if (payout <= 0) continue;
+        const payout = matchable.mul(pairingPercentage).div(100);
+        if (payout.lte(0)) continue;
 
         // Construct unique deterministic eventId for this specific user's payout in this cycle run
         const eventId = `cycle:${cycleId}:${node.userId}`;
@@ -83,11 +84,11 @@ export async function POST(req: NextRequest) {
           walletId: wallet.id,
           amount: payout,
           type: 'PAIRING_BONUS',
-          description: `Pairing matching bonus cycle payout. Matched volume: ₦${matchable}`,
+          description: `Pairing matching bonus cycle payout. Matched volume: ₦${matchable.toNumber()}`,
           reference: eventId,
         });
 
-        totalPayout += payout;
+        totalPayout = totalPayout.plus(payout);
         payoutCount += 1;
       }
 
@@ -109,11 +110,11 @@ export async function POST(req: NextRequest) {
           action: 'RUN_COMMISSION_CYCLE',
           targetType: 'CommissionCycle',
           targetId: cycle.id,
-          details: `Processed pairing matching cycle. Payouts: ${payoutCount} users. Total paid: ₦${totalPayout}. Cycle ID: ${cycle.id}`,
+          details: `Processed pairing matching cycle. Payouts: ${payoutCount} users. Total paid: ₦${totalPayout.toNumber()}. Cycle ID: ${cycle.id}`,
         },
       });
 
-      return { payoutCount, totalPayout, cycleId: cycle.id };
+      return { payoutCount, totalPayout: totalPayout.toNumber(), cycleId: cycle.id };
     });
 
     return NextResponse.json({

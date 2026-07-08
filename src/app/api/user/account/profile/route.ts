@@ -1,7 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 
-
 import { prisma } from '@/lib/prisma';
 
 // GET Profile Details
@@ -70,7 +69,7 @@ export async function POST(req: NextRequest) {
       // Update user details
       const usr = await tx.user.update({
         where: { id: userId },
-        data: { 
+        data: {
           name: name.trim(),
           bankName: bankName !== undefined ? bankName.trim() : undefined,
           accountNumber: accountNumber !== undefined ? accountNumber.trim() : undefined,

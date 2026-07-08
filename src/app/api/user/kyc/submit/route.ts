@@ -81,8 +81,7 @@ const deriveOverallStatus = (submission: {
   if (
     documents.every(
       (document) =>
-        document.hasUrl &&
-        (document.status === 'UPLOADED' || document.status === 'APPROVED')
+        document.hasUrl && (document.status === 'UPLOADED' || document.status === 'APPROVED')
     )
   ) {
     return 'SUBMITTED';
@@ -90,8 +89,7 @@ const deriveOverallStatus = (submission: {
   return 'PENDING';
 };
 
-const getCloudinaryCloudName = () =>
-  process.env.CLOUDINARY_CLOUD_NAME?.replace(/['"]/g, '').trim();
+const getCloudinaryCloudName = () => process.env.CLOUDINARY_CLOUD_NAME?.replace(/['"]/g, '').trim();
 
 const isCloudinarySecureUrl = (value: unknown, cloudName: string) => {
   if (typeof value !== 'string' || !value.trim()) {
@@ -119,8 +117,7 @@ const isCloudinarySecureUrl = (value: unknown, cloudName: string) => {
 const cleanText = (value: unknown) =>
   typeof value === 'string' && value.trim() ? value.trim() : null;
 
-const cleanRequiredText = (value: unknown) =>
-  typeof value === 'string' ? value.trim() : '';
+const cleanRequiredText = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
 const buildUserKycUpdateData = (status: string, now: Date) => {
   const data: any = { kycStatus: status };
@@ -308,10 +305,7 @@ export async function POST(req: NextRequest) {
 
     const submittedIdType = cleanText(idType);
     if (!submittedIdType) {
-      return NextResponse.json(
-        { message: 'ID type is required.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'ID type is required.' }, { status: 400 });
     }
 
     // At least one document must be provided
@@ -407,12 +401,8 @@ export async function POST(req: NextRequest) {
       user.profile?.state ||
       'Not Provided';
     const lga =
-      cleanText(submittedLga) ||
-      existingSubmission?.lga ||
-      user.profile?.lga ||
-      'Not Provided';
-    const resolvedIdNumber =
-      cleanText(idNumber) || existingSubmission?.idNumber || 'NOT_PROVIDED';
+      cleanText(submittedLga) || existingSubmission?.lga || user.profile?.lga || 'Not Provided';
+    const resolvedIdNumber = cleanText(idNumber) || existingSubmission?.idNumber || 'NOT_PROVIDED';
 
     // Build update data based on provided documents
     const updateData: any = {

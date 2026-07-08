@@ -180,7 +180,9 @@ export default function ProfilePage() {
                   {getInitials(profile.name)}
                 </div>
                 <div className="space-y-1">
-                  <h2 className="text-xl font-bold text-gray-900">{profile.name || 'GMA Member'}</h2>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {profile.name || 'GMA Member'}
+                  </h2>
                   <p className="text-gray-500 text-sm">
                     Member ID: <span className="font-mono">{profile.referralCode || 'N/A'}</span>
                   </p>
@@ -247,7 +249,9 @@ export default function ProfilePage() {
             <div className="space-y-6">
               <div className="border-b border-gray-100 pb-4">
                 <h3 className="text-lg font-bold text-gray-900">Bank Information</h3>
-                <p className="text-sm text-gray-500">Provide bank details where your commissions will be disbursed.</p>
+                <p className="text-sm text-gray-500">
+                  Provide bank details where your commissions will be disbursed.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -301,7 +305,10 @@ export default function ProfilePage() {
             <div className="space-y-6">
               <div className="border-b border-gray-100 pb-4">
                 <h3 className="text-lg font-bold text-gray-900">Notification Channels</h3>
-                <p className="text-sm text-gray-500">Configure how you would like to be alerted for earnings, downline registrations, and updates.</p>
+                <p className="text-sm text-gray-500">
+                  Configure how you would like to be alerted for earnings, downline registrations,
+                  and updates.
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -314,8 +321,13 @@ export default function ProfilePage() {
                     className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-1"
                   />
                   <div>
-                    <span className="block text-sm font-semibold text-gray-900">Email Notifications</span>
-                    <span className="block text-xs text-gray-500">Receive summaries of weekly payouts, direct signups, and official announcements.</span>
+                    <span className="block text-sm font-semibold text-gray-900">
+                      Email Notifications
+                    </span>
+                    <span className="block text-xs text-gray-500">
+                      Receive summaries of weekly payouts, direct signups, and official
+                      announcements.
+                    </span>
                   </div>
                 </label>
 
@@ -329,7 +341,10 @@ export default function ProfilePage() {
                   />
                   <div>
                     <span className="block text-sm font-semibold text-gray-900">SMS Alerts</span>
-                    <span className="block text-xs text-gray-500">Receive instant text messages when a matching bonus or referral commission hits your wallet.</span>
+                    <span className="block text-xs text-gray-500">
+                      Receive instant text messages when a matching bonus or referral commission
+                      hits your wallet.
+                    </span>
                   </div>
                 </label>
               </div>

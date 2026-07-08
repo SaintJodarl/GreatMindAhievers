@@ -129,7 +129,7 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
       setIsEditOpen(false);
       router.refresh();
 
-      setMessages(messages.map(m => m.id === activeId ? data.messageRecord : m));
+      setMessages(messages.map((m) => (m.id === activeId ? data.messageRecord : m)));
     } catch (err: any) {
       showNotification(err.message || 'Something went wrong', 'error');
     } finally {
@@ -155,7 +155,7 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
       setIsDeleteOpen(false);
       router.refresh();
 
-      setMessages(messages.filter(m => m.id !== activeId));
+      setMessages(messages.filter((m) => m.id !== activeId));
     } catch (err: any) {
       showNotification(err.message || 'Something went wrong', 'error');
     } finally {
@@ -201,7 +201,9 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Subject</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Status</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Last Updated</th>
-                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">Actions</th>
+                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -214,7 +216,9 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
                       </div>
                       <div>
                         <span className="font-medium text-gray-900 block">{msg.subject}</span>
-                        <span className="text-xs text-gray-500 line-clamp-1 max-w-lg mt-0.5">{msg.content}</span>
+                        <span className="text-xs text-gray-500 line-clamp-1 max-w-lg mt-0.5">
+                          {msg.content}
+                        </span>
                       </div>
                     </div>
                   </td>
@@ -267,7 +271,10 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl border border-gray-100 p-6 space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
               <h3 className="text-xl font-bold text-gray-900">Create Welcome Message</h3>
-              <button onClick={() => setIsCreateOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setIsCreateOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -286,7 +293,9 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message Content</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Message Content
+                </label>
                 <textarea
                   rows={8}
                   required
@@ -305,7 +314,10 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
                   onChange={(e) => setIsActive(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <label htmlFor="isActiveCreate" className="text-sm font-medium text-gray-700 select-none">
+                <label
+                  htmlFor="isActiveCreate"
+                  className="text-sm font-medium text-gray-700 select-none"
+                >
                   Set message as active
                 </label>
               </div>
@@ -338,7 +350,10 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl border border-gray-100 p-6 space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
               <h3 className="text-xl font-bold text-gray-900">Edit Welcome Message</h3>
-              <button onClick={() => setIsEditOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setIsEditOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -357,7 +372,9 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message Content</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Message Content
+                </label>
                 <textarea
                   rows={8}
                   required
@@ -376,7 +393,10 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
                   onChange={(e) => setIsActive(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <label htmlFor="isActiveEdit" className="text-sm font-medium text-gray-700 select-none">
+                <label
+                  htmlFor="isActiveEdit"
+                  className="text-sm font-medium text-gray-700 select-none"
+                >
                   Active Message
                 </label>
               </div>
@@ -413,7 +433,9 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
             </div>
 
             <p className="text-gray-600 text-sm">
-              Are you sure you want to delete <span className="font-semibold text-gray-900">"{subject}"</span>? This welcome message will be permanently removed.
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-gray-900">"{subject}"</span>? This welcome message
+              will be permanently removed.
             </p>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">

@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -16,6 +17,7 @@ model User {
   password            String?
   role                String              @default("MEMBER")
   status              String              @default("PENDING")
+  currentStage        String              @default("STARTER")
   referralCode        String?             @unique
   username            String?             @unique
   sponsorId           String?
@@ -65,6 +67,9 @@ model User {
   wallet              Wallet?
   transactions        WalletTransaction[]
   withdrawals         Withdrawal[]
+  stageProgress       StageProgress[]
+  rewards             Reward[]
+  rewardClaims        RewardClaim[]
 
   @@index([role])
   @@index([status])
@@ -440,5 +445,64 @@ model PasswordResetRequest {
 
   user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([email])
+  @@index([status])
+}
+
+model StageProgress {
+  id                  String    @id @default(cuid())
+  userId              String
+  stage               String
+  status              String    @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
+  leftQualifiedCount  Int       @default(0)
+  rightQualifiedCount Int       @default(0)
+  qualifiedAt         DateTime?
+  movedToNextStageAt  DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stage])
+  @@index([userId])
+  @@index([stage])
+  @@index([status])
+}
+
+model Reward {
+  id            String        @id @default(cuid())
+  userId        String
+  stage         String
+  rewardValue   Decimal
+  rewardPackage String?
+  status        String        @default("EARNED") // EARNED, CLAIMED
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claims        RewardClaim[]
+
+  @@unique([userId, stage])
+  @@index([userId])
+  @@index([stage])
+  @@index([status])
+}
+
+model RewardClaim {
+  id                 String    @id @default(cuid())
+  rewardId           String
+  userId             String
+  selectedOption     String    // CASH or FOOD
+  status             String    @default("PENDING_ADMIN_PROCESSING") // PENDING_ADMIN_PROCESSING, PROCESSING, PAID, FULFILLED, REJECTED, CANCELLED
+  adminNote          String?
+  processedByAdminId String?
+  processedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  reward             Reward    @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([rewardId])
+  @@index([userId])
   @@index([status])
 }

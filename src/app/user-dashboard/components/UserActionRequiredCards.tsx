@@ -9,7 +9,10 @@ interface UserActionRequiredCardsProps {
   onOpenAction: (step: number) => void;
 }
 
-export default function UserActionRequiredCards({ summary, onOpenAction }: UserActionRequiredCardsProps) {
+export default function UserActionRequiredCards({
+  summary,
+  onOpenAction,
+}: UserActionRequiredCardsProps) {
   const isKycVerified = summary.kycStatus === 'APPROVED';
   const isRegistrationComplete =
     summary.kycStatus === 'COMPLETE' || summary.onboardingStatus === 'COMPLETE';
@@ -52,21 +55,21 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
     ? 'KYC Verified'
     : isRegistrationComplete
       ? 'Registration Complete'
-    : isKycSubmitted
-      ? 'KYC Submitted'
-      : isKycRejected
-        ? 'KYC Action Required'
-        : 'KYC Verification Incomplete';
+      : isKycSubmitted
+        ? 'KYC Submitted'
+        : isKycRejected
+          ? 'KYC Action Required'
+          : 'KYC Verification Incomplete';
 
   const kycCopy = isKycVerified
     ? 'Your identity has been fully verified. All features are unlocked.'
     : isRegistrationComplete
       ? 'Your registration details are complete. Account activation remains separate.'
-    : isKycSubmitted
-      ? 'Your registration information has been submitted and is under compliance review.'
-      : isKycRejected
-        ? 'Your registration details need to be re-submitted. Please complete registration again.'
-        : 'Complete your registration to save personal and banking information.';
+      : isKycSubmitted
+        ? 'Your registration information has been submitted and is under compliance review.'
+        : isKycRejected
+          ? 'Your registration details need to be re-submitted. Please complete registration again.'
+          : 'Complete your registration to save personal and banking information.';
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -82,23 +85,15 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
               kycTone.icon
             }`}
           >
-            {isKycVerified || isRegistrationComplete || isKycSubmitted ? <ShieldCheck size={24} strokeWidth={2.5} /> : <ShieldAlert size={24} strokeWidth={2.5} />}
+            {isKycVerified || isRegistrationComplete || isKycSubmitted ? (
+              <ShieldCheck size={24} strokeWidth={2.5} />
+            ) : (
+              <ShieldAlert size={24} strokeWidth={2.5} />
+            )}
           </div>
           <div>
-            <h3
-              className={`text-base font-bold ${
-                kycTone.title
-              }`}
-            >
-              {kycTitle}
-            </h3>
-            <p
-              className={`text-[13px] mt-1 font-medium ${
-                kycTone.body
-              }`}
-            >
-              {kycCopy}
-            </p>
+            <h3 className={`text-base font-bold ${kycTone.title}`}>{kycTitle}</h3>
+            <p className={`text-[13px] mt-1 font-medium ${kycTone.body}`}>{kycCopy}</p>
           </div>
         </div>
 
@@ -129,7 +124,11 @@ export default function UserActionRequiredCards({ summary, onOpenAction }: UserA
               isActivated ? 'bg-emerald-100/50 text-emerald-600' : 'bg-blue-100/50 text-blue-600'
             }`}
           >
-            {isActivated ? <CheckCircle2 size={24} strokeWidth={2.5} /> : <KeyRound size={24} strokeWidth={2.5} />}
+            {isActivated ? (
+              <CheckCircle2 size={24} strokeWidth={2.5} />
+            ) : (
+              <KeyRound size={24} strokeWidth={2.5} />
+            )}
           </div>
           <div>
             <h3

@@ -1,13 +1,11 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import React from 'react';
 
-
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import RegistrationNewForm from './RegistrationNewForm';
 
 export const dynamic = 'force-dynamic';
-
 
 export const metadata = {
   title: 'Register New Member | GMA Network',

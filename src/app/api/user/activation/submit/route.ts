@@ -1,7 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 
-
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
@@ -22,7 +21,10 @@ export async function POST(req: NextRequest) {
     const normalizedCode = code.trim().toUpperCase();
 
     if (!/^GMA-\d{6}$/.test(normalizedCode)) {
-      return NextResponse.json({ message: 'Invalid activation code format. Required format: GMA-123456' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'Invalid activation code format. Required format: GMA-123456' },
+        { status: 400 }
+      );
     }
 
     const userRecord = await prisma.user.findUnique({
@@ -56,7 +58,9 @@ export async function POST(req: NextRequest) {
       if (timeDiff < lockDurationMs) {
         const remainingMin = Math.ceil((lockDurationMs - timeDiff) / 60000);
         return NextResponse.json(
-          { message: `Too many failed attempts. Locked out. Try again in ${remainingMin} minutes.` },
+          {
+            message: `Too many failed attempts. Locked out. Try again in ${remainingMin} minutes.`,
+          },
           { status: 429 }
         );
       }
@@ -92,7 +96,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Activation code has expired' }, { status: 400 });
     }
 
-      // 4. Perform redemption in transaction
+    // 4. Perform redemption in transaction
     const result = await prisma.$transaction(async (tx) => {
       // Mark code as used only if it is unused to prevent race conditions / double redemption
       const updateResult = await tx.activationCode.updateMany({
@@ -134,7 +138,7 @@ export async function POST(req: NextRequest) {
         buyerId: userId,
         amountPerLevel: [10000, 5000, 3000, 1000, 1000], // 10%, 5%, 3%, 1%, 1% of 100k
         orderId: dbCode.id,
-        description: `Activation Commission for User ${userId}`
+        description: `Activation Commission for User ${userId}`,
       });
 
       // Log activation action to AuditLog

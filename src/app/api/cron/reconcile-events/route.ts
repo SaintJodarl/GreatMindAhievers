@@ -15,22 +15,24 @@ export async function GET(req: NextRequest) {
     const stuckEvents = await prisma.outboxEvent.count({
       where: {
         status: 'OUTBOX_PROCESSING',
-        processingLeaseUntil: { lt: fifteenMinsAgo }
-      }
+        processingLeaseUntil: { lt: fifteenMinsAgo },
+      },
     });
 
     if (stuckEvents > 0) {
-      console.warn(`[Event Audit] Found ${stuckEvents} events stuck in PROCESSING despite expired leases! The lease recovery system might be lagging.`);
+      console.warn(
+        `[Event Audit] Found ${stuckEvents} events stuck in PROCESSING despite expired leases! The lease recovery system might be lagging.`
+      );
     }
 
     // Audit 2: Count Dead Letters
     const deadLetters = await prisma.outboxEvent.count({
-      where: { status: 'DEAD_LETTER' }
+      where: { status: 'DEAD_LETTER' },
     });
 
     // Audit 3: Queue Depth
     const pendingEvents = await prisma.outboxEvent.count({
-      where: { status: 'OUTBOX_PENDING' }
+      where: { status: 'OUTBOX_PENDING' },
     });
 
     return NextResponse.json({
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest) {
       stuckEvents,
       deadLetters,
       pendingEvents,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   } catch (error: any) {
     console.error('Event Reconciliation Error:', error);

@@ -95,9 +95,7 @@ export default function AdminKycClient() {
       }
 
       const data = await res.json();
-      const rawMembers: any[] = Array.isArray(data)
-        ? data
-        : data.members || data.users || [];
+      const rawMembers: any[] = Array.isArray(data) ? data : data.members || data.users || [];
 
       setMembers(
         rawMembers.map((m: any) => ({
@@ -122,8 +120,7 @@ export default function AdminKycClient() {
 
   const filtered = members.filter((m) => {
     const q = search.toLowerCase();
-    const matchSearch =
-      !q || [m.name, m.email].some((v) => v?.toLowerCase().includes(q));
+    const matchSearch = !q || [m.name, m.email].some((v) => v?.toLowerCase().includes(q));
 
     let matchStatus = true;
     if (statusFilter === 'complete') {
@@ -160,8 +157,8 @@ export default function AdminKycClient() {
         <div>
           <p className="font-semibold">Document review disabled</p>
           <p className="text-xs mt-1 font-medium text-blue-700">
-            KYC is now registration completion only (personal information + banking information).
-            No document upload or admin document review is required.
+            KYC is now registration completion only (personal information + banking information). No
+            document upload or admin document review is required.
           </p>
         </div>
       </div>
@@ -179,10 +176,7 @@ export default function AdminKycClient() {
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
-          <Search
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-            size={16}
-          />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
           <input
             type="text"
             placeholder="Search by name or email..."

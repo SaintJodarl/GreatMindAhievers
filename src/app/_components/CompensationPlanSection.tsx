@@ -41,7 +41,9 @@ function RewardCard({
       ) : (
         <div className="relative flex aspect-video w-full flex-col items-center justify-center border-b border-border bg-muted p-4 text-center">
           <div className="absolute inset-0 bg-black/5" />
-          <span className="relative z-10 mb-1 text-sm font-semibold text-muted-foreground">Reward image coming soon</span>
+          <span className="relative z-10 mb-1 text-sm font-semibold text-muted-foreground">
+            Reward image coming soon
+          </span>
           <span className="relative z-10 text-xs text-muted-foreground/70">{title}</span>
         </div>
       )}
@@ -49,9 +51,7 @@ function RewardCard({
       <div className="flex flex-1 flex-col p-6">
         <h3 className="mb-4 text-xl font-bold text-foreground sm:text-2xl">{title}</h3>
 
-        <p className="mb-6 text-sm leading-relaxed text-secondary-foreground">
-          {qualification}
-        </p>
+        <p className="mb-6 text-sm leading-relaxed text-secondary-foreground">{qualification}</p>
 
         {totalAward && (
           <div className="mb-6 inline-block rounded-lg bg-secondary px-4 py-2 font-mono text-lg font-semibold text-foreground">
@@ -60,18 +60,30 @@ function RewardCard({
         )}
 
         <div className="mt-auto border-t border-border pt-5">
-          <h4 className="mb-3 text-sm font-semibold text-foreground">Rewards included:</h4>
+          <h4 className="mb-3 text-sm font-semibold text-foreground">Reward package:</h4>
           <ul className="space-y-3">
-            {rewards.map((reward, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <Check
-                  className="mt-0.5 h-4 w-4 shrink-0"
-                  style={{ color: accentColor }}
-                  aria-hidden="true"
-                />
-                <span className="text-sm text-secondary-foreground">{reward}</span>
-              </li>
-            ))}
+            {rewards.map((reward, i) => {
+              const isOr = reward.trim().toUpperCase() === 'OR';
+              return (
+                <li
+                  key={i}
+                  className={`flex ${isOr ? 'justify-center items-center py-1' : 'items-start gap-3'}`}
+                >
+                  {!isOr && (
+                    <Check
+                      className="mt-0.5 h-4 w-4 shrink-0"
+                      style={{ color: accentColor }}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span
+                    className={`text-sm ${isOr ? 'font-bold text-muted-foreground bg-muted px-4 py-1 rounded-full text-xs tracking-widest' : 'text-secondary-foreground'}`}
+                  >
+                    {isOr ? 'OR' : reward}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
@@ -90,10 +102,14 @@ export function CompensationPlanSection() {
         '1 roll of milk',
         '1 roll of Milo',
         '1 pack of sugar',
+        'CASH 10k',
+        'OR',
         '5kg Garri',
         '5kg Beans',
+        '1 Liter of Palm Oil',
+        'CASH 10k',
+        'OR',
         'Rice 10kg',
-        '2 Liters of Palm Oil',
         'Cash ₦10,000',
       ],
       accentColor: '#10b981', // Emerald green
@@ -193,7 +209,8 @@ export function CompensationPlanSection() {
             GMA FOODCARE/INITIATIVE FOR ALL COMPENSATION PLAN
           </h2>
           <p className="mt-4 text-base leading-relaxed text-secondary-foreground sm:text-lg">
-            Progress through our structured stages and unlock increasing rewards, from vital food supplies to significant financial empowerment.
+            Progress through our structured stages and unlock increasing rewards, from vital food
+            supplies to significant financial empowerment.
           </p>
         </div>
 
@@ -202,14 +219,19 @@ export function CompensationPlanSection() {
           {/* Starter Image Placeholder */}
           <div className="relative flex w-full flex-col items-center justify-center border-b border-primary/20 bg-primary/10 p-6 text-center sm:w-1/3 sm:border-b-0 sm:border-r aspect-video sm:aspect-auto">
             <div className="absolute inset-0 bg-primary/5" />
-            <span className="relative z-10 mb-1 text-sm font-semibold text-primary/80">Reward image coming soon</span>
+            <span className="relative z-10 mb-1 text-sm font-semibold text-primary/80">
+              Reward image coming soon
+            </span>
             <span className="relative z-10 text-xs text-primary/60">STARTER LEVEL REWARD</span>
           </div>
-          
+
           <div className="flex flex-1 flex-col justify-center p-6 sm:p-8">
             <h3 className="mb-3 text-xl font-bold text-foreground">STARTER LEVEL REWARD</h3>
             <p className="text-base leading-relaxed text-secondary-foreground">
-              Once the one-time registration fee of <strong className="text-foreground">₦7,000</strong> is made, you automatically become a member of GMA and you are then required to introduce two persons successfully before you start earning your reward.
+              Once the one-time registration fee of{' '}
+              <strong className="text-foreground">₦7,000</strong> is made, you automatically become
+              a member of GMA and you are then required to introduce two persons successfully before
+              you start earning your reward.
             </p>
           </div>
         </div>

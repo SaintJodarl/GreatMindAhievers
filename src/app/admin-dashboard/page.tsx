@@ -5,7 +5,6 @@ import AdminOverviewClient from './components/AdminOverviewClient';
 
 export const dynamic = 'force-dynamic';
 
-
 export const metadata = {
   title: 'Admin Overview | GMA Network',
 };
@@ -98,4 +97,3 @@ export default async function AdminDashboardOverview() {
     </div>
   );
 }
-

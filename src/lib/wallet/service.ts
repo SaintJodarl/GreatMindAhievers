@@ -1,9 +1,8 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import {
   Wallet,
   WalletTransaction,
-  CreateWalletInput,
   CreditDebitInput,
   CommissionRecordInput,
   WalletBalance,
@@ -21,19 +20,13 @@ function castTransaction(t: any): WalletTransaction {
   if (!t) return t;
   return {
     ...t,
-    amount: Number(t.amount),
-    balanceAfter: Number(t.balanceAfter),
     type: t.type as TransactionType,
     status: t.status as TransactionStatus,
   };
 }
 
 function castWallet(w: any): Wallet {
-  if (!w) return w;
-  return {
-    ...w,
-    balance: Number(w.balance),
-  };
+  return w as Wallet;
 }
 
 const CREDIT_TYPES: TransactionType[] = [
@@ -101,13 +94,13 @@ export async function getWalletBalance(walletId: string): Promise<WalletBalance 
   return {
     walletId: wallet.id,
     userId: wallet.userId,
-    balance: Number(wallet.balance),
+    balance: wallet.balance,
     currency: 'NGN',
     lastUpdated: wallet.updatedAt,
   };
 }
 
-import { MLM_EVENT_MODE, LEGACY_WRITE_DISABLED } from "@/lib/env";
+import { MLM_EVENT_MODE, LEGACY_WRITE_DISABLED } from '@/lib/env';
 
 export async function creditWallet(
   tx: Prisma.TransactionClient,
@@ -120,23 +113,16 @@ export async function creditWallet(
   if (MLM_EVENT_MODE) {
     // GREEN MODE: Emit WALLET_CREDIT event only (Pure Ledger Model)
     const userId = (input as any).userId || 'SYSTEM';
-    await emitOutboxEvent(
-      tx,
-      'WALLET_CREDIT',
-      userId,
-      input as any,
-      txnReference,
-      'GREEN'
-    );
+    await emitOutboxEvent(tx, 'WALLET_CREDIT', userId, input as any, txnReference, 'GREEN');
     return;
   }
 
   if (LEGACY_WRITE_DISABLED) {
-    throw new Error("Legacy financial writes disabled");
+    throw new Error('Legacy financial writes disabled');
   }
 
   // BLUE MODE (LEGACY): Direct mutation
-  if (amount <= 0) {
+  if (amount.lte(0)) {
     throw new Error('Amount must be greater than zero');
   }
 
@@ -144,20 +130,23 @@ export async function creditWallet(
     throw new Error(`Transaction type ${type} is not a credit type`);
   }
 
-
   // 1. Idempotency Check: check FinancialEvent first
   const existingEvent = await tx.financialEvent.findUnique({
     where: { eventId: txnReference },
   });
   if (existingEvent) {
-    console.log(`[Idempotency Gate] FinancialEvent with eventId ${txnReference} already exists. Skipping.`);
+    console.log(
+      `[Idempotency Gate] FinancialEvent with eventId ${txnReference} already exists. Skipping.`
+    );
     const existingTxn = await tx.walletTransaction.findUnique({
       where: { reference: txnReference },
     });
     if (existingTxn) {
       return castTransaction(existingTxn);
     }
-    throw new Error(`FinancialEvent ${txnReference} exists but no matching WalletTransaction found.`);
+    throw new Error(
+      `FinancialEvent ${txnReference} exists but no matching WalletTransaction found.`
+    );
   }
 
   // Also check WalletTransaction directly to be absolutely sure
@@ -165,7 +154,9 @@ export async function creditWallet(
     where: { reference: txnReference },
   });
   if (existingTxn) {
-    console.log(`[Idempotency Gate] Transaction with reference ${txnReference} already exists. Skipping.`);
+    console.log(
+      `[Idempotency Gate] Transaction with reference ${txnReference} already exists. Skipping.`
+    );
     return castTransaction(existingTxn);
   }
 
@@ -212,7 +203,21 @@ export async function creditWallet(
     },
   });
 
-  await verifyWalletIntegrity(tx, walletId);
+  // Keep the wallet mutation transaction short; full reconciliation is handled by the outbox worker.
+  await tx.outboxEvent.create({
+    data: {
+      idempotencyKey: `deferred-integrity-${walletId}-${Date.now()}-${uuidv4()}`,
+      type: 'MLM_DEFERRED_OPERATION',
+      userId: wallet.userId,
+      payload: {
+        source: 'creditWallet',
+        originalFunction: 'verifyWalletIntegrity',
+        reason: 'deferred from synchronous wallet credit path',
+        walletId,
+      },
+      status: 'OUTBOX_PENDING',
+    },
+  });
 
   return castTransaction(transaction);
 }
@@ -223,7 +228,7 @@ export async function debitWallet(
 ): Promise<WalletTransaction | void> {
   const { walletId, amount, type, description, reference, metadata } = input;
 
-  if (amount <= 0) {
+  if (amount.lte(0)) {
     throw new Error('Amount must be greater than zero');
   }
 
@@ -235,19 +240,12 @@ export async function debitWallet(
 
   if (MLM_EVENT_MODE) {
     const userId = (input as any).userId || 'SYSTEM';
-    await emitOutboxEvent(
-      tx,
-      'DEBIT_WALLET',
-      userId,
-      input as any,
-      txnReference,
-      'GREEN'
-    );
+    await emitOutboxEvent(tx, 'DEBIT_WALLET', userId, input as any, txnReference, 'GREEN');
     return;
   }
 
   if (LEGACY_WRITE_DISABLED) {
-    throw new Error("Legacy financial writes disabled");
+    throw new Error('Legacy financial writes disabled');
   }
 
   // 1. Idempotency Check: check FinancialEvent first
@@ -255,14 +253,18 @@ export async function debitWallet(
     where: { eventId: txnReference },
   });
   if (existingEvent) {
-    console.log(`[Idempotency Gate] FinancialEvent with eventId ${txnReference} already exists. Skipping.`);
+    console.log(
+      `[Idempotency Gate] FinancialEvent with eventId ${txnReference} already exists. Skipping.`
+    );
     const existingTxn = await tx.walletTransaction.findUnique({
       where: { reference: txnReference },
     });
     if (existingTxn) {
       return castTransaction(existingTxn);
     }
-    throw new Error(`FinancialEvent ${txnReference} exists but no matching WalletTransaction found.`);
+    throw new Error(
+      `FinancialEvent ${txnReference} exists but no matching WalletTransaction found.`
+    );
   }
 
   // Also check WalletTransaction directly
@@ -270,7 +272,9 @@ export async function debitWallet(
     where: { reference: txnReference },
   });
   if (existingTxn) {
-    console.log(`[Idempotency Gate] Transaction with reference ${txnReference} already exists. Skipping.`);
+    console.log(
+      `[Idempotency Gate] Transaction with reference ${txnReference} already exists. Skipping.`
+    );
     return castTransaction(existingTxn);
   }
 
@@ -283,7 +287,7 @@ export async function debitWallet(
   }
 
   // Check balance before debit
-  if (wallet.balance.toNumber() < amount) {
+  if (wallet.balance.lt(amount)) {
     throw new Error('Insufficient balance');
   }
 
@@ -305,7 +309,7 @@ export async function debitWallet(
   });
 
   // Double check balance under concurrency
-  if (updatedWallet.balance.toNumber() < 0) {
+  if (updatedWallet.balance.lt(0)) {
     throw new Error('Insufficient balance');
   }
 
@@ -330,16 +334,16 @@ export async function debitWallet(
   await tx.outboxEvent.create({
     data: {
       idempotencyKey: `deferred-integrity-${walletId}-${Date.now()}-${uuidv4()}`,
-      type: "MLM_DEFERRED_OPERATION",
+      type: 'MLM_DEFERRED_OPERATION',
       userId: wallet.userId,
       payload: {
-        source: "debitWallet",
-        originalFunction: "verifyWalletIntegrity",
-        reason: "moved from auth optimization phase",
-        walletId
+        source: 'debitWallet',
+        originalFunction: 'verifyWalletIntegrity',
+        reason: 'moved from auth optimization phase',
+        walletId,
       },
-      status: "OUTBOX_PENDING"
-    }
+      status: 'OUTBOX_PENDING',
+    },
   });
 
   return castTransaction(transaction);
@@ -351,7 +355,7 @@ export async function recordCommission(
 ): Promise<WalletTransaction | void> {
   const { userId, amount, commissionType, description, reference, metadata } = input;
 
-  if (amount <= 0) {
+  if (amount.lte(0)) {
     throw new Error('Commission amount must be greater than zero');
   }
 
@@ -361,19 +365,25 @@ export async function recordCommission(
       where: { eventId: reference },
     });
     if (existingEvent) {
-      console.log(`[Idempotency Gate] FinancialEvent with eventId ${reference} already exists. Skipping.`);
+      console.log(
+        `[Idempotency Gate] FinancialEvent with eventId ${reference} already exists. Skipping.`
+      );
       const existingTxn = await tx.walletTransaction.findUnique({
         where: { reference },
       });
       if (existingTxn) return castTransaction(existingTxn);
-      throw new Error(`FinancialEvent ${reference} exists but no matching WalletTransaction found.`);
+      throw new Error(
+        `FinancialEvent ${reference} exists but no matching WalletTransaction found.`
+      );
     }
 
     const existingTxn = await tx.walletTransaction.findUnique({
       where: { reference },
     });
     if (existingTxn) {
-      console.log(`[Idempotency Check] Commission with reference ${reference} already exists. Skipping.`);
+      console.log(
+        `[Idempotency Check] Commission with reference ${reference} already exists. Skipping.`
+      );
       return castTransaction(existingTxn);
     }
   }
@@ -409,16 +419,16 @@ export async function recordCommission(
 export async function adjustBalance(
   tx: Prisma.TransactionClient,
   walletId: string,
-  newBalance: number,
+  newBalance: Prisma.Decimal,
   description: string,
   reference?: string,
   metadata?: Record<string, unknown>
 ): Promise<WalletTransaction> {
   if (LEGACY_WRITE_DISABLED) {
-    throw new Error("Legacy financial writes disabled");
+    throw new Error('Legacy financial writes disabled');
   }
 
-  if (newBalance < 0) {
+  if (newBalance.lt(0)) {
     throw new Error('Balance cannot be negative');
   }
 
@@ -429,21 +439,27 @@ export async function adjustBalance(
     where: { eventId: txnReference },
   });
   if (existingEvent) {
-    console.log(`[Idempotency Gate] FinancialEvent with eventId ${txnReference} already exists. Skipping.`);
+    console.log(
+      `[Idempotency Gate] FinancialEvent with eventId ${txnReference} already exists. Skipping.`
+    );
     const existingTxn = await tx.walletTransaction.findUnique({
       where: { reference: txnReference },
     });
     if (existingTxn) {
       return castTransaction(existingTxn);
     }
-    throw new Error(`FinancialEvent ${txnReference} exists but no matching WalletTransaction found.`);
+    throw new Error(
+      `FinancialEvent ${txnReference} exists but no matching WalletTransaction found.`
+    );
   }
 
   const existingTxn = await tx.walletTransaction.findUnique({
     where: { reference: txnReference },
   });
   if (existingTxn) {
-    console.log(`[Idempotency Gate] Adjustment with reference ${txnReference} already exists. Skipping.`);
+    console.log(
+      `[Idempotency Gate] Adjustment with reference ${txnReference} already exists. Skipping.`
+    );
     return castTransaction(existingTxn);
   }
 
@@ -455,7 +471,7 @@ export async function adjustBalance(
     throw new Error('Wallet not found');
   }
 
-  const difference = newBalance - wallet.balance.toNumber();
+  const difference = newBalance.minus(wallet.balance);
   const type = 'ADJUSTMENT';
 
   // 2. Create FinancialEvent
@@ -464,7 +480,7 @@ export async function adjustBalance(
       eventId: txnReference,
       userId: wallet.userId,
       type,
-      amount: Math.abs(difference),
+      amount: difference.abs(),
       metadata: metadata ? JSON.stringify(metadata) : null,
     },
   });
@@ -475,7 +491,7 @@ export async function adjustBalance(
       walletId,
       userId: wallet.userId,
       type,
-      amount: Math.abs(difference),
+      amount: difference.abs(),
       balanceAfter: newBalance,
       description,
       reference: txnReference,
@@ -494,16 +510,16 @@ export async function adjustBalance(
   await tx.outboxEvent.create({
     data: {
       idempotencyKey: `deferred-integrity-${walletId}-${Date.now()}-${uuidv4()}`,
-      type: "MLM_DEFERRED_OPERATION",
+      type: 'MLM_DEFERRED_OPERATION',
       userId: wallet.userId,
       payload: {
-        source: "adjustBalance",
-        originalFunction: "verifyWalletIntegrity",
-        reason: "moved from auth optimization phase",
-        walletId
+        source: 'adjustBalance',
+        originalFunction: 'verifyWalletIntegrity',
+        reason: 'moved from auth optimization phase',
+        walletId,
       },
-      status: "OUTBOX_PENDING"
-    }
+      status: 'OUTBOX_PENDING',
+    },
   });
 
   return castTransaction(transaction);
@@ -565,7 +581,7 @@ export async function reverseTransaction(
   reason: string
 ): Promise<WalletTransaction> {
   if (LEGACY_WRITE_DISABLED) {
-    throw new Error("Legacy financial writes disabled");
+    throw new Error('Legacy financial writes disabled');
   }
 
   const originalTxn = await tx.walletTransaction.findUnique({
@@ -594,7 +610,7 @@ export async function reverseTransaction(
 
   const isOriginalCredit = isCreditType(originalTxn.type as TransactionType);
   const reverseAmount = originalTxn.amount;
-  
+
   // Use atomic updates for balance reversal
   let updatedWallet;
   if (isOriginalCredit) {
@@ -602,7 +618,7 @@ export async function reverseTransaction(
       where: { id: originalTxn.walletId },
       data: { balance: { decrement: reverseAmount } },
     });
-    if (updatedWallet.balance.toNumber() < 0) {
+    if (updatedWallet.balance.lt(0)) {
       throw new Error('Reversal would result in negative balance');
     }
   } else {
@@ -639,44 +655,46 @@ export async function reverseTransaction(
   await tx.outboxEvent.create({
     data: {
       idempotencyKey: `deferred-integrity-${originalTxn.walletId}-${Date.now()}-${uuidv4()}`,
-      type: "MLM_DEFERRED_OPERATION",
+      type: 'MLM_DEFERRED_OPERATION',
       userId: originalTxn.userId,
       payload: {
-        source: "reverseTransaction",
-        originalFunction: "verifyWalletIntegrity",
-        reason: "moved from auth optimization phase",
-        walletId: originalTxn.walletId
+        source: 'reverseTransaction',
+        originalFunction: 'verifyWalletIntegrity',
+        reason: 'moved from auth optimization phase',
+        walletId: originalTxn.walletId,
       },
-      status: "OUTBOX_PENDING"
-    }
+      status: 'OUTBOX_PENDING',
+    },
   });
 
   return castTransaction(reverseTxn);
 }
 
-export async function calculateBalance(walletId: string): Promise<number> {
+export async function calculateBalance(walletId: string): Promise<Prisma.Decimal> {
   const wallet = await prisma.wallet.findUnique({
     where: { id: walletId },
     select: { balance: true },
   });
 
-  return wallet?.balance ? Number(wallet.balance) : 0;
+  return wallet?.balance ? wallet.balance : new Prisma.Decimal(0);
 }
 
-export async function recalculateBalanceFromTransactions(walletId: string): Promise<number> {
+export async function recalculateBalanceFromTransactions(
+  walletId: string
+): Promise<Prisma.Decimal> {
   const transactions = await prisma.walletTransaction.findMany({
     where: { walletId, status: 'COMPLETED' },
     orderBy: { createdAt: 'asc' },
     select: { type: true, amount: true },
   });
 
-  let balance = 0;
+  let balance = new Prisma.Decimal(0);
 
   for (const txn of transactions) {
     if (isCreditType(txn.type as TransactionType)) {
-      balance += Number(txn.amount);
+      balance = balance.plus(txn.amount);
     } else if (isDebitType(txn.type as TransactionType)) {
-      balance -= Number(txn.amount);
+      balance = balance.minus(txn.amount);
     }
   }
 
@@ -704,30 +722,30 @@ export async function verifyWalletIntegrity(
     where: { walletId, status: 'COMPLETED' },
   });
 
-  let ledgerSum = 0;
+  let ledgerSum = new Prisma.Decimal(0);
   for (const txn of transactions) {
     if (isCreditType(txn.type as TransactionType)) {
-      ledgerSum += Number(txn.amount);
+      ledgerSum = ledgerSum.plus(txn.amount);
     } else if (isDebitType(txn.type as TransactionType)) {
-      ledgerSum -= Number(txn.amount);
+      ledgerSum = ledgerSum.minus(txn.amount);
     }
   }
 
-  const walletBalance = Number(wallet.balance);
-  const drift = Math.abs(walletBalance - ledgerSum);
-  const isConsistent = drift < 0.001;
+  const walletBalance = wallet.balance;
+  const drift = walletBalance.minus(ledgerSum).abs();
+  const isConsistent = drift.lt(0.001);
 
   if (!isConsistent) {
     console.error(
-      `[CRITICAL AUDIT DRIFT DETECTED] Wallet ID: ${walletId} for User: ${wallet.userId} is inconsistent! Wallet balance cached: ${walletBalance}, Ledger sum total: ${ledgerSum}, Drift difference: ${drift}`
+      `[CRITICAL AUDIT DRIFT DETECTED] Wallet ID: ${walletId} for User: ${wallet.userId} is inconsistent! Wallet balance cached: ${walletBalance.toNumber()}, Ledger sum total: ${ledgerSum.toNumber()}, Drift difference: ${drift.toNumber()}`
     );
   }
 
   return {
     isConsistent,
-    drift,
-    walletBalance,
-    ledgerSum,
+    drift: drift.toNumber(),
+    walletBalance: walletBalance.toNumber(),
+    ledgerSum: ledgerSum.toNumber(),
   };
 }
 
@@ -759,7 +777,7 @@ export async function distributeMultiLevelCommission(
   }
 
   if (LEGACY_WRITE_DISABLED) {
-    throw new Error("Legacy financial writes disabled");
+    throw new Error('Legacy financial writes disabled');
   }
 
   const transactions: WalletTransaction[] = [];
@@ -784,7 +802,9 @@ export async function distributeMultiLevelCommission(
   // Circular referral loop verification: user cannot appear in their own path chain (except as buyerId, which we filtered out)
   const uniqueUplines = new Set(uplineIds);
   if (uniqueUplines.size !== uplineIds.length) {
-    console.warn(`[MLM LOOP GUARD] Circular loop detected in buyer ${buyerId} path: ${buyer.path}! Payout stopped.`);
+    console.warn(
+      `[MLM LOOP GUARD] Circular loop detected in buyer ${buyerId} path: ${buyer.path}! Payout stopped.`
+    );
     return [];
   }
 
@@ -815,13 +835,17 @@ export async function distributeMultiLevelCommission(
     // Verify user exists in the database
     const sponsor = uplineMap.get(sponsorId);
     if (!sponsor) {
-      console.warn(`[Upline Resolution] Sponsor ${sponsorId} at level ${level} not found in database.`);
+      console.warn(
+        `[Upline Resolution] Sponsor ${sponsorId} at level ${level} not found in database.`
+      );
       break;
     }
 
     // Self-commission prevention: sponsor cannot be the buyer themselves
     if (sponsorId === buyerId) {
-      console.warn(`[Self-Referral Guard] Sponsor ${sponsorId} is the same as buyer ${buyerId}. Skipping level ${level} payout.`);
+      console.warn(
+        `[Self-Referral Guard] Sponsor ${sponsorId} is the same as buyer ${buyerId}. Skipping level ${level} payout.`
+      );
       continue;
     }
 
@@ -833,26 +857,28 @@ export async function distributeMultiLevelCommission(
 
       const txn = await recordCommission(tx, {
         userId: sponsorId,
-        amount,
+        amount: new Prisma.Decimal(amount),
         commissionType: 'REFERRAL_BONUS',
         description: `${description} (Level ${level} Referral Bonus from User ${buyerId})`,
         reference: eventId,
         metadata: { buyerId, level }, // pass buyerId to bypass self-referral check
       });
 
-      // Write to explicit CommissionLog table
-      await tx.commissionLog.create({
-        data: {
-          eventId,
-          userId: sponsorId,
-          fromUserId: buyerId,
-          level,
-          amount,
-          status: 'COMPLETED'
-        }
-      });
-
       if (txn) {
+        // Write to explicit CommissionLog table idempotently for duplicate commission runs.
+        await tx.commissionLog.createMany({
+          data: [
+            {
+              eventId,
+              userId: sponsorId,
+              fromUserId: buyerId,
+              level,
+              amount: new Prisma.Decimal(amount),
+              status: 'COMPLETED',
+            },
+          ],
+          skipDuplicates: true,
+        });
         transactions.push(txn);
       }
     }

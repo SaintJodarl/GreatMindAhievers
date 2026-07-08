@@ -1,7 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 
-
 import { prisma } from '@/lib/prisma';
 import { getOrCreateWallet, creditWallet, TransactionType } from '@/lib/wallet/service';
 
@@ -13,7 +12,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Defense-in-depth: Block non-ACTIVE members from wallet operations
-    if (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN' && currentUser.status !== 'ACTIVE') {
+    if (
+      currentUser.role !== 'ADMIN' &&
+      currentUser.role !== 'SUPER_ADMIN' &&
+      currentUser.status !== 'ACTIVE'
+    ) {
       return NextResponse.json({ message: 'Forbidden: Account not activated' }, { status: 403 });
     }
 
@@ -21,7 +24,10 @@ export async function POST(req: NextRequest) {
     const { amount, type, description, reference, metadata } = body;
 
     if (!reference || typeof reference !== 'string' || !reference.trim()) {
-      return NextResponse.json({ message: 'reference (eventId) is required for idempotency' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'reference (eventId) is required for idempotency' },
+        { status: 400 }
+      );
     }
 
     if (!amount || amount <= 0) {

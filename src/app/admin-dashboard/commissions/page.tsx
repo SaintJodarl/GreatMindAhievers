@@ -4,7 +4,6 @@ import AdminCommissionsClient from './components/AdminCommissionsClient';
 
 export const dynamic = 'force-dynamic';
 
-
 export const metadata = {
   title: 'Commissions | Admin',
 };
@@ -23,4 +22,3 @@ export default async function CommissionsPage() {
 
   return <AdminCommissionsClient initialCommissions={serializedCommissions} />;
 }
-

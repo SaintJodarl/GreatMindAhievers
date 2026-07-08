@@ -4,7 +4,6 @@ import AdminSupportClient from './components/AdminSupportClient';
 
 export const dynamic = 'force-dynamic';
 
-
 export const metadata = {
   title: 'Support Management | Admin',
 };
@@ -31,4 +30,3 @@ export default async function SupportPage() {
 
   return <AdminSupportClient initialTickets={serializedTickets} />;
 }
-

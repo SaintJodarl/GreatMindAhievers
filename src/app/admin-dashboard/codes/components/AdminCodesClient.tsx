@@ -18,7 +18,7 @@ import {
   User,
   ShieldCheck,
   X,
-  Copy
+  Copy,
 } from 'lucide-react';
 
 interface CodeUser {
@@ -117,7 +117,7 @@ export default function AdminCodesClient() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const queryParams = new URLSearchParams({
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
@@ -130,7 +130,7 @@ export default function AdminCodesClient() {
       if (!res.ok) {
         throw new Error('Failed to fetch codes list');
       }
-      
+
       const data = await res.json();
       setCodes(data.codes || []);
       if (data.pagination) {
@@ -160,7 +160,9 @@ export default function AdminCodesClient() {
         body: JSON.stringify({
           type: generateForm.type,
           count: parseInt(generateForm.count.toString()),
-          expirationDays: generateForm.expirationDays ? parseInt(generateForm.expirationDays) : null,
+          expirationDays: generateForm.expirationDays
+            ? parseInt(generateForm.expirationDays)
+            : null,
         }),
       });
 
@@ -170,7 +172,9 @@ export default function AdminCodesClient() {
         throw new Error(data.message || 'Failed to generate codes');
       }
 
-      setSuccessMsg(data.message || `${generateForm.count} activation codes generated successfully.`);
+      setSuccessMsg(
+        data.message || `${generateForm.count} activation codes generated successfully.`
+      );
       setShowGenerateModal(false);
       // Reset form
       setGenerateForm({
@@ -279,7 +283,10 @@ export default function AdminCodesClient() {
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl flex items-start gap-3 text-sm font-medium">
           <CheckCircle2 className="text-emerald-600 mt-0.5 flex-shrink-0" size={18} />
           <div className="flex-1">{successMsg}</div>
-          <button onClick={() => setSuccessMsg(null)} className="text-emerald-400 hover:text-emerald-600">
+          <button
+            onClick={() => setSuccessMsg(null)}
+            className="text-emerald-400 hover:text-emerald-600"
+          >
             <X size={16} />
           </button>
         </div>
@@ -289,7 +296,9 @@ export default function AdminCodesClient() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-5 rounded-2xl border border-gray-150 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Active Codes</p>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+              Total Active Codes
+            </p>
             <p className="text-2xl font-bold text-gray-900 mt-1">{pagination.total}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
@@ -323,7 +332,9 @@ export default function AdminCodesClient() {
 
         <div className="bg-white p-5 rounded-2xl border border-gray-150 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Expired / Disabled</p>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+              Expired / Disabled
+            </p>
             <p className="text-2xl font-bold text-gray-900 mt-1">
               {codes.filter((c) => ['DISABLED', 'EXPIRED'].includes(c.status)).length}
             </p>
@@ -350,7 +361,6 @@ export default function AdminCodesClient() {
 
         {/* Dropdowns */}
         <div className="flex flex-wrap items-center gap-3">
-
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 font-bold uppercase">Status:</span>
             <select
@@ -402,12 +412,24 @@ export default function AdminCodesClient() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-150">
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Code String</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Type</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Expiration Date</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Redeemer details</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Code String
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Expiration Date
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Redeemer details
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider text-right">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -444,13 +466,17 @@ export default function AdminCodesClient() {
                       </td>
 
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border uppercase ${getTypeBadgeClass(code.type)}`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border uppercase ${getTypeBadgeClass(code.type)}`}
+                        >
                           {code.type}
                         </span>
                       </td>
 
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border uppercase ${getStatusBadgeClass(code.status)}`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border uppercase ${getStatusBadgeClass(code.status)}`}
+                        >
                           {code.status}
                         </span>
                       </td>
@@ -471,7 +497,9 @@ export default function AdminCodesClient() {
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1 text-xs text-gray-700 font-bold">
                               <User size={12} className="text-gray-400" />
-                              <span>{code.regUser?.name || code.kycUser?.name || 'Unknown User'}</span>
+                              <span>
+                                {code.regUser?.name || code.kycUser?.name || 'Unknown User'}
+                              </span>
                             </div>
                             <div className="text-[10px] text-gray-400 font-semibold font-mono">
                               {code.regUser?.email || code.kycUser?.email}
@@ -484,7 +512,10 @@ export default function AdminCodesClient() {
 
                       <td className="px-6 py-4 text-right">
                         {updatingCodeId === code.id ? (
-                          <Loader2 className="animate-spin text-indigo-600 inline-block mr-2" size={16} />
+                          <Loader2
+                            className="animate-spin text-indigo-600 inline-block mr-2"
+                            size={16}
+                          />
                         ) : isUnused ? (
                           <button
                             onClick={() => handleStatusToggle(code, 'DISABLED')}
@@ -502,7 +533,9 @@ export default function AdminCodesClient() {
                             Activate
                           </button>
                         ) : (
-                          <span className="text-xs text-gray-400 font-semibold italic">No actions</span>
+                          <span className="text-xs text-gray-400 font-semibold italic">
+                            No actions
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -581,7 +614,9 @@ export default function AdminCodesClient() {
 
                 {/* Count */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700 uppercase">Number of Codes to Generate</label>
+                  <label className="text-xs font-bold text-gray-700 uppercase">
+                    Number of Codes to Generate
+                  </label>
                   <input
                     type="number"
                     min="1"
@@ -594,18 +629,24 @@ export default function AdminCodesClient() {
                     className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                     required
                   />
-                  <p className="text-[10px] text-gray-500">Each code will be generated automatically as GMA-123456.</p>
+                  <p className="text-[10px] text-gray-500">
+                    Each code will be generated automatically as GMA-123456.
+                  </p>
                 </div>
 
                 {/* Expiration Days */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Expiration (Days - optional)</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase">
+                    Expiration (Days - optional)
+                  </label>
                   <input
                     type="number"
                     min="1"
                     placeholder="e.g. 30 (Leave blank for never)"
                     value={generateForm.expirationDays}
-                    onChange={(e) => setGenerateForm((prev) => ({ ...prev, expirationDays: e.target.value }))}
+                    onChange={(e) =>
+                      setGenerateForm((prev) => ({ ...prev, expirationDays: e.target.value }))
+                    }
                     className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>

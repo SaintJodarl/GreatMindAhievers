@@ -14,7 +14,7 @@ import {
   X,
   KeyRound,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
 } from 'lucide-react';
 
 interface MemberData {
@@ -76,7 +76,10 @@ export default function AdminMembersClient() {
     for (let i = 0; i < 6; i++) {
       pass += chars[Math.floor(Math.random() * chars.length)];
     }
-    pass = pass.split('').sort(() => 0.5 - Math.random()).join('');
+    pass = pass
+      .split('')
+      .sort(() => 0.5 - Math.random())
+      .join('');
     setResetNewPassword(pass);
     setResetConfirmPassword(pass);
   };
@@ -97,7 +100,10 @@ export default function AdminMembersClient() {
       const res = await fetch(`/api/admin/members/${resetPasswordMember.id}/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword: resetNewPassword, confirmPassword: resetConfirmPassword }),
+        body: JSON.stringify({
+          newPassword: resetNewPassword,
+          confirmPassword: resetConfirmPassword,
+        }),
       });
 
       const result = await res.json();
@@ -226,9 +232,12 @@ export default function AdminMembersClient() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Member Management</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            Member Management
+          </h1>
           <p className="text-gray-500 mt-1 text-sm">
-            View, track progress, review verification status, and suspend/activate GMA network members.
+            View, track progress, review verification status, and suspend/activate GMA network
+            members.
           </p>
         </div>
       </div>
@@ -248,7 +257,10 @@ export default function AdminMembersClient() {
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl flex items-start gap-3 text-sm font-medium">
           <ShieldCheck className="text-emerald-600 mt-0.5 flex-shrink-0" size={18} />
           <div className="flex-1">{successMsg}</div>
-          <button onClick={() => setSuccessMsg(null)} className="text-emerald-400 hover:text-emerald-600">
+          <button
+            onClick={() => setSuccessMsg(null)}
+            className="text-emerald-400 hover:text-emerald-600"
+          >
             <X size={16} />
           </button>
         </div>
@@ -339,12 +351,24 @@ export default function AdminMembersClient() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-150">
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Member Details</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Referral Code</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Lifecycle Status</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Onboarding Progress</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Wallet Balance</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Member Details
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Referral Code
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Lifecycle Status
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Onboarding Progress
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Wallet Balance
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider text-right">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -356,10 +380,15 @@ export default function AdminMembersClient() {
                           {(member.name || 'U')[0].toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-bold text-gray-900 text-sm">{member.name || 'Unknown User'}</p>
+                          <p className="font-bold text-gray-900 text-sm">
+                            {member.name || 'Unknown User'}
+                          </p>
                           <p className="text-xs text-gray-400 font-medium">{member.email}</p>
                           <p className="text-[10px] text-gray-400 font-mono mt-0.5">
-                            username: <span className="font-bold text-indigo-600">{member.username || '-'}</span>
+                            username:{' '}
+                            <span className="font-bold text-indigo-600">
+                              {member.username || '-'}
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -372,15 +401,21 @@ export default function AdminMembersClient() {
                     </td>
 
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border uppercase ${getStatusBadge(member.status)}`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border uppercase ${getStatusBadge(member.status)}`}
+                      >
                         {member.status?.replace(/_/g, ' ')}
                       </span>
                     </td>
 
                     <td className="px-6 py-4">
                       <div className="space-y-0.5">
-                        <span className="text-xs text-gray-700 font-bold block">{getProgressLabel(member.status)}</span>
-                        <span className="text-[10px] text-gray-400 font-semibold">KYC: {member.kycStatus}</span>
+                        <span className="text-xs text-gray-700 font-bold block">
+                          {getProgressLabel(member.status)}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-semibold">
+                          KYC: {member.kycStatus}
+                        </span>
                       </div>
                     </td>
 
@@ -476,7 +511,10 @@ export default function AdminMembersClient() {
                 <KeyRound className="text-indigo-600" size={20} />
                 Reset Member Password
               </h3>
-              <button onClick={() => setResetPasswordMember(null)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setResetPasswordMember(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -496,12 +534,17 @@ export default function AdminMembersClient() {
             )}
 
             <p className="text-xs text-gray-500 leading-relaxed">
-              You are resetting the password for <span className="font-bold text-gray-900">{resetPasswordMember.name}</span> (<span className="font-mono text-indigo-600">{resetPasswordMember.email}</span>). The registered email will not be changed.
+              You are resetting the password for{' '}
+              <span className="font-bold text-gray-900">{resetPasswordMember.name}</span> (
+              <span className="font-mono text-indigo-600">{resetPasswordMember.email}</span>). The
+              registered email will not be changed.
             </p>
 
             <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">New Password</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                  New Password
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -522,7 +565,9 @@ export default function AdminMembersClient() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Confirm Password</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                  Confirm Password
+                </label>
                 <input
                   type="text"
                   required

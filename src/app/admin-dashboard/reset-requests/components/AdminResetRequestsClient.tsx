@@ -14,7 +14,7 @@ import {
   X,
   Eye,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -193,7 +193,10 @@ export default function AdminResetRequestsClient() {
     for (let i = 0; i < 6; i++) {
       pass += chars[Math.floor(Math.random() * chars.length)];
     }
-    pass = pass.split('').sort(() => 0.5 - Math.random()).join('');
+    pass = pass
+      .split('')
+      .sort(() => 0.5 - Math.random())
+      .join('');
     setNewPassword(pass);
     setConfirmPassword(pass);
   };
@@ -228,7 +231,9 @@ export default function AdminResetRequestsClient() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Password Reset Requests</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            Password Reset Requests
+          </h1>
           <p className="text-gray-500 mt-1 text-sm">
             Review, approve, and execute manual password resets for members.
           </p>
@@ -250,7 +255,10 @@ export default function AdminResetRequestsClient() {
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl flex items-start gap-3 text-sm font-medium">
           <ShieldCheck className="text-emerald-600 mt-0.5 flex-shrink-0" size={18} />
           <div className="flex-1">{successMsg}</div>
-          <button onClick={() => setSuccessMsg(null)} className="text-emerald-400 hover:text-emerald-600">
+          <button
+            onClick={() => setSuccessMsg(null)}
+            className="text-emerald-400 hover:text-emerald-600"
+          >
             <X size={16} />
           </button>
         </div>
@@ -322,18 +330,30 @@ export default function AdminResetRequestsClient() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-150">
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Registered Account</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">User Details</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Requested Date</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Registered Account
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    User Details
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Requested Date
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider text-right">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {requests.map((request) => (
                   <tr key={request.id} className="hover:bg-gray-50/30 transition-colors">
                     <td className="px-6 py-4">
-                      <span className="font-mono text-sm text-gray-800 font-bold">{request.email}</span>
+                      <span className="font-mono text-sm text-gray-800 font-bold">
+                        {request.email}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       {request.user ? (
@@ -342,14 +362,18 @@ export default function AdminResetRequestsClient() {
                           <p className="text-xs text-gray-400">ID: {request.user.id}</p>
                         </div>
                       ) : (
-                        <span className="text-xs text-rose-500 font-bold italic">User not matched</span>
+                        <span className="text-xs text-rose-500 font-bold italic">
+                          User not matched
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-xs text-gray-500 font-medium">
                       {new Date(request.requestedAt).toLocaleString()}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border uppercase ${getStatusBadge(request.status)}`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border uppercase ${getStatusBadge(request.status)}`}
+                      >
                         {request.status}
                       </span>
                     </td>
@@ -407,13 +431,15 @@ export default function AdminResetRequestsClient() {
       {selectedRequest && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in text-gray-800">
           <div className="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-gray-150 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            
             <div className="flex justify-between items-center pb-3 border-b border-gray-150">
               <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <KeyRound className="text-indigo-600" size={22} />
                 Password Reset Request
               </h3>
-              <button onClick={() => setSelectedRequest(null)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setSelectedRequest(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -422,41 +448,61 @@ export default function AdminResetRequestsClient() {
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
                 <p className="font-bold text-gray-400 uppercase tracking-wider">Registered Email</p>
-                <p className="font-bold text-gray-800 text-sm mt-0.5 font-mono">{selectedRequest.email}</p>
+                <p className="font-bold text-gray-800 text-sm mt-0.5 font-mono">
+                  {selectedRequest.email}
+                </p>
               </div>
               <div>
                 <p className="font-bold text-gray-400 uppercase tracking-wider">Current Status</p>
-                <span className={`inline-block mt-0.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border uppercase ${getStatusBadge(selectedRequest.status)}`}>
+                <span
+                  className={`inline-block mt-0.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border uppercase ${getStatusBadge(selectedRequest.status)}`}
+                >
                   {selectedRequest.status}
                 </span>
               </div>
               <div>
                 <p className="font-bold text-gray-400 uppercase tracking-wider">Member Name</p>
-                <p className="font-bold text-gray-800 mt-0.5">{selectedRequest.user?.name || 'Unregistered / Invalid'}</p>
+                <p className="font-bold text-gray-800 mt-0.5">
+                  {selectedRequest.user?.name || 'Unregistered / Invalid'}
+                </p>
               </div>
               <div>
                 <p className="font-bold text-gray-400 uppercase tracking-wider">Member ID</p>
-                <p className="font-bold text-gray-800 mt-0.5 font-mono">{selectedRequest.userId || '-'}</p>
+                <p className="font-bold text-gray-800 mt-0.5 font-mono">
+                  {selectedRequest.userId || '-'}
+                </p>
               </div>
               <div>
-                <p className="font-bold text-gray-400 uppercase tracking-wider">Registration Date</p>
+                <p className="font-bold text-gray-400 uppercase tracking-wider">
+                  Registration Date
+                </p>
                 <p className="font-bold text-gray-800 mt-0.5">
-                  {selectedRequest.user ? new Date(selectedRequest.user.createdAt).toLocaleDateString() : '-'}
+                  {selectedRequest.user
+                    ? new Date(selectedRequest.user.createdAt).toLocaleDateString()
+                    : '-'}
                 </p>
               </div>
               <div>
                 <p className="font-bold text-gray-400 uppercase tracking-wider">Account Status</p>
-                <p className="font-bold text-gray-800 mt-0.5 uppercase">{selectedRequest.user?.status || '-'}</p>
+                <p className="font-bold text-gray-800 mt-0.5 uppercase">
+                  {selectedRequest.user?.status || '-'}
+                </p>
               </div>
               <div className="col-span-2">
-                <p className="font-bold text-gray-400 uppercase tracking-wider">Request Received Date</p>
-                <p className="font-bold text-gray-800 mt-0.5">{new Date(selectedRequest.requestedAt).toLocaleString()}</p>
+                <p className="font-bold text-gray-400 uppercase tracking-wider">
+                  Request Received Date
+                </p>
+                <p className="font-bold text-gray-800 mt-0.5">
+                  {new Date(selectedRequest.requestedAt).toLocaleString()}
+                </p>
               </div>
             </div>
 
             {/* Admin Notes Section */}
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase">Administrator Notes</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase">
+                Administrator Notes
+              </label>
               <textarea
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
@@ -490,7 +536,9 @@ export default function AdminResetRequestsClient() {
 
                 <form onSubmit={handleExecuteReset} className="space-y-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Temporary Password</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                      Temporary Password
+                    </label>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -510,7 +558,9 @@ export default function AdminResetRequestsClient() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Confirm Password</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                      Confirm Password
+                    </label>
                     <input
                       type="text"
                       required
@@ -605,11 +655,9 @@ export default function AdminResetRequestsClient() {
                 </div>
               </div>
             )}
-
           </div>
         </div>
       )}
-
     </div>
   );
 }

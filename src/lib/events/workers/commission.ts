@@ -9,18 +9,18 @@ export async function processCommissionCalc(event: any) {
 
   // Path format: ".admin.user1.user2." -> resolve up to 5 levels up
   const pathParts = sourceUser.path.split('.').filter(Boolean);
-  const uplines = pathParts.slice(-5).reverse(); 
-  
+  const uplines = pathParts.slice(-5).reverse();
+
   if (uplines.length === 0) return;
 
   // Configurable rates per depth could be loaded here. Using flat rate for demonstration.
-  const commissionRate = 0.10; 
+  const commissionRate = 0.1;
 
   // Independent Iteration ensures partial-failure recovery
   for (let i = 0; i < uplines.length; i++) {
     const uplineId = uplines[i];
     const commissionAmount = amount * commissionRate;
-    
+
     // ONE consistent rule for idempotency
     const uniqueCommissionEventId = `${event.idempotencyKey}_comm_${uplineId}`;
 
@@ -34,7 +34,7 @@ export async function processCommissionCalc(event: any) {
             fromUserId: sourceUserId,
             level: i + 1,
             amount: commissionAmount,
-          }
+          },
         });
 
         // 2. Safely emit Outbox Wallet Credit Event instead of direct Wallet mutation
@@ -47,16 +47,15 @@ export async function processCommissionCalc(event: any) {
               userId: uplineId,
               amount: commissionAmount,
               type: 'COMMISSION',
-              description: `Commission from ${sourceUserId} at level ${i + 1}`
+              description: `Commission from ${sourceUserId} at level ${i + 1}`,
             },
             idempotencyKey: uniqueCommissionEventId,
             executionMode: event.executionMode || 'GREEN',
             status: 'OUTBOX_PENDING',
-            nextRetryAt: new Date()
-          }
+            nextRetryAt: new Date(),
+          },
         });
       });
-      
     } catch (error: any) {
       // Idempotent recovery step
       if (error.code === 'P2002') {

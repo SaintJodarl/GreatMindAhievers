@@ -35,8 +35,8 @@ export async function GET(req: NextRequest) {
           eventId: comm.eventId,
           userId: comm.userId,
           type: 'COMMISSION',
-          amount: comm.amount
-        }
+          amount: comm.amount,
+        },
       });
 
       if (!matchingTxn) {
@@ -45,13 +45,16 @@ export async function GET(req: NextRequest) {
           commissionId: comm.id,
           eventId: comm.eventId,
           userId: comm.userId,
-          issue: 'Missing corresponding WalletTransaction for CommissionLog'
+          issue: 'Missing corresponding WalletTransaction for CommissionLog',
         });
       }
     }
 
     if (inconsistencies > 0) {
-      console.error(`[Commission Audit Alert] Found ${inconsistencies} commission inconsistencies!`, discrepancies);
+      console.error(
+        `[Commission Audit Alert] Found ${inconsistencies} commission inconsistencies!`,
+        discrepancies
+      );
     }
 
     return NextResponse.json({
@@ -59,7 +62,7 @@ export async function GET(req: NextRequest) {
       scanned: commissions.length,
       inconsistencies,
       discrepancies,
-      nextSkip: skip + take
+      nextSkip: skip + take,
     });
   } catch (error: any) {
     console.error('Commission Audit Error:', error);

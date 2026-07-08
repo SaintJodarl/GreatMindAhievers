@@ -38,9 +38,7 @@ const isDocumentType = (value: unknown): value is DocumentType =>
 const isDecision = (value: unknown): value is Decision =>
   value === 'APPROVED' || value === 'REJECTED';
 
-const deriveOverallStatus = (
-  documents: { status: string; hasUrl: boolean }[]
-) => {
+const deriveOverallStatus = (documents: { status: string; hasUrl: boolean }[]) => {
   if (documents.every((document) => document.hasUrl && document.status === 'APPROVED')) {
     return 'APPROVED';
   }
@@ -50,8 +48,7 @@ const deriveOverallStatus = (
   if (
     documents.every(
       (document) =>
-        document.hasUrl &&
-        (document.status === 'UPLOADED' || document.status === 'APPROVED')
+        document.hasUrl && (document.status === 'UPLOADED' || document.status === 'APPROVED')
     )
   ) {
     return 'SUBMITTED';
@@ -59,16 +56,10 @@ const deriveOverallStatus = (
   return 'PENDING';
 };
 
-const hasDocumentUrl = (
-  submission: any,
-  primaryUrlField: string,
-  fallbackUrlField: string
-) => Boolean(submission[primaryUrlField] || submission[fallbackUrlField]);
+const hasDocumentUrl = (submission: any, primaryUrlField: string, fallbackUrlField: string) =>
+  Boolean(submission[primaryUrlField] || submission[fallbackUrlField]);
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await verifyAdminPermission('kyc:write');
     if (!auth.authorized) {
@@ -81,7 +72,9 @@ export async function POST(
 
     if (!isDocumentType(documentType)) {
       return NextResponse.json(
-        { message: 'Invalid documentType. Use government_id, address_proof, selfie, or photograph.' },
+        {
+          message: 'Invalid documentType. Use government_id, address_proof, selfie, or photograph.',
+        },
         { status: 400 }
       );
     }

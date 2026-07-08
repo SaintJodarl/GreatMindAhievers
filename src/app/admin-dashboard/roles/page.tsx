@@ -4,7 +4,6 @@ import AdminRolesClient from './components/AdminRolesClient';
 
 export const dynamic = 'force-dynamic';
 
-
 export const metadata = {
   title: 'Admin Roles | Admin',
 };
@@ -31,6 +30,7 @@ export default async function RolesPage() {
     updatedAt: role.updatedAt.toISOString(),
   }));
 
-  return <AdminRolesClient initialAdmins={serializedAdmins as any} roles={serializedRoles as any} />;
+  return (
+    <AdminRolesClient initialAdmins={serializedAdmins as any} roles={serializedRoles as any} />
+  );
 }
-

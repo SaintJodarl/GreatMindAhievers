@@ -17,7 +17,9 @@ interface AdminCommissionsClientProps {
   initialCommissions: CommissionSetting[];
 }
 
-export default function AdminCommissionsClient({ initialCommissions }: AdminCommissionsClientProps) {
+export default function AdminCommissionsClient({
+  initialCommissions,
+}: AdminCommissionsClientProps) {
   const router = useRouter();
   const [commissions, setCommissions] = useState<CommissionSetting[]>(initialCommissions);
 
@@ -86,12 +88,15 @@ export default function AdminCommissionsClient({ initialCommissions }: AdminComm
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to update commission setting');
 
-      showNotification(`${selectedSetting.type} commission settings updated successfully`, 'success');
+      showNotification(
+        `${selectedSetting.type} commission settings updated successfully`,
+        'success'
+      );
       setIsOpen(false);
       router.refresh();
 
       // Update local state
-      setCommissions(commissions.map(c => c.id === selectedSetting.id ? data.setting : c));
+      setCommissions(commissions.map((c) => (c.id === selectedSetting.id ? data.setting : c)));
     } catch (err: any) {
       showNotification(err.message || 'Something went wrong', 'error');
     } finally {
@@ -140,13 +145,15 @@ export default function AdminCommissionsClient({ initialCommissions }: AdminComm
                 {comm.isActive ? 'Active' : 'Disabled'}
               </span>
             </div>
-            
+
             <h2 className="text-xl font-bold text-gray-900 mb-2">{comm.type} BONUS</h2>
-            
+
             <div className="mt-auto pt-4 border-t border-gray-50">
               {comm.percentage !== null && (
                 <div>
-                  <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider block">Commission rate</span>
+                  <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider block">
+                    Commission rate
+                  </span>
                   <p className="text-3xl font-black text-indigo-600 mt-0.5">
                     {comm.percentage}%{' '}
                     <span className="text-sm font-medium text-gray-500">of volume</span>
@@ -155,7 +162,9 @@ export default function AdminCommissionsClient({ initialCommissions }: AdminComm
               )}
               {comm.fixedAmount !== null && (
                 <div>
-                  <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider block">Flat Reward</span>
+                  <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider block">
+                    Flat Reward
+                  </span>
                   <p className="text-3xl font-black text-indigo-600 mt-0.5">
                     ₦{comm.fixedAmount.toLocaleString()}{' '}
                     <span className="text-sm font-medium text-gray-500">fixed amount</span>
@@ -188,8 +197,13 @@ export default function AdminCommissionsClient({ initialCommissions }: AdminComm
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-xl border border-gray-100 p-6 space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-              <h3 className="text-xl font-bold text-gray-900">Edit {selectedSetting.type} Settings</h3>
-              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-xl font-bold text-gray-900">
+                Edit {selectedSetting.type} Settings
+              </h3>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -197,7 +211,9 @@ export default function AdminCommissionsClient({ initialCommissions }: AdminComm
             <form onSubmit={handleUpdate} className="space-y-4">
               {selectedSetting.percentage !== null && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Commission Percentage (%)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Commission Percentage (%)
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -206,7 +222,9 @@ export default function AdminCommissionsClient({ initialCommissions }: AdminComm
                     required
                     placeholder="Enter percentage rate..."
                     value={percentage}
-                    onChange={(e) => setPercentage(e.target.value === '' ? '' : Number(e.target.value))}
+                    onChange={(e) =>
+                      setPercentage(e.target.value === '' ? '' : Number(e.target.value))
+                    }
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -214,7 +232,9 @@ export default function AdminCommissionsClient({ initialCommissions }: AdminComm
 
               {selectedSetting.fixedAmount !== null && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fixed Amount (₦)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fixed Amount (₦)
+                  </label>
                   <input
                     type="number"
                     step="1"
@@ -222,7 +242,9 @@ export default function AdminCommissionsClient({ initialCommissions }: AdminComm
                     required
                     placeholder="Enter fixed bonus reward..."
                     value={fixedAmount}
-                    onChange={(e) => setFixedAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                    onChange={(e) =>
+                      setFixedAmount(e.target.value === '' ? '' : Number(e.target.value))
+                    }
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -236,7 +258,10 @@ export default function AdminCommissionsClient({ initialCommissions }: AdminComm
                   onChange={(e) => setIsActive(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <label htmlFor="isActiveCommission" className="text-sm font-medium text-gray-700 select-none">
+                <label
+                  htmlFor="isActiveCommission"
+                  className="text-sm font-medium text-gray-700 select-none"
+                >
                   Enable this bonus type
                 </label>
               </div>

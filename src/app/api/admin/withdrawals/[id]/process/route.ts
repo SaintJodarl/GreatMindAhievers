@@ -3,10 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
 import { debitWallet } from '@/lib/wallet/service';
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await verifyAdminPermission('withdrawal:write');
     if (!auth.authorized) {
@@ -60,7 +57,7 @@ export async function POST(
         where: { userId: withdrawal.userId },
       });
 
-      if (!wallet || wallet.balance < withdrawal.amount) {
+      if (!wallet || wallet.balance.lt(withdrawal.amount)) {
         return NextResponse.json(
           { message: 'Cannot approve withdrawal: Insufficient wallet balance' },
           { status: 400 }

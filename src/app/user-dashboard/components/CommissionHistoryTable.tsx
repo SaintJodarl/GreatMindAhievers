@@ -6,13 +6,15 @@ interface CommissionHistoryTableProps {
 }
 
 const typeColors: Record<string, { bg: string; color: string }> = {
-  'PAIRING_BONUS': { bg: 'rgba(108,71,255,0.12)', color: '#9B7AFF' },
-  'REFERRAL_BONUS': { bg: 'rgba(16,217,160,0.1)', color: '#10D9A0' },
-  'LEADERSHIP_BONUS': { bg: 'rgba(56,189,248,0.1)', color: '#38BDF8' },
-  'WITHDRAWAL': { bg: 'rgba(245,158,11,0.1)', color: '#F59E0B' },
+  PAIRING_BONUS: { bg: 'rgba(108,71,255,0.12)', color: '#9B7AFF' },
+  REFERRAL_BONUS: { bg: 'rgba(16,217,160,0.1)', color: '#10D9A0' },
+  LEADERSHIP_BONUS: { bg: 'rgba(56,189,248,0.1)', color: '#38BDF8' },
+  WITHDRAWAL: { bg: 'rgba(245,158,11,0.1)', color: '#F59E0B' },
 };
 
-export default function CommissionHistoryTable({ initialTransactions = [] }: CommissionHistoryTableProps) {
+export default function CommissionHistoryTable({
+  initialTransactions = [],
+}: CommissionHistoryTableProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const perPage = 6;
@@ -30,7 +32,20 @@ export default function CommissionHistoryTable({ initialTransactions = [] }: Com
     return (
       <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-8 flex flex-col items-center justify-center text-center">
         <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 mb-3">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 2v20" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
         </div>
         <h3 className="text-sm font-bold text-slate-700">No transactions yet</h3>
         <p className="text-xs text-slate-500 mt-1 max-w-[250px]">
@@ -88,11 +103,11 @@ export default function CommissionHistoryTable({ initialTransactions = [] }: Com
           </thead>
           <tbody>
             {paged.length === 0 ? (
-               <tr>
-                 <td colSpan={5} className="px-5 py-8 text-center text-sm text-slate-500">
-                   No transactions match your search.
-                 </td>
-               </tr>
+              <tr>
+                <td colSpan={5} className="px-5 py-8 text-center text-sm text-slate-500">
+                  No transactions match your search.
+                </td>
+              </tr>
             ) : (
               paged.map((row, i) => (
                 <tr
@@ -108,7 +123,7 @@ export default function CommissionHistoryTable({ initialTransactions = [] }: Com
                       style={{
                         background: typeColors[row.type]?.bg || 'rgba(241,245,249,1)',
                         color: typeColors[row.type]?.color || '#475569',
-                        borderColor: 'rgba(0,0,0,0.05)'
+                        borderColor: 'rgba(0,0,0,0.05)',
                       }}
                     >
                       {row.type?.replace(/_/g, ' ')}
@@ -118,7 +133,10 @@ export default function CommissionHistoryTable({ initialTransactions = [] }: Com
                     {row.description || '—'}
                   </td>
                   <td className="px-5 py-4 text-sm font-bold text-indigo-600 font-mono-nums">
-                    {row.type === 'WITHDRAWAL' || row.type === 'DEBIT' ? '-' : '+'}₦{Number(row.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}
+                    {row.type === 'WITHDRAWAL' || row.type === 'DEBIT' ? '-' : '+'}₦
+                    {Number(row.amount || 0).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
                   </td>
                   <td className="px-5 py-4">
                     <span
@@ -126,8 +144,8 @@ export default function CommissionHistoryTable({ initialTransactions = [] }: Com
                         row.status === 'COMPLETED' || row.status === 'APPROVED'
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           : row.status === 'PENDING'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-slate-50 text-slate-700 border-slate-200'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-slate-50 text-slate-700 border-slate-200'
                       }`}
                     >
                       {row.status}
@@ -143,18 +161,19 @@ export default function CommissionHistoryTable({ initialTransactions = [] }: Com
       {totalPages > 1 && (
         <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
           <span className="text-xs font-medium text-slate-500">
-            Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, filtered.length)} of {filtered.length}
+            Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, filtered.length)} of{' '}
+            {filtered.length}
           </span>
           <div className="flex gap-1.5">
             <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
               className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-50 disabled:bg-slate-50 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
             >
               Prev
             </button>
             <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
               className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-50 disabled:bg-slate-50 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
             >

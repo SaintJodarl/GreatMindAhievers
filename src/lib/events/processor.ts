@@ -51,12 +51,12 @@ export async function processOutboxEvents(): Promise<number> {
       // On Success: Mark DONE and clear lease
       await prisma.outboxEvent.update({
         where: { id: event.id },
-        data: { 
-          status: 'OUTBOX_DONE', 
+        data: {
+          status: 'OUTBOX_DONE',
           processingLeaseUntil: null,
           processingWorkerId: null,
-          updatedAt: new Date() 
-        }
+          updatedAt: new Date(),
+        },
       });
       processedCount++;
     } catch (error: any) {
@@ -65,7 +65,7 @@ export async function processOutboxEvents(): Promise<number> {
       // Exponential Backoff Logic
       const newRetryCount = event.retryCount + 1;
       const isDeadLetter = newRetryCount >= 3;
-      
+
       const backoffMinutes = isDeadLetter ? null : Math.min(Math.pow(5, newRetryCount), 60);
       const nextRetryAt = isDeadLetter ? null : new Date(Date.now() + backoffMinutes! * 60000);
 
@@ -79,8 +79,8 @@ export async function processOutboxEvents(): Promise<number> {
           nextRetryAt,
           processingLeaseUntil: null,
           processingWorkerId: null,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
 
       if (isDeadLetter) {
@@ -94,16 +94,19 @@ export async function processOutboxEvents(): Promise<number> {
 
 async function routeAndExecuteWorker(event: any) {
   const payload = typeof event.payload === 'string' ? JSON.parse(event.payload) : event.payload;
-  
+
   if (event.type === 'MLM_DEFERRED_OPERATION') {
     if (payload.originalFunction === 'spilloverSearch') {
-      await prisma.$transaction(async (tx) => {
-        await executePlacementWithTx(tx, {
-          sponsorId: payload.sponsorId,
-          preferredPosition: payload.preferredPosition,
-          userId: event.userId,
-        });
-      }, { timeout: 15000 });
+      await prisma.$transaction(
+        async (tx) => {
+          await executePlacementWithTx(tx, {
+            sponsorId: payload.sponsorId,
+            preferredPosition: payload.preferredPosition,
+            userId: event.userId,
+          });
+        },
+        { timeout: 15000 }
+      );
     }
   } else if (event.type === 'WALLET_CREDIT') {
     await processWalletCredit(event);

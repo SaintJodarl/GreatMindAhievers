@@ -68,7 +68,8 @@ export default function ForcePasswordChangePage() {
           Secure Your Account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-500 max-w-sm mx-auto">
-          Your account was reset by an administrator. Please create a new private password to continue to the dashboard.
+          Your account was reset by an administrator. Please create a new private password to
+          continue to the dashboard.
         </p>
       </div>
 

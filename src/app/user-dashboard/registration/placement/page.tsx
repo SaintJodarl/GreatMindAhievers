@@ -50,7 +50,9 @@ export default function PlacementManagerPage() {
       }
 
       setPreferredPosition(position);
-      setSuccess(`Placement preference updated to ${position === 'LEFT' ? 'Left Leg' : 'Right Leg'} successfully!`);
+      setSuccess(
+        `Placement preference updated to ${position === 'LEFT' ? 'Left Leg' : 'Right Leg'} successfully!`
+      );
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to update configuration.');
@@ -96,7 +98,9 @@ export default function PlacementManagerPage() {
           </div>
           <div>
             <h2 className="text-lg font-bold text-gray-900">Placement Settings</h2>
-            <p className="text-sm text-gray-500">Set the leg where new members will be placed by default when they register.</p>
+            <p className="text-sm text-gray-500">
+              Set the leg where new members will be placed by default when they register.
+            </p>
           </div>
         </div>
 
@@ -112,13 +116,19 @@ export default function PlacementManagerPage() {
                 : 'border-gray-200 hover:bg-gray-50/55'
             }`}
           >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg mb-4 ${
-              preferredPosition === 'LEFT' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'
-            }`}>
+            <div
+              className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg mb-4 ${
+                preferredPosition === 'LEFT'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
               L
             </div>
             <h3 className="font-bold text-gray-900 mb-1">Left Leg</h3>
-            <p className="text-xs text-gray-500 max-w-[200px]">New signups will be placed down your left binary leg.</p>
+            <p className="text-xs text-gray-500 max-w-[200px]">
+              New signups will be placed down your left binary leg.
+            </p>
           </button>
 
           {/* Right Leg Card */}
@@ -132,13 +142,19 @@ export default function PlacementManagerPage() {
                 : 'border-gray-200 hover:bg-gray-50/55'
             }`}
           >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg mb-4 ${
-              preferredPosition === 'RIGHT' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'
-            }`}>
+            <div
+              className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg mb-4 ${
+                preferredPosition === 'RIGHT'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
               R
             </div>
             <h3 className="font-bold text-gray-900 mb-1">Right Leg</h3>
-            <p className="text-xs text-gray-500 max-w-[200px]">New signups will be placed down your right binary leg.</p>
+            <p className="text-xs text-gray-500 max-w-[200px]">
+              New signups will be placed down your right binary leg.
+            </p>
           </button>
         </div>
 

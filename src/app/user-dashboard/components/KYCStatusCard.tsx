@@ -35,26 +35,27 @@ export default function KYCStatusCard({
           ? 'Rejected'
           : 'Not Submitted';
 
-  const tone = isApproved || isComplete
-    ? {
-        color: 'var(--accent)',
-        bg: 'rgba(16,217,160,0.08)',
-        border: 'rgba(16,217,160,0.25)',
-        icon: <CheckCircle2 size={16} />,
-      }
-    : isRejected
+  const tone =
+    isApproved || isComplete
       ? {
-          color: 'var(--negative)',
-          bg: 'rgba(255,77,106,0.08)',
-          border: 'rgba(255,77,106,0.25)',
-          icon: <XCircle size={16} />,
+          color: 'var(--accent)',
+          bg: 'rgba(16,217,160,0.08)',
+          border: 'rgba(16,217,160,0.25)',
+          icon: <CheckCircle2 size={16} />,
         }
-      : {
-          color: 'var(--warning)',
-          bg: 'rgba(245,158,11,0.08)',
-          border: 'rgba(245,158,11,0.25)',
-          icon: <Clock size={16} />,
-        };
+      : isRejected
+        ? {
+            color: 'var(--negative)',
+            bg: 'rgba(255,77,106,0.08)',
+            border: 'rgba(255,77,106,0.25)',
+            icon: <XCircle size={16} />,
+          }
+        : {
+            color: 'var(--warning)',
+            bg: 'rgba(245,158,11,0.08)',
+            border: 'rgba(245,158,11,0.25)',
+            icon: <Clock size={16} />,
+          };
 
   const message = isApproved
     ? 'Your identity has been verified. All platform features are unlocked.'

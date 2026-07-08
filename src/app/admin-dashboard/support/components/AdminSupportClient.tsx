@@ -1,7 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Clock, Search, X, Loader2, Send, ShieldAlert, AlertCircle, CheckCircle2, User } from 'lucide-react';
+import {
+  MessageSquare,
+  Clock,
+  Search,
+  X,
+  Loader2,
+  Send,
+  ShieldAlert,
+  AlertCircle,
+  CheckCircle2,
+  User,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface UserInfo {
@@ -40,7 +51,7 @@ interface AdminSupportClientProps {
 export default function AdminSupportClient({ initialTickets }: AdminSupportClientProps) {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -49,7 +60,7 @@ export default function AdminSupportClient({ initialTickets }: AdminSupportClien
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [ticketDetails, setTicketDetails] = useState<SelectedTicketDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  
+
   // Reply form state
   const [replyMessage, setReplyMessage] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -86,7 +97,7 @@ export default function AdminSupportClient({ initialTickets }: AdminSupportClien
         const res = await fetch(`/api/admin/support/tickets/${selectedTicketId}`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to load ticket details');
-        
+
         setTicketDetails(data.ticket);
         setSelectedStatus(data.ticket.status);
       } catch (err: any) {
@@ -134,11 +145,17 @@ export default function AdminSupportClient({ initialTickets }: AdminSupportClien
       }
 
       // Update tickets list state
-      setTickets(tickets.map(t => t.id === selectedTicketId ? {
-        ...t,
-        status: data.ticket.status,
-        _count: { messages: (t._count?.messages || 0) + 1 }
-      } : t));
+      setTickets(
+        tickets.map((t) =>
+          t.id === selectedTicketId
+            ? {
+                ...t,
+                status: data.ticket.status,
+                _count: { messages: (t._count?.messages || 0) + 1 },
+              }
+            : t
+        )
+      );
 
       router.refresh();
     } catch (err: any) {
@@ -149,9 +166,9 @@ export default function AdminSupportClient({ initialTickets }: AdminSupportClien
   };
 
   // Filtered Tickets
-  const filteredTickets = tickets.filter(ticket => {
+  const filteredTickets = tickets.filter((ticket) => {
     const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
-    const matchesSearch = 
+    const matchesSearch =
       ticket.subject.toLowerCase().includes(search.toLowerCase()) ||
       (ticket.user.name || '').toLowerCase().includes(search.toLowerCase()) ||
       (ticket.user.email || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -209,7 +226,9 @@ export default function AdminSupportClient({ initialTickets }: AdminSupportClien
       {/* Split Layout */}
       <div className="flex-1 flex gap-6 min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {/* Left Side: Tickets List */}
-        <div className={`flex-1 flex flex-col min-h-0 border-r border-gray-100 ${selectedTicketId ? 'hidden md:flex' : 'flex'}`}>
+        <div
+          className={`flex-1 flex flex-col min-h-0 border-r border-gray-100 ${selectedTicketId ? 'hidden md:flex' : 'flex'}`}
+        >
           <div className="overflow-y-auto flex-1">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -231,8 +250,12 @@ export default function AdminSupportClient({ initialTickets }: AdminSupportClien
                     }`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <p className="text-sm font-mono text-indigo-600 font-semibold">#{ticket.id.slice(0, 8)}</p>
-                      <p className="text-xs text-gray-500 font-medium">{ticket.user.name || 'GMA Member'}</p>
+                      <p className="text-sm font-mono text-indigo-600 font-semibold">
+                        #{ticket.id.slice(0, 8)}
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        {ticket.user.name || 'GMA Member'}
+                      </p>
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold text-gray-900 max-w-[180px] truncate">
                       {ticket.subject}
@@ -280,7 +303,9 @@ export default function AdminSupportClient({ initialTickets }: AdminSupportClien
         </div>
 
         {/* Right Side: Conversation Thread */}
-        <div className={`w-full md:w-[450px] lg:w-[550px] flex flex-col min-h-0 ${selectedTicketId ? 'flex' : 'hidden md:flex bg-gray-50/50 justify-center items-center p-8 text-center text-gray-400'}`}>
+        <div
+          className={`w-full md:w-[450px] lg:w-[550px] flex flex-col min-h-0 ${selectedTicketId ? 'flex' : 'hidden md:flex bg-gray-50/50 justify-center items-center p-8 text-center text-gray-400'}`}
+        >
           {selectedTicketId ? (
             loadingDetails ? (
               <div className="flex-1 flex flex-col justify-center items-center gap-3">
@@ -293,16 +318,24 @@ export default function AdminSupportClient({ initialTickets }: AdminSupportClien
                 <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                   <div className="min-w-0 pr-4">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-mono text-indigo-600 font-bold">#{ticketDetails.id.slice(0, 8)}</span>
-                      <span className="text-xs text-gray-400">• Created {new Date(ticketDetails.createdAt).toLocaleDateString()}</span>
+                      <span className="text-sm font-mono text-indigo-600 font-bold">
+                        #{ticketDetails.id.slice(0, 8)}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        • Created {new Date(ticketDetails.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
-                    <h2 className="font-bold text-gray-900 text-lg truncate mt-0.5" title={ticketDetails.subject}>
+                    <h2
+                      className="font-bold text-gray-900 text-lg truncate mt-0.5"
+                      title={ticketDetails.subject}
+                    >
                       {ticketDetails.subject}
                     </h2>
                     <div className="flex items-center gap-2 mt-1">
                       <User size={14} className="text-gray-400" />
                       <p className="text-xs text-gray-600 font-medium">
-                        {ticketDetails.user.name || 'GMA Member'} ({ticketDetails.user.email || 'No Email'})
+                        {ticketDetails.user.name || 'GMA Member'} (
+                        {ticketDetails.user.email || 'No Email'})
                       </p>
                     </div>
                   </div>
@@ -341,7 +374,11 @@ export default function AdminSupportClient({ initialTickets }: AdminSupportClien
                             </span>
                           )}
                           <span>
-                            {new Date(msg.createdAt).toLocaleDateString()} {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(msg.createdAt).toLocaleDateString()}{' '}
+                            {new Date(msg.createdAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
                           </span>
                         </div>
                       </div>
@@ -354,7 +391,9 @@ export default function AdminSupportClient({ initialTickets }: AdminSupportClien
                 <div className="p-4 border-t border-gray-100 bg-white">
                   <form onSubmit={handleSendReply} className="space-y-3">
                     <div className="flex items-center gap-3">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Update Status:</label>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Update Status:
+                      </label>
                       <select
                         value={selectedStatus}
                         onChange={(e) => setSelectedStatus(e.target.value)}
@@ -401,7 +440,9 @@ export default function AdminSupportClient({ initialTickets }: AdminSupportClien
                 <MessageSquare className="text-gray-400" size={32} />
               </div>
               <h3 className="font-bold text-gray-700">No Ticket Selected</h3>
-              <p className="text-sm text-gray-500 max-w-xs mt-1">Select a support ticket from the list to view its message thread and respond.</p>
+              <p className="text-sm text-gray-500 max-w-xs mt-1">
+                Select a support ticket from the list to view its message thread and respond.
+              </p>
             </div>
           )}
         </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth/session';
+import { signAccessToken } from '@/lib/auth/jwt';
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,10 +53,7 @@ export async function POST(req: NextRequest) {
 
     const parsedDob = new Date(dob);
     if (Number.isNaN(parsedDob.getTime())) {
-      return NextResponse.json(
-        { message: 'Date of birth must be a valid date.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'Date of birth must be a valid date.' }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -75,7 +73,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await prisma.$transaction(async (tx) => {
+    const updatedUser = await prisma.$transaction(async (tx) => {
       await tx.memberProfile.upsert({
         where: { userId },
         create: {
@@ -97,7 +95,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      await tx.user.update({
+      return tx.user.update({
         where: { id: userId },
         data: {
           email: user.email || normalizedEmail,
@@ -105,13 +103,31 @@ export async function POST(req: NextRequest) {
           accountNumber: accountNumber.trim(),
           accountName: accountName.trim(),
           onboardingStep: 3,
+          onboardingStatus: 'COMPLETE',
         },
       });
     });
 
-    return NextResponse.json({
-      message: 'Personal and banking information saved successfully.',
+    const accessToken = await signAccessToken({
+      sub: updatedUser.id,
+      role: updatedUser.role,
+      status: updatedUser.status,
+      onboardingStatus: updatedUser.onboardingStatus,
+      sessionVersion: updatedUser.sessionVersion,
     });
+
+    const response = NextResponse.json({
+      message: 'Personal and banking information saved successfully. Onboarding completed.',
+    });
+
+    response.cookies.set('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
+
+    return response;
   } catch (error: any) {
     console.error('Onboarding profile save error:', error);
     return NextResponse.json(

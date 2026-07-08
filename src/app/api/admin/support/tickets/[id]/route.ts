@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await verifyAdminPermission('support:read');
     if (!auth.authorized) {
@@ -42,10 +39,7 @@ export async function GET(
 }
 
 // POST: Add message reply and optionally update ticket status
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await verifyAdminPermission('support:write');
     if (!auth.authorized) {
@@ -81,7 +75,8 @@ export async function POST(
       });
 
       // 2. Update status if specified, otherwise keep current status or move to IN_PROGRESS
-      const newStatus = status || (ticketExists.status === 'OPEN' ? 'IN_PROGRESS' : ticketExists.status);
+      const newStatus =
+        status || (ticketExists.status === 'OPEN' ? 'IN_PROGRESS' : ticketExists.status);
       const updatedTicket = await tx.ticket.update({
         where: { id },
         data: {
@@ -103,11 +98,14 @@ export async function POST(
       return { ticketMessage, updatedTicket };
     });
 
-    return NextResponse.json({
-      message: 'Reply sent successfully',
-      ticketMessage: result.ticketMessage,
-      ticket: result.updatedTicket,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        message: 'Reply sent successfully',
+        ticketMessage: result.ticketMessage,
+        ticket: result.updatedTicket,
+      },
+      { status: 201 }
+    );
   } catch (error: any) {
     console.error('Reply ticket error:', error);
     return NextResponse.json(
@@ -116,4 +114,3 @@ export async function POST(
     );
   }
 }
-

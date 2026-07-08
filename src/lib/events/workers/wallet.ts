@@ -15,26 +15,28 @@ export async function processWalletCredit(event: any) {
           balanceAfter: 0,
           description,
           eventId: event.idempotencyKey,
-          status: 'COMPLETED'
-        }
+          status: 'COMPLETED',
+        },
       });
 
       // 2. Atomic Balance Increment
       const updatedWallet = await tx.wallet.update({
         where: { id: walletId },
-        data: { balance: { increment: amount } }
+        data: { balance: { increment: amount } },
       });
 
       // 3. Update correct balanceAfter
       await tx.walletTransaction.update({
         where: { id: txn.id },
-        data: { balanceAfter: updatedWallet.balance }
+        data: { balanceAfter: updatedWallet.balance },
       });
     });
   } catch (e: any) {
     // P2002: Prisma unique constraint violation (Database-level check)
     if (e.code === 'P2002' && e.meta?.target?.includes('eventId')) {
-      console.log(`[Wallet Worker] DB Idempotency catch: Transaction for event ${event.idempotencyKey} already exists. Skipping safely.`);
+      console.log(
+        `[Wallet Worker] DB Idempotency catch: Transaction for event ${event.idempotencyKey} already exists. Skipping safely.`
+      );
       return;
     }
     throw e;
@@ -56,33 +58,34 @@ export async function processWalletDebit(event: any) {
           balanceAfter: 0,
           description,
           eventId: event.idempotencyKey,
-          status: 'COMPLETED'
-        }
+          status: 'COMPLETED',
+        },
       });
 
       // 2. Atomic Balance Decrement
       const updatedWallet = await tx.wallet.update({
         where: { id: walletId },
-        data: { balance: { decrement: amount } }
+        data: { balance: { decrement: amount } },
       });
 
       // Concurrency safety check
-      if (updatedWallet.balance < 0) {
+      if (updatedWallet.balance.lt(0)) {
         throw new Error('Insufficient balance');
       }
 
       // 3. Update correct balanceAfter
       await tx.walletTransaction.update({
         where: { id: txn.id },
-        data: { balanceAfter: updatedWallet.balance }
+        data: { balanceAfter: updatedWallet.balance },
       });
     });
   } catch (e: any) {
     if (e.code === 'P2002' && e.meta?.target?.includes('eventId')) {
-      console.log(`[Wallet Worker] DB Idempotency catch: Debit transaction for event ${event.idempotencyKey} already exists. Skipping safely.`);
+      console.log(
+        `[Wallet Worker] DB Idempotency catch: Debit transaction for event ${event.idempotencyKey} already exists. Skipping safely.`
+      );
       return;
     }
     throw e;
   }
 }
-

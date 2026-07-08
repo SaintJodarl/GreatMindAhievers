@@ -671,7 +671,10 @@ export default function LandingPageClient() {
                 </p>
               </div>
 
-              <div className="relative w-full overflow-hidden rounded-3xl shadow-2xl border border-white/10 aspect-[4/3] lg:aspect-[16/11] animate-slide-up motion-reduce:animate-none" style={{ animationDelay: '150ms' }}>
+              <div
+                className="relative w-full overflow-hidden rounded-3xl shadow-2xl border border-white/10 aspect-[4/3] lg:aspect-[16/11] animate-slide-up motion-reduce:animate-none"
+                style={{ animationDelay: '150ms' }}
+              >
                 <Image
                   src="/assets/images/2025/Hero Section Image.jpg"
                   alt="Great Mind Achievers community leadership"
@@ -818,7 +821,9 @@ export default function LandingPageClient() {
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
                         <Check className="h-5 w-5" aria-hidden="true" />
                       </div>
-                      <span className="text-base font-medium text-secondary-foreground">{item}</span>
+                      <span className="text-base font-medium text-secondary-foreground">
+                        {item}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -834,10 +839,7 @@ export default function LandingPageClient() {
             />
             <div className="grid gap-6 sm:grid-cols-2">
               {benefits.map((benefit) => (
-                <FeatureCard
-                  key={benefit.title}
-                  {...benefit}
-                />
+                <FeatureCard key={benefit.title} {...benefit} />
               ))}
             </div>
           </Section>

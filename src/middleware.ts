@@ -8,9 +8,7 @@ if (!secret && process.env.NODE_ENV === 'production') {
   throw new Error('JWT_SECRET environment variable is required in production.');
 }
 
-const JWT_SECRET = new TextEncoder().encode(
-  secret || 'gma-dev-secret-key-change-in-development'
-);
+const JWT_SECRET = new TextEncoder().encode(secret || 'gma-dev-secret-key-change-in-development');
 
 export async function middleware(req: NextRequest) {
   // Redirect Vercel Preview environments to Production
@@ -21,29 +19,26 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   // Skip static assets
-  if (
-    path.startsWith('/_next') ||
-    path.startsWith('/assets') ||
-    path.startsWith('/favicon.ico')
-  ) {
+  if (path.startsWith('/_next') || path.startsWith('/assets') || path.startsWith('/favicon.ico')) {
     return NextResponse.next();
   }
 
   // Determine matcher targets
   const isOnboardingRoute = path.startsWith('/complete-profile');
   const isAdminRoute = path.startsWith('/admin-dashboard') || path.startsWith('/api/admin');
-  const isMemberRoute = path.startsWith('/user-dashboard') ||
-                        path.startsWith('/api/user') ||
-                        path.startsWith('/api/network') ||
-                        path.startsWith('/api/wallet') ||
-                        isOnboardingRoute;
+  const isMemberRoute =
+    path.startsWith('/user-dashboard') ||
+    path.startsWith('/activate') ||
+    path.startsWith('/api/user') ||
+    path.startsWith('/api/network') ||
+    path.startsWith('/api/wallet') ||
+    isOnboardingRoute;
 
   if (!isAdminRoute && !isMemberRoute) {
     return NextResponse.next();
   }
 
-  // Extract access token exclusively from cookie
-  let token = req.cookies.get('accessToken')?.value;
+  const token = req.cookies.get('accessToken')?.value;
 
   const isApiRequest = path.startsWith('/api/');
 
@@ -69,24 +64,18 @@ export async function middleware(req: NextRequest) {
     // PASSWORD TEMPORARY ENFORCEMENT: Block all non-admin users with temporary passwords.
     const isTemporary = payload.isPasswordTemporary === true;
     if (isTemporary && !isAdminUser) {
-      const allowedTempApis = [
-        '/api/user/account/force-password-change',
-        '/api/auth/logout'
-      ];
-      const allowedTempPages = [
-        '/user-dashboard/force-password-change',
-        '/sign-up-login-screen'
-      ];
+      const allowedTempApis = ['/api/user/account/force-password-change', '/api/auth/logout'];
+      const allowedTempPages = ['/user-dashboard/force-password-change', '/sign-up-login-screen'];
 
       if (isApiRequest) {
-        if (!allowedTempApis.some(p => path.startsWith(p))) {
+        if (!allowedTempApis.some((p) => path.startsWith(p))) {
           return NextResponse.json(
             { message: 'Forbidden: Password reset change required.', code: 'PASSWORD_TEMPORARY' },
             { status: 403 }
           );
         }
       } else {
-        if (!allowedTempPages.some(p => path === p || path.startsWith(p + '/'))) {
+        if (!allowedTempPages.some((p) => path === p || path.startsWith(p + '/'))) {
           return NextResponse.redirect(new URL('/user-dashboard/force-password-change', req.url));
         }
       }
@@ -100,25 +89,21 @@ export async function middleware(req: NextRequest) {
         '/api/auth',
         '/api/user/onboarding',
         '/api/user/kyc',
-        '/api/user/account/profile'
+        '/api/user/account/profile',
       ];
-      const allowedInactivePages = [
-        '/user-dashboard',
-        '/user-dashboard/kyc',
-        '/user-dashboard/account'
-      ];
+      const allowedInactivePages = ['/activate'];
 
       if (isApiRequest) {
-        if (!allowedInactiveApis.some(p => path.startsWith(p))) {
+        if (!allowedInactiveApis.some((p) => path.startsWith(p))) {
           return NextResponse.json(
             { message: 'Forbidden: Account not activated. Please submit an activation code.' },
             { status: 403 }
           );
         }
       } else {
-        // Allow dashboard overview, KYC pages, and account pages for non-ACTIVE users
-        if (!allowedInactivePages.some(p => path === p || path.startsWith(p + '/'))) {
-          return NextResponse.redirect(new URL('/user-dashboard', req.url));
+        // Redirect inactive users to /activate
+        if (!allowedInactivePages.some((p) => path === p || path.startsWith(p + '/'))) {
+          return NextResponse.redirect(new URL('/activate', req.url));
         }
       }
     }
@@ -158,7 +143,10 @@ export async function middleware(req: NextRequest) {
   } catch (err) {
     console.error(`[MW] JWT verification FAILED for path=${path}:`, err);
     if (isApiRequest) {
-      return NextResponse.json({ message: 'Unauthorized: Session expired or invalid' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Unauthorized: Session expired or invalid' },
+        { status: 401 }
+      );
     }
     const response = NextResponse.redirect(new URL('/sign-up-login-screen', req.url));
     response.cookies.delete('accessToken');
@@ -169,11 +157,12 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     '/user-dashboard/:path*',
+    '/activate',
     '/admin-dashboard/:path*',
     '/complete-profile',
     '/api/admin/:path*',
     '/api/user/:path*',
     '/api/network/:path*',
-    '/api/wallet/:path*'
+    '/api/wallet/:path*',
   ],
 };

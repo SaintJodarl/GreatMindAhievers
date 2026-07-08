@@ -25,17 +25,14 @@ export async function POST(req: NextRequest) {
         await prisma.refreshToken.deleteMany({
           where: {
             userId: tokenRecord.userId,
-            OR: [
-              { revoked: true },
-              { expiresAt: { lt: new Date() } }
-            ]
-          }
+            OR: [{ revoked: true }, { expiresAt: { lt: new Date() } }],
+          },
         });
       }
     }
 
     const response = NextResponse.json({ message: 'Logged out successfully' });
-    
+
     // Clear cookies
     response.cookies.delete('refreshToken');
     response.cookies.delete('accessToken');

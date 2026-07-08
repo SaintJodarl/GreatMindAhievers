@@ -1,7 +1,7 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 
-
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { adjustBalance } from '@/lib/wallet/service';
 
@@ -21,7 +21,10 @@ export async function POST(req: NextRequest) {
     const { walletId, newBalance, description, reference, metadata } = body;
 
     if (!reference || typeof reference !== 'string' || !reference.trim()) {
-      return NextResponse.json({ message: 'reference (eventId) is required for idempotency' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'reference (eventId) is required for idempotency' },
+        { status: 400 }
+      );
     }
 
     if (!walletId) {
@@ -40,7 +43,14 @@ export async function POST(req: NextRequest) {
     }
 
     const transaction = await prisma.$transaction(async (tx) => {
-      return adjustBalance(tx, walletId, newBalance, description, reference, metadata);
+      return adjustBalance(
+        tx,
+        walletId,
+        new Prisma.Decimal(newBalance),
+        description,
+        reference,
+        metadata
+      );
     });
 
     return NextResponse.json({ transaction }, { status: 201 });

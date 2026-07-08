@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       isCheckingRef.current = true;
       const meRes = await fetch(`${BASE_URL}/api/auth/me`, {
-        credentials: 'include'
+        credentials: 'include',
       });
       if (!meRes.ok) {
         forceLogout(); // ONLY ONCE

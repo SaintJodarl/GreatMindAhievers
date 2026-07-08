@@ -45,13 +45,16 @@ export default function ForgotPasswordPage() {
       className="min-h-screen flex items-center justify-center p-6"
       style={{ background: 'var(--background)' }}
     >
-      <div className="w-full max-w-md bg-opacity-40 backdrop-blur-md rounded-2xl p-8 border"
-           style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
-        
+      <div
+        className="w-full max-w-md bg-opacity-40 backdrop-blur-md rounded-2xl p-8 border"
+        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
+      >
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="mx-auto h-12 w-12 rounded-xl flex items-center justify-center mb-4"
-               style={{ background: 'rgba(108,71,255,0.1)', color: 'var(--primary)' }}>
+          <div
+            className="mx-auto h-12 w-12 rounded-xl flex items-center justify-center mb-4"
+            style={{ background: 'rgba(108,71,255,0.1)', color: 'var(--primary)' }}
+          >
             <KeyRound size={26} />
           </div>
           <h2 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
@@ -64,16 +67,28 @@ export default function ForgotPasswordPage() {
 
         {/* Notifications */}
         {error && (
-          <div className="p-3.5 rounded-lg mb-5 text-sm flex items-start gap-2.5"
-               style={{ background: 'var(--negative-bg)', border: '1px solid rgba(255,77,106,0.25)', color: 'var(--negative)' }}>
+          <div
+            className="p-3.5 rounded-lg mb-5 text-sm flex items-start gap-2.5"
+            style={{
+              background: 'var(--negative-bg)',
+              border: '1px solid rgba(255,77,106,0.25)',
+              color: 'var(--negative)',
+            }}
+          >
             <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="p-3.5 rounded-lg mb-5 text-sm flex items-start gap-2.5"
-               style={{ background: 'var(--positive-bg)', border: '1px solid rgba(16,217,160,0.25)', color: 'var(--positive)' }}>
+          <div
+            className="p-3.5 rounded-lg mb-5 text-sm flex items-start gap-2.5"
+            style={{
+              background: 'var(--positive-bg)',
+              border: '1px solid rgba(16,217,160,0.25)',
+              color: 'var(--positive)',
+            }}
+          >
             <CheckCircle2 size={18} className="flex-shrink-0 mt-0.5" />
             <span>{success}</span>
           </div>
@@ -82,7 +97,10 @@ export default function ForgotPasswordPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--foreground)' }}>
+            <label
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: 'var(--foreground)' }}
+            >
               Email Address
             </label>
             <input

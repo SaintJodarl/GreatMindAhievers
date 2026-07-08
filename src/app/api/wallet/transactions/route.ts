@@ -1,7 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 
-
 import { getOrCreateWallet, getTransactions, TransactionFilters } from '@/lib/wallet/service';
 
 export async function GET(req: NextRequest) {

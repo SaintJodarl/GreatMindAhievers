@@ -5,10 +5,7 @@ import bcrypt from 'bcryptjs';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || null;
   const userAgent = req.headers.get('user-agent') || null;
 
@@ -32,10 +29,7 @@ export async function POST(
     }
 
     if (newPassword !== confirmPassword) {
-      return NextResponse.json(
-        { message: 'Passwords do not match' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'Passwords do not match' }, { status: 400 });
     }
 
     if (!PASSWORD_REGEX.test(newPassword)) {

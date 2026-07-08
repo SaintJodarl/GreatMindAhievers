@@ -323,7 +323,9 @@ export default function RegistrationNewForm({ sponsorCode }: RegistrationNewForm
               disabled
               className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-sm text-gray-500 cursor-not-allowed"
             />
-            <p className="text-xs text-gray-400 mt-1">Automatic placement based on your sponsor profile rules.</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Automatic placement based on your sponsor profile rules.
+            </p>
           </div>
 
           {/* Sponsor Code (Read Only) */}

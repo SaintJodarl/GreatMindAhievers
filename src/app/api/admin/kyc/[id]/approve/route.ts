@@ -3,10 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
 import { NextResponse } from 'next/server';
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await verifyAdminPermission('kyc:write');
     if (!auth.authorized) {
@@ -86,7 +83,7 @@ export async function POST(
             buyerId: submission.userId,
             amountPerLevel: [10000, 5000, 3000, 1000, 1000], // 10%, 5%, 3%, 1%, 1% of 100k
             orderId: hasCode.id,
-            description: `Activation Commission for User ${submission.userId}`
+            description: `Activation Commission for User ${submission.userId}`,
           });
         }
       }

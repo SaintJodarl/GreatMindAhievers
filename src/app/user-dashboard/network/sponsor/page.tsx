@@ -1,13 +1,11 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import React from 'react';
 
-
 import { prisma } from '@/lib/prisma';
 import { UserCheck, Mail, Calendar, Award, Shield, User as UserIcon } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
-
 
 export const metadata = {
   title: 'Sponsor Info | My Network',
@@ -57,7 +55,10 @@ export default async function SponsorInfoPage() {
   // Compute rank if sponsor exists
   let rank = 'Entry';
   if (sponsor?.binaryTree) {
-    rank = determineRank(sponsor.binaryTree.leftVolume || 0, sponsor.binaryTree.rightVolume || 0);
+    rank = determineRank(
+      sponsor.binaryTree.leftVolume?.toNumber() || 0,
+      sponsor.binaryTree.rightVolume?.toNumber() || 0
+    );
   }
 
   const getStatusBadge = (statusStr: string) => {

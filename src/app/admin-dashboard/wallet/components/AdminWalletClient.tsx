@@ -30,9 +30,9 @@ export default function AdminWalletClient({ initialTransactions }: AdminWalletCl
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  const filteredTransactions = transactions.filter(tx => {
+  const filteredTransactions = transactions.filter((tx) => {
     const matchesType = typeFilter === 'all' || tx.type === typeFilter;
-    const matchesSearch = 
+    const matchesSearch =
       tx.id.toLowerCase().includes(search.toLowerCase()) ||
       (tx.description || '').toLowerCase().includes(search.toLowerCase()) ||
       (tx.wallet.user.name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -82,17 +82,25 @@ export default function AdminWalletClient({ initialTransactions }: AdminWalletCl
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Member</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Type</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Description</th>
-                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">Amount (₦)</th>
+                <th className="px-6 py-4 font-semibold text-sm text-gray-600 text-right">
+                  Amount (₦)
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredTransactions.map((tx) => (
                 <tr key={tx.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                    {new Date(tx.createdAt).toLocaleDateString()} {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(tx.createdAt).toLocaleDateString()}{' '}
+                    {new Date(tx.createdAt).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </td>
                   <td className="px-6 py-4">
-                    <p className="font-semibold text-gray-900 text-sm">{tx.wallet.user.name || 'GMA Member'}</p>
+                    <p className="font-semibold text-gray-900 text-sm">
+                      {tx.wallet.user.name || 'GMA Member'}
+                    </p>
                     <p className="text-xs text-gray-500">{tx.wallet.user.email}</p>
                   </td>
                   <td className="px-6 py-4">

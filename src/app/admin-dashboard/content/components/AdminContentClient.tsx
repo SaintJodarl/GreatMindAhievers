@@ -20,19 +20,19 @@ interface AdminContentClientProps {
 export default function AdminContentClient({ initialContents }: AdminContentClientProps) {
   const router = useRouter();
   const [contents, setContents] = useState<ContentBlock[]>(initialContents);
-  
+
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  
+
   // Form state
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [body, setBody] = useState('');
   const [isPublished, setIsPublished] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  
+
   // Status states
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,7 +113,7 @@ export default function AdminContentClient({ initialContents }: AdminContentClie
       showNotification('Content block created successfully', 'success');
       setIsCreateOpen(false);
       router.refresh();
-      
+
       // Update local state temporarily
       setContents([data.content, ...contents]);
     } catch (err: any) {
@@ -149,7 +149,7 @@ export default function AdminContentClient({ initialContents }: AdminContentClie
       router.refresh();
 
       // Update local state
-      setContents(contents.map(c => c.id === activeId ? data.content : c));
+      setContents(contents.map((c) => (c.id === activeId ? data.content : c)));
     } catch (err: any) {
       showNotification(err.message || 'Something went wrong', 'error');
     } finally {
@@ -176,7 +176,7 @@ export default function AdminContentClient({ initialContents }: AdminContentClie
       router.refresh();
 
       // Update local state
-      setContents(contents.filter(c => c.id !== activeId));
+      setContents(contents.filter((c) => c.id !== activeId));
     } catch (err: any) {
       showNotification(err.message || 'Something went wrong', 'error');
     } finally {
@@ -221,7 +221,10 @@ export default function AdminContentClient({ initialContents }: AdminContentClie
             className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full hover:shadow-md transition-shadow relative"
           >
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-xl font-bold text-gray-900 line-clamp-1 pr-6" title={content.title}>
+              <h2
+                className="text-xl font-bold text-gray-900 line-clamp-1 pr-6"
+                title={content.title}
+              >
                 {content.title}
               </h2>
               <span
@@ -275,7 +278,10 @@ export default function AdminContentClient({ initialContents }: AdminContentClie
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl border border-gray-100 p-6 space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
               <h3 className="text-xl font-bold text-gray-900">Create Content Block</h3>
-              <button onClick={() => setIsCreateOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setIsCreateOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -325,7 +331,10 @@ export default function AdminContentClient({ initialContents }: AdminContentClie
                   onChange={(e) => setIsPublished(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <label htmlFor="isPublishedCreate" className="text-sm font-medium text-gray-700 select-none">
+                <label
+                  htmlFor="isPublishedCreate"
+                  className="text-sm font-medium text-gray-700 select-none"
+                >
                   Publish immediately (visible to members)
                 </label>
               </div>
@@ -358,7 +367,10 @@ export default function AdminContentClient({ initialContents }: AdminContentClie
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl border border-gray-100 p-6 space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
               <h3 className="text-xl font-bold text-gray-900">Edit Content Block</h3>
-              <button onClick={() => setIsEditOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setIsEditOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -408,7 +420,10 @@ export default function AdminContentClient({ initialContents }: AdminContentClie
                   onChange={(e) => setIsPublished(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <label htmlFor="isPublishedEdit" className="text-sm font-medium text-gray-700 select-none">
+                <label
+                  htmlFor="isPublishedEdit"
+                  className="text-sm font-medium text-gray-700 select-none"
+                >
                   Publish Block
                 </label>
               </div>
@@ -443,9 +458,11 @@ export default function AdminContentClient({ initialContents }: AdminContentClie
               <AlertCircle size={24} />
               <h3 className="text-xl font-bold text-gray-900">Delete Content</h3>
             </div>
-            
+
             <p className="text-gray-600 text-sm">
-              Are you sure you want to delete <span className="font-semibold text-gray-900">"{title}"</span>? This action is permanent and cannot be undone.
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-gray-900">"{title}"</span>? This action is
+              permanent and cannot be undone.
             </p>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">

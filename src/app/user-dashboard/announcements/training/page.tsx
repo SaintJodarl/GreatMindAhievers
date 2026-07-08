@@ -1,7 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import React from 'react';
 
-
 import { redirect } from 'next/navigation';
 import { GraduationCap, PlayCircle, FileText, Download, ExternalLink } from 'lucide-react';
 

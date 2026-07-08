@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function AdminSecurityPage() {
   const { logout } = useAuth();
-  
+
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -47,7 +47,7 @@ export default function AdminSecurityPage() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      
+
       // Delay slightly so the user sees the success message, then log them out
       setTimeout(() => {
         logout();
@@ -63,7 +63,9 @@ export default function AdminSecurityPage() {
     <div className="space-y-8 max-w-4xl">
       <div>
         <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">System Settings</h1>
-        <p className="text-gray-500 mt-1 text-sm">Configure security settings and system password credentials.</p>
+        <p className="text-gray-500 mt-1 text-sm">
+          Configure security settings and system password credentials.
+        </p>
       </div>
 
       {error && (
@@ -83,15 +85,23 @@ export default function AdminSecurityPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Navigation Sidebar inside settings for future expansion */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-150 p-6 space-y-2 h-fit">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-3">Settings Navigation</h2>
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-3">
+            Settings Navigation
+          </h2>
           <button className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm bg-indigo-50 text-indigo-700 flex items-center gap-2 transition-colors">
             <Shield size={16} />
             Security Settings
           </button>
-          <button disabled className="w-full text-left px-3 py-2.5 rounded-xl font-medium text-sm text-gray-400 flex items-center gap-2 cursor-not-allowed opacity-50">
+          <button
+            disabled
+            className="w-full text-left px-3 py-2.5 rounded-xl font-medium text-sm text-gray-400 flex items-center gap-2 cursor-not-allowed opacity-50"
+          >
             Profile Settings
           </button>
-          <button disabled className="w-full text-left px-3 py-2.5 rounded-xl font-medium text-sm text-gray-400 flex items-center gap-2 cursor-not-allowed opacity-50">
+          <button
+            disabled
+            className="w-full text-left px-3 py-2.5 rounded-xl font-medium text-sm text-gray-400 flex items-center gap-2 cursor-not-allowed opacity-50"
+          >
             Organization Config
           </button>
         </div>

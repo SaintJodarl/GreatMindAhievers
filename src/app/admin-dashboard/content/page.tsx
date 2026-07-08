@@ -4,7 +4,6 @@ import AdminContentClient from './components/AdminContentClient';
 
 export const dynamic = 'force-dynamic';
 
-
 export const metadata = {
   title: 'Content Management | Admin',
 };
@@ -23,4 +22,3 @@ export default async function ContentPage() {
 
   return <AdminContentClient initialContents={serializedContents} />;
 }
-

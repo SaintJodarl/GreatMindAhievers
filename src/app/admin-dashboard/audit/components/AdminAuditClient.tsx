@@ -23,9 +23,9 @@ export default function AdminAuditClient({ initialLogs }: AdminAuditClientProps)
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
 
-  const filteredLogs = logs.filter(log => {
+  const filteredLogs = logs.filter((log) => {
     const matchesAction = actionFilter === 'all' || log.action === actionFilter;
-    const matchesSearch = 
+    const matchesSearch =
       log.adminId.toLowerCase().includes(search.toLowerCase()) ||
       log.action.toLowerCase().includes(search.toLowerCase()) ||
       (log.details || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -34,7 +34,7 @@ export default function AdminAuditClient({ initialLogs }: AdminAuditClientProps)
   });
 
   // Extract unique action types for filter options
-  const actionTypes = Array.from(new Set(logs.map(log => log.action)));
+  const actionTypes = Array.from(new Set(logs.map((log) => log.action)));
 
   return (
     <div className="space-y-6">
@@ -60,8 +60,10 @@ export default function AdminAuditClient({ initialLogs }: AdminAuditClientProps)
             className="px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-medium text-gray-700 max-w-[180px]"
           >
             <option value="all">All Actions</option>
-            {actionTypes.map(type => (
-              <option key={type} value={type}>{type}</option>
+            {actionTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
             ))}
           </select>
         </div>
@@ -76,7 +78,9 @@ export default function AdminAuditClient({ initialLogs }: AdminAuditClientProps)
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Admin ID</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Action</th>
                 <th className="px-6 py-4 font-semibold text-sm text-gray-600">Details</th>
-                <th className="px-6 py-4 font-semibold text-sm text-gray-600 font-mono">IP Address</th>
+                <th className="px-6 py-4 font-semibold text-sm text-gray-600 font-mono">
+                  IP Address
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -91,7 +95,10 @@ export default function AdminAuditClient({ initialLogs }: AdminAuditClientProps)
                       {log.action}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 max-w-sm truncate" title={log.details || ''}>
+                  <td
+                    className="px-6 py-4 text-sm text-gray-600 max-w-sm truncate"
+                    title={log.details || ''}
+                  >
                     {log.details}
                   </td>
                   <td className="px-6 py-4 text-sm font-mono text-gray-500">

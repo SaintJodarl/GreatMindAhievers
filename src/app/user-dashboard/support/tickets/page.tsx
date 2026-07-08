@@ -282,7 +282,7 @@ export default function SupportTicketsPage() {
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">No Support Tickets</h2>
               <p className="text-gray-500 max-w-sm text-center mb-6 text-sm">
-                You don't have any support tickets yet. If you have questions or encountered an
+                You don&apos;t have any support tickets yet. If you have questions or encountered an
                 issue, create a ticket.
               </p>
               <button

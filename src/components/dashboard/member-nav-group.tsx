@@ -20,7 +20,12 @@ const isAllowedRoute = (path: string) => {
   );
 };
 
-export default function MemberNavGroup({ group, collapsed, userStatus, counts }: MemberNavGroupProps) {
+export default function MemberNavGroup({
+  group,
+  collapsed,
+  userStatus,
+  counts,
+}: MemberNavGroupProps) {
   const pathname = usePathname();
 
   // If the group contains a dashboard item, we don't need a collapsible header usually
@@ -75,19 +80,14 @@ export default function MemberNavGroup({ group, collapsed, userStatus, counts }:
               return (
                 <div
                   key={item.href}
-                  title={collapsed ? `${item.label} (Locked)` : "Complete onboarding to unlock"}
+                  title={collapsed ? `${item.label} (Locked)` : 'Complete onboarding to unlock'}
                   className={`
                     flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
                     opacity-50 cursor-not-allowed text-gray-400 relative group select-none
                     ${collapsed ? 'justify-center' : ''}
                   `}
                 >
-                  {Icon && (
-                    <Icon
-                      size={20}
-                      className="flex-shrink-0 text-gray-300"
-                    />
-                  )}
+                  {Icon && <Icon size={20} className="flex-shrink-0 text-gray-300" />}
                   {!collapsed && <span className="truncate flex-1">{item.label}</span>}
                   {!collapsed && <Lock size={14} className="text-gray-400 flex-shrink-0 ml-auto" />}
 

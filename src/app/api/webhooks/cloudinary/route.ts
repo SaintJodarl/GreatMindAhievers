@@ -18,13 +18,17 @@ export async function POST(req: NextRequest) {
     }
 
     const rawBody = await req.text();
-    
+
+    const apiSecret = process.env.CLOUDINARY_API_SECRET?.replace(/['"]/g, '').trim();
+    if (!apiSecret) {
+      return NextResponse.json({ message: 'Missing API secret' }, { status: 500 });
+    }
+
     // Verify notification signature using Cloudinary SDK utility
     const isValid = cloudinary.utils.verifyNotificationSignature(
       rawBody,
       Number(timestamp),
-      signature,
-      process.env.CLOUDINARY_API_SECRET?.replace(/['"]/g, '').trim()
+      signature
     );
 
     if (!isValid) {
@@ -52,7 +56,7 @@ export async function POST(req: NextRequest) {
     // pathParts[2] = userId
     // pathParts[3] = 'kyc'
     // pathParts[4] = docType
-    
+
     if (pathParts.length < 5 || pathParts[3] !== 'kyc') {
       return NextResponse.json({ message: 'Invalid folder structure for KYC' }, { status: 200 });
     }
@@ -102,6 +106,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });
   } catch (error: any) {
     console.error('Cloudinary webhook error:', error);
-    return NextResponse.json({ message: 'Webhook processing failed', error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Webhook processing failed', error: error.message },
+      { status: 500 }
+    );
   }
 }

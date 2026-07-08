@@ -1,13 +1,11 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import React from 'react';
 
-
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { Megaphone, Calendar, AlertCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
-
 
 export const metadata = {
   title: 'Company News | Announcements',

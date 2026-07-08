@@ -104,12 +104,19 @@ export default function MemberSidebar({
       {/* Navigation Groups */}
       <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-gray-200">
         {memberNavigation.map((group, index) => (
-          <MemberNavGroup 
-            key={index} 
-            group={group} 
-            collapsed={collapsed} 
+          <MemberNavGroup
+            key={index}
+            group={group}
+            collapsed={collapsed}
             userStatus={summary?.status}
-            counts={summary ? { openTickets: summary.openTicketsCount || 0, announcements: summary.announcementsCount || 0 } : undefined} 
+            counts={
+              summary
+                ? {
+                    openTickets: summary.openTicketsCount || 0,
+                    announcements: summary.announcementsCount || 0,
+                  }
+                : undefined
+            }
           />
         ))}
       </nav>
@@ -124,7 +131,9 @@ export default function MemberSidebar({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-gray-900 truncate">{userName}</p>
-                <p className="text-xs text-gray-500 font-mono truncate">ID: {summary?.referralCode || 'N/A'}</p>
+                <p className="text-xs text-gray-500 font-mono truncate">
+                  ID: {summary?.referralCode || 'N/A'}
+                </p>
               </div>
             </div>
 

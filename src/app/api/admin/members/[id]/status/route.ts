@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await verifyAdminPermission('member:write');
     if (!auth.authorized) {
@@ -24,7 +21,10 @@ export async function PATCH(
     }
 
     if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
-      return NextResponse.json({ message: 'Forbidden: Cannot manage administrator accounts via member endpoints' }, { status: 403 });
+      return NextResponse.json(
+        { message: 'Forbidden: Cannot manage administrator accounts via member endpoints' },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();

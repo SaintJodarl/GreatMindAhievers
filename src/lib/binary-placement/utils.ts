@@ -94,36 +94,61 @@ async function spilloverSearch(
   userId: string,
   preferredPosition: BinaryPosition
 ): Promise<PlacementResult> {
-  let currentNodeId = sponsorTree.userId;
+  // Start BFS from the root of the preferred leg
+  const rootLegId =
+    preferredPosition === 'LEFT' ? sponsorTree.leftChildId : sponsorTree.rightChildId;
 
-  while (true) {
+  if (!rootLegId) {
+    throw new Error(`Sponsor leg ${preferredPosition} is empty, but spilloverSearch was called`);
+  }
+
+  const queue: string[] = [rootLegId];
+
+  while (queue.length > 0) {
+    const currentNodeId = queue.shift()!;
+
     const nodeTree = await tx.binaryTree.findUnique({
       where: { userId: currentNodeId },
       select: { leftChildId: true, rightChildId: true, path: true, depth: true },
     });
 
     if (!nodeTree) {
-      throw new Error(`Node ${currentNodeId} not found in BinaryTree`);
+      continue;
     }
 
-    // Follow the preferred position leg
-    const nextChildId = preferredPosition === 'LEFT' ? nodeTree.leftChildId : nodeTree.rightChildId;
-
-    if (!nextChildId) {
+    // Place in the first available left or right child position
+    if (!nodeTree.leftChildId) {
       const depth = nodeTree.depth + 1;
       validateDepth(depth, userId);
       return {
         userId,
         placementId: currentNodeId,
         parentId: currentNodeId,
-        binaryPosition: preferredPosition,
+        binaryPosition: 'LEFT',
         depth,
-        path: generatePath(nodeTree.path, preferredPosition, userId),
+        path: generatePath(nodeTree.path, 'LEFT', userId),
       };
     }
 
-    currentNodeId = nextChildId;
+    if (!nodeTree.rightChildId) {
+      const depth = nodeTree.depth + 1;
+      validateDepth(depth, userId);
+      return {
+        userId,
+        placementId: currentNodeId,
+        parentId: currentNodeId,
+        binaryPosition: 'RIGHT',
+        depth,
+        path: generatePath(nodeTree.path, 'RIGHT', userId),
+      };
+    }
+
+    // Both children occupied, add to queue for next level BFS
+    queue.push(nodeTree.leftChildId);
+    queue.push(nodeTree.rightChildId);
   }
+
+  throw new Error('Spillover search failed to find an empty position');
 }
 
 function validateDepth(depth: number, userId: string): void {
@@ -172,7 +197,9 @@ export async function assignPlacementInTransaction(
     });
 
     if (updateCount.count === 0) {
-      throw new Error(`Placement slot ${result.binaryPosition} on parent ${result.parentId} is already occupied.`);
+      throw new Error(
+        `Placement slot ${result.binaryPosition} on parent ${result.parentId} is already occupied.`
+      );
     }
   }
 
@@ -236,6 +263,8 @@ export async function updateAncestorCounters(
   }
 }
 
+import { checkUserQualification } from '@/lib/qualification/engine';
+
 export async function executePlacementWithTx(
   tx: TxClient,
   context: PlacementContext
@@ -243,6 +272,10 @@ export async function executePlacementWithTx(
   const result = await findPlacementForUser(tx, context);
   await assignPlacementInTransaction(tx, context.userId, result);
   await updateAncestorCounters(tx, context.userId, result.binaryPosition);
+
+  // Trigger qualification engine for the placed user
+  await checkUserQualification(tx, context.userId);
+
   return result;
 }
 

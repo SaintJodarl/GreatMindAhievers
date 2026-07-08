@@ -83,8 +83,7 @@ const deriveOverallStatus = (submission: {
   if (
     documents.every(
       (document) =>
-        document.hasUrl &&
-        (document.status === 'UPLOADED' || document.status === 'APPROVED')
+        document.hasUrl && (document.status === 'UPLOADED' || document.status === 'APPROVED')
     )
   ) {
     return 'SUBMITTED';
@@ -127,10 +126,7 @@ export async function POST(req: NextRequest) {
     const currentUser = await getCurrentUser();
 
     if (!currentUser) {
-      return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const formData = await req.formData();
@@ -138,17 +134,11 @@ export async function POST(req: NextRequest) {
     const docType = formData.get('docType') as string | null;
 
     if (!file) {
-      return NextResponse.json(
-        { message: 'No file provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'No file provided' }, { status: 400 });
     }
 
     if (!isUploadDocumentType(docType)) {
-      return NextResponse.json(
-        { message: 'Invalid document type' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'Invalid document type' }, { status: 400 });
     }
 
     const config = DOCUMENT_CONFIG[docType];
@@ -193,8 +183,7 @@ export async function POST(req: NextRequest) {
     if (!extension || !validExtensions.includes(extension)) {
       return NextResponse.json(
         {
-          message:
-            'Invalid file type. Only PDF, JPG, PNG, HEIC, and WEBP are allowed.',
+          message: 'Invalid file type. Only PDF, JPG, PNG, HEIC, and WEBP are allowed.',
         },
         { status: 400 }
       );
@@ -202,10 +191,7 @@ export async function POST(req: NextRequest) {
 
     // Validate file size (5 MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { message: 'File size exceeds the 5MB limit.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'File size exceeds the 5MB limit.' }, { status: 400 });
     }
 
     // Convert uploaded file to Data URI

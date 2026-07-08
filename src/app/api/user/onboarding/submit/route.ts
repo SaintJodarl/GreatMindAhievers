@@ -3,8 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth/session';
 import { signAccessToken } from '@/lib/auth/jwt';
 
-const cleanText = (value: unknown) =>
-  typeof value === 'string' ? value.trim() : '';
+const cleanText = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,10 +53,7 @@ export async function POST(req: NextRequest) {
 
     const parsedDob = new Date(dob);
     if (Number.isNaN(parsedDob.getTime())) {
-      return NextResponse.json(
-        { message: 'Date of birth must be a valid date.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'Date of birth must be a valid date.' }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({

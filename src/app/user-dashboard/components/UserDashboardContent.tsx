@@ -11,7 +11,7 @@ import {
   Calendar,
   ChevronRight,
   Info,
-  Users
+  Users,
 } from 'lucide-react';
 import UserKPIGrid from './UserKPIGrid';
 import BinaryTreeSection from './BinaryTreeSection';
@@ -113,12 +113,8 @@ export default function UserDashboardContent() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
-        <div
-          className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"
-        ></div>
-        <p className="text-sm text-gray-500">
-          Loading dashboard summary...
-        </p>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+        <p className="text-sm text-gray-500">Loading dashboard summary...</p>
       </div>
     );
   }
@@ -167,21 +163,27 @@ export default function UserDashboardContent() {
     <div className="space-y-6 pb-12 animate-fade-in">
       {/* 1. Header Navigation Bar / Welcome Banner Container */}
       <div className="relative rounded-xl overflow-hidden bg-white border border-slate-200/60 shadow-sm p-6">
-        
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5 z-10">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h1>
             <p className="mt-1 text-sm font-medium text-slate-500">
-              Welcome back, <span className="font-semibold text-slate-700">{userName}</span>! Here's what's happening today.
+              Welcome back, <span className="font-semibold text-slate-700">{userName}</span>! Here's
+              what's happening today.
             </p>
             <div className="flex items-center gap-3 mt-4 text-[11px] font-semibold">
               <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-mono border border-slate-200/60">
                 ID: {summary.referralCode || `GMA-${summary.id.slice(-5).toUpperCase()}`}
               </span>
-              <span className={`px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
-                summary.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
-              }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${summary.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              <span
+                className={`px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
+                  summary.status === 'ACTIVE'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${summary.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                />
                 {summary.status}
               </span>
             </div>
@@ -247,14 +249,14 @@ export default function UserDashboardContent() {
       {/* 3. Content Panel */}
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-fade-in">
-          <UserActionRequiredCards 
-            summary={summary} 
+          <UserActionRequiredCards
+            summary={summary}
             onOpenAction={(step) => {
               setOnboardingStartStep(step);
               setShowOnboardingModal(true);
-            }} 
+            }}
           />
-          
+
           {/* KPI metrics grid */}
           <UserKPIGrid summary={summary} />
 
@@ -266,7 +268,9 @@ export default function UserDashboardContent() {
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">Recent Transactions</h2>
-                    <p className="text-xs text-gray-500 mt-0.5">Your latest financial activity and earnings</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Your latest financial activity and earnings
+                    </p>
                   </div>
                   <button
                     onClick={() => setActiveTab('earnings')}
@@ -287,12 +291,21 @@ export default function UserDashboardContent() {
                       <Calendar size={20} />
                     </div>
                     <p className="text-sm font-bold text-gray-700">No Transactions Yet</p>
-                    <p className="text-xs text-gray-400 mt-1 max-w-xs">Transactions and bonuses will appear here once processed.</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-xs">
+                      Transactions and bonuses will appear here once processed.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {recentTransactions.map((txn) => {
-                      const isCredit = ['CREDIT', 'REFERRAL_BONUS', 'PAIRING_BONUS', 'LEADERSHIP_BONUS', 'DEPOSIT', 'ADJUSTMENT'].includes(txn.type);
+                      const isCredit = [
+                        'CREDIT',
+                        'REFERRAL_BONUS',
+                        'PAIRING_BONUS',
+                        'LEADERSHIP_BONUS',
+                        'DEPOSIT',
+                        'ADJUSTMENT',
+                      ].includes(txn.type);
                       return (
                         <div
                           key={txn.id}
@@ -303,7 +316,13 @@ export default function UserDashboardContent() {
                               {txn.description || txn.type.replace('_', ' ')}
                             </h3>
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500 font-medium">
-                              <span>Amount: <span className="font-bold text-gray-700 font-mono-nums">₦{txn.amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span></span>
+                              <span>
+                                Amount:{' '}
+                                <span className="font-bold text-gray-700 font-mono-nums">
+                                  ₦
+                                  {txn.amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+                                </span>
+                              </span>
                               <span>•</span>
                               <span className="font-mono text-[11px]">Ref: {txn.reference}</span>
                               <span>•</span>
@@ -313,9 +332,13 @@ export default function UserDashboardContent() {
 
                           <div className="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0">
                             {/* Type Pill */}
-                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold tracking-wider uppercase ${
-                              isCredit ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
-                            }`}>
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[9px] font-bold tracking-wider uppercase ${
+                                isCredit
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-100'
+                              }`}
+                            >
                               {isCredit ? '+' : '-'} {txn.type.replace(/_/g, ' ')}
                             </span>
 
@@ -369,15 +392,22 @@ export default function UserDashboardContent() {
                       <Users size={20} className="text-slate-400" />
                     </div>
                     <p className="text-sm font-bold text-slate-700">No Referrals Yet</p>
-                    <p className="text-xs text-slate-400 mt-1 max-w-xs">Share your referral link to build your team!</p>
+                    <p className="text-xs text-slate-400 mt-1 max-w-xs">
+                      Share your referral link to build your team!
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {recentReferrals.map((user) => {
                       const initials = user.name
-                        ? user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+                        ? user.name
+                            .split(' ')
+                            .map((n: string) => n[0])
+                            .join('')
+                            .slice(0, 2)
+                            .toUpperCase()
                         : '??';
-                      
+
                       return (
                         <div
                           key={user.id}
@@ -389,12 +419,20 @@ export default function UserDashboardContent() {
                               {initials}
                             </div>
                             <div className="min-w-0">
-                              <h4 className="text-xs font-bold text-gray-900 truncate">{user.name}</h4>
+                              <h4 className="text-xs font-bold text-gray-900 truncate">
+                                {user.name}
+                              </h4>
                               <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
                               <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className={`inline-block w-1 h-1 rounded-full ${user.status === 'ACTIVE' ? 'bg-green-500' : 'bg-amber-500'}`} />
-                                <span className="text-[9px] text-gray-500 font-bold uppercase">{user.status}</span>
-                                <span className="text-[9px] text-gray-400 font-medium">• L: {user.leftLegCount} | R: {user.rightLegCount}</span>
+                                <span
+                                  className={`inline-block w-1 h-1 rounded-full ${user.status === 'ACTIVE' ? 'bg-green-500' : 'bg-amber-500'}`}
+                                />
+                                <span className="text-[9px] text-gray-500 font-bold uppercase">
+                                  {user.status}
+                                </span>
+                                <span className="text-[9px] text-gray-400 font-medium">
+                                  • L: {user.leftLegCount} | R: {user.rightLegCount}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -421,14 +459,18 @@ export default function UserDashboardContent() {
             <div className="bg-white rounded-xl border border-gray-150 border-t-4 border-t-cyan-500 p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex flex-col justify-between">
               <div>
                 <h3 className="font-bold text-gray-900 text-sm">Registration Completion</h3>
-                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">Confirm your personal and banking details for handover-ready access.</p>
+                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                  Confirm your personal and banking details for handover-ready access.
+                </p>
               </div>
               <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
-                  summary.kycStatus === 'APPROVED' || summary.kycStatus === 'COMPLETE'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                    : 'bg-amber-50 text-amber-700 border-amber-100'
-                }`}>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
+                    summary.kycStatus === 'APPROVED' || summary.kycStatus === 'COMPLETE'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                      : 'bg-amber-50 text-amber-700 border-amber-100'
+                  }`}
+                >
                   {summary.kycStatus}
                 </span>
                 <Link
@@ -443,7 +485,9 @@ export default function UserDashboardContent() {
             <div className="bg-white rounded-xl border border-gray-150 border-t-4 border-t-indigo-500 p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex flex-col justify-between">
               <div>
                 <h3 className="font-bold text-gray-900 text-sm">Referral Link</h3>
-                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">Share your registration invite link with new members to grow your downline.</p>
+                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                  Share your registration invite link with new members to grow your downline.
+                </p>
               </div>
               <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                 <span className="text-[10px] font-mono bg-gray-50 px-2 py-0.5 border border-gray-100 rounded text-gray-600 font-bold">
@@ -461,7 +505,9 @@ export default function UserDashboardContent() {
             <div className="bg-white rounded-xl border border-gray-150 border-t-4 border-t-rose-500 p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex flex-col justify-between">
               <div>
                 <h3 className="font-bold text-gray-900 text-sm">Support & Help</h3>
-                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">Submit support requests to our staff if you run into any operational problems.</p>
+                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                  Submit support requests to our staff if you run into any operational problems.
+                </p>
               </div>
               <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                 <span className="text-[10px] text-gray-400 font-bold">
@@ -505,15 +551,15 @@ export default function UserDashboardContent() {
       {showOnboardingModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
             onClick={() => setShowOnboardingModal(false)}
           />
-          
+
           {/* Modal Content */}
           <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl">
-            <OnboardingWidget 
-              summary={summary} 
+            <OnboardingWidget
+              summary={summary}
               onRefresh={handleRefreshAll}
               initialStep={onboardingStartStep}
               onClose={() => setShowOnboardingModal(false)}
@@ -544,7 +590,9 @@ export default function UserDashboardContent() {
             <div className="p-6 space-y-6">
               {/* Large Amount */}
               <div className="text-center py-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
-                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Amount</p>
+                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
+                  Amount
+                </p>
                 <p className="text-3xl font-extrabold text-indigo-900 mt-1 font-mono-nums">
                   ₦{selectedTxn.amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
                 </p>
@@ -553,36 +601,53 @@ export default function UserDashboardContent() {
               {/* Detail fields */}
               <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
                 <div>
-                  <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Reference</p>
-                  <p className="text-gray-800 font-mono mt-1 break-all bg-gray-50 border border-gray-100 p-2 rounded-lg">{selectedTxn.reference}</p>
+                  <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
+                    Reference
+                  </p>
+                  <p className="text-gray-800 font-mono mt-1 break-all bg-gray-50 border border-gray-100 p-2 rounded-lg">
+                    {selectedTxn.reference}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Transaction Type</p>
-                  <p className="text-gray-800 mt-1 break-all bg-gray-50 border border-gray-100 p-2 rounded-lg">{selectedTxn.type.replace(/_/g, ' ')}</p>
+                  <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
+                    Transaction Type
+                  </p>
+                  <p className="text-gray-800 mt-1 break-all bg-gray-50 border border-gray-100 p-2 rounded-lg">
+                    {selectedTxn.type.replace(/_/g, ' ')}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Status</p>
+                  <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
+                    Status
+                  </p>
                   <p className="text-gray-800 mt-1 flex items-center gap-1.5 bg-gray-50 border border-gray-100 p-2 rounded-lg uppercase">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     {selectedTxn.status || 'COMPLETED'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Date & Time</p>
+                  <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
+                    Date & Time
+                  </p>
                   <p className="text-gray-800 mt-1 bg-gray-50 border border-gray-100 p-2 rounded-lg">
                     {new Date(selectedTxn.createdAt).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
                     })}{' '}
-                    {new Date(selectedTxn.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(selectedTxn.createdAt).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </p>
                 </div>
               </div>
 
               {/* Description */}
               <div className="text-xs">
-                <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Description</p>
+                <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
+                  Description
+                </p>
                 <div className="mt-1 bg-gray-50 border border-gray-100 p-3 rounded-lg text-gray-700 leading-relaxed">
                   {selectedTxn.description || 'No description provided for this transaction.'}
                 </div>

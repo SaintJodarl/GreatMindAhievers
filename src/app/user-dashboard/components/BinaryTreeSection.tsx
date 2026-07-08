@@ -61,7 +61,7 @@ function TreeNodeCard({ node, isRoot = false }: { node: TreeNode; isRoot?: boole
             {node.name.length > 16 ? node.name.slice(0, 14) + '…' : node.name}
           </p>
           <p className="text-xs font-mono-nums" style={{ color: 'var(--muted-foreground)' }}>
-            {node.id ? node.id.slice(0,8).toUpperCase() : 'UNKNOWN'}
+            {node.id ? node.id.slice(0, 8).toUpperCase() : 'UNKNOWN'}
           </p>
           <div className="flex items-center justify-center gap-1.5 mt-1.5">
             <span
@@ -185,14 +185,17 @@ export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
   // If no summary is loaded yet, show skeleton or empty
   if (!summary) {
     return (
-      <div className="p-5 rounded-xl flex items-center justify-center h-[300px]" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+      <div
+        className="p-5 rounded-xl flex items-center justify-center h-[300px]"
+        style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+      >
         <p className="text-sm text-slate-400 animate-pulse">Loading tree...</p>
       </div>
     );
   }
 
   // Construct the root node from summary
-  // Assuming API gives us leftLegCount, rightLegCount, etc. 
+  // Assuming API gives us leftLegCount, rightLegCount, etc.
   // We'll leave children empty for now since we're removing mock data.
   // Real tree data should be fetched from /api/user/network/tree
   const rootNode: TreeNode = {
@@ -223,10 +226,7 @@ export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
         <div className="flex gap-3">
           {['Silver', 'Bronze', 'Entry'].map((r) => (
             <div key={r} className="flex items-center gap-1.5">
-              <div
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ background: rankColors[r] }}
-              />
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: rankColors[r] }} />
               <span className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>
                 {r}
               </span>

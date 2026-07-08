@@ -1,7 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Shield, KeyRound, Monitor, History, Loader2, AlertCircle, CheckCircle2, QrCode } from 'lucide-react';
+import {
+  Settings,
+  Shield,
+  KeyRound,
+  Monitor,
+  History,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  QrCode,
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function SecurityPage() {
@@ -180,7 +190,9 @@ export default function SecurityPage() {
     <div className="space-y-8 max-w-5xl">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Security Settings</h1>
-        <p className="text-gray-500 mt-1">Manage your account credentials, sessions, and multi-factor authentication.</p>
+        <p className="text-gray-500 mt-1">
+          Manage your account credentials, sessions, and multi-factor authentication.
+        </p>
       </div>
 
       {error && (
@@ -198,10 +210,8 @@ export default function SecurityPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         {/* Change Password Panel */}
         <div className="lg:col-span-2 space-y-8">
-          
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2.5">
               <KeyRound className="text-indigo-600" size={22} />
@@ -274,11 +284,17 @@ export default function SecurityPage() {
               <Monitor className="text-indigo-600" size={22} />
               Active Sessions
             </h2>
-            <p className="text-sm text-gray-500 mb-6">These devices are currently logged into your GMA account. You can log out of other devices if you suspect unauthorized access.</p>
+            <p className="text-sm text-gray-500 mb-6">
+              These devices are currently logged into your GMA account. You can log out of other
+              devices if you suspect unauthorized access.
+            </p>
 
             <div className="divide-y divide-gray-100">
               {activeSessions.map((session) => (
-                <div key={session.id} className="py-4 flex justify-between items-center first:pt-0 last:pb-0">
+                <div
+                  key={session.id}
+                  className="py-4 flex justify-between items-center first:pt-0 last:pb-0"
+                >
                   <div className="flex gap-4 items-start">
                     <div className="p-2.5 bg-indigo-50 rounded-lg text-indigo-600 mt-1">
                       <Monitor size={20} />
@@ -295,35 +311,37 @@ export default function SecurityPage() {
                       <span className="block text-xs text-gray-500 mt-0.5">
                         {session.browser} • {session.ip}
                       </span>
-                      <span className="block text-xs text-gray-400 mt-0.5">
-                        {session.location}
-                      </span>
+                      <span className="block text-xs text-gray-400 mt-0.5">{session.location}</span>
                     </div>
                   </div>
-                  <span className={`text-xs font-semibold ${session.isCurrent ? 'text-green-600' : 'text-gray-500'}`}>
+                  <span
+                    className={`text-xs font-semibold ${session.isCurrent ? 'text-green-600' : 'text-gray-500'}`}
+                  >
                     {session.status}
                   </span>
                 </div>
               ))}
             </div>
           </div>
-
         </div>
 
         {/* 2FA Sidebar Panel */}
         <div className="space-y-8">
-          
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2.5">
               <Shield className="text-indigo-600" size={22} />
               Multi-Factor Auth
             </h2>
-            <p className="text-sm text-gray-500 mb-6">Protect your earnings and transactions with an extra layer of code validation.</p>
+            <p className="text-sm text-gray-500 mb-6">
+              Protect your earnings and transactions with an extra layer of code validation.
+            </p>
 
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl mb-6">
               <div>
                 <span className="block text-sm font-semibold text-gray-900">Authenticator App</span>
-                <span className="block text-xs text-gray-500">Google Authenticator, Authy, etc.</span>
+                <span className="block text-xs text-gray-500">
+                  Google Authenticator, Authy, etc.
+                </span>
               </div>
               <button
                 onClick={handleToggle2FA}
@@ -341,7 +359,8 @@ export default function SecurityPage() {
 
             {is2FAEnabled ? (
               <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-800 text-xs">
-                <strong>✓ Two-Factor Authentication is Active.</strong> Whenever you log in or process a withdrawal, you will be prompted to enter the generated code.
+                <strong>✓ Two-Factor Authentication is Active.</strong> Whenever you log in or
+                process a withdrawal, you will be prompted to enter the generated code.
               </div>
             ) : (
               <div className="text-xs text-gray-400">
@@ -356,23 +375,26 @@ export default function SecurityPage() {
               <History className="text-indigo-600" size={22} />
               Login History
             </h2>
-            
+
             <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
               {loginHistory.map((log) => (
-                <div key={log.id} className="text-xs border-b border-gray-50 pb-3 last:border-b-0 last:pb-0">
+                <div
+                  key={log.id}
+                  className="text-xs border-b border-gray-50 pb-3 last:border-b-0 last:pb-0"
+                >
                   <div className="flex justify-between font-semibold text-gray-900">
                     <span>{log.device}</span>
                     <span className="text-green-600 font-semibold">{log.status}</span>
                   </div>
-                  <span className="block text-gray-500 mt-0.5">{log.browser} • {log.ip}</span>
+                  <span className="block text-gray-500 mt-0.5">
+                    {log.browser} • {log.ip}
+                  </span>
                   <span className="block text-gray-400 mt-0.5">{log.date}</span>
                 </div>
               ))}
             </div>
           </div>
-
         </div>
-
       </div>
 
       {/* 2FA Setup Dialog */}
@@ -394,7 +416,8 @@ export default function SecurityPage() {
 
             <div className="space-y-5">
               <p className="text-sm text-gray-600">
-                1. Scan the QR code below using your Google Authenticator, Authy, or Microsoft Authenticator app.
+                1. Scan the QR code below using your Google Authenticator, Authy, or Microsoft
+                Authenticator app.
               </p>
 
               {/* Simulated QR Code Wrapper */}
@@ -412,11 +435,14 @@ export default function SecurityPage() {
                     ))}
                   </div>
                 </div>
-                <span className="text-[10px] font-mono text-gray-500 mt-2">SECRET: GMA-MEMBER-SEC</span>
+                <span className="text-[10px] font-mono text-gray-500 mt-2">
+                  SECRET: GMA-MEMBER-SEC
+                </span>
               </div>
 
               <p className="text-sm text-gray-600">
-                2. Enter the 6-digit confirmation code from your authenticator app below to activate:
+                2. Enter the 6-digit confirmation code from your authenticator app below to
+                activate:
               </p>
 
               <form onSubmit={handleVerify2FA} className="space-y-4">
@@ -458,7 +484,6 @@ export default function SecurityPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

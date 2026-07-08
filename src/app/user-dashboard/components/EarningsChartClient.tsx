@@ -57,10 +57,25 @@ export default function EarningsChartClient({ data = [] }: EarningsChartClientPr
     return (
       <div className="w-full h-[240px] flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50">
         <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 mb-3">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 3v18h18" />
+            <path d="m19 9-5 5-4-4-3 3" />
+          </svg>
         </div>
         <p className="text-sm font-medium text-slate-500">No earnings data yet</p>
-        <p className="text-xs text-slate-400 mt-1 max-w-[200px] text-center">Your chart will populate as you generate network volume.</p>
+        <p className="text-xs text-slate-400 mt-1 max-w-[200px] text-center">
+          Your chart will populate as you generate network volume.
+        </p>
       </div>
     );
   }

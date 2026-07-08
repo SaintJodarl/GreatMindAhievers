@@ -29,7 +29,7 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
   const walletBalance = summary?.balance || 0;
   const minWithdrawal = 5000;
   const pendingAmount = summary?.pendingWithdrawals || 0;
-  
+
   // No withdrawal history yet for new accounts.
   // Real implementation should fetch from `/api/wallet/withdrawals`
   const withdrawalHistory: any[] = [];
@@ -52,13 +52,13 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
         {[
           {
             label: 'Available Balance',
-            value: `₦${Math.max(0, walletBalance - pendingAmount).toLocaleString(undefined, {minimumFractionDigits: 2})}`,
+            value: `₦${Math.max(0, walletBalance - pendingAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
             color: 'var(--accent)',
             sub: 'Ready to withdraw',
           },
           {
             label: 'Pending Withdrawal',
-            value: `₦${pendingAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
+            value: `₦${pendingAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
             color: 'var(--warning)',
             sub: 'Awaiting approval',
           },
@@ -98,7 +98,8 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
               Request Withdrawal
             </h3>
             <p className="text-sm mt-1" style={{ color: 'var(--muted-foreground)' }}>
-              Transfer your earnings to your local bank account. Minimum withdrawal is ₦{minWithdrawal.toLocaleString()}.
+              Transfer your earnings to your local bank account. Minimum withdrawal is ₦
+              {minWithdrawal.toLocaleString()}.
             </p>
           </div>
 
@@ -116,7 +117,8 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
                 <div>
                   <h4 className="text-sm font-bold text-emerald-800">Request Submitted</h4>
                   <p className="text-xs text-emerald-600 mt-1">
-                    Your withdrawal request has been received and is pending admin approval. You will be notified once processed.
+                    Your withdrawal request has been received and is pending admin approval. You
+                    will be notified once processed.
                   </p>
                 </div>
               </div>
@@ -127,7 +129,10 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
             <div className="space-y-4">
               {/* Method */}
               <div>
-                <label className="block text-xs font-bold mb-1.5" style={{ color: 'var(--foreground)' }}>
+                <label
+                  className="block text-xs font-bold mb-1.5"
+                  style={{ color: 'var(--foreground)' }}
+                >
                   Withdrawal Method
                 </label>
                 <select
@@ -149,18 +154,26 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
 
               {/* Amount */}
               <div>
-                <label className="block text-xs font-bold mb-1.5" style={{ color: 'var(--foreground)' }}>
+                <label
+                  className="block text-xs font-bold mb-1.5"
+                  style={{ color: 'var(--foreground)' }}
+                >
                   Amount (₦)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₦</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+                    ₦
+                  </span>
                   <input
                     type="number"
                     className="input-field pl-8"
                     placeholder="5000"
                     {...register('amount', {
                       required: 'Amount is required',
-                      min: { value: minWithdrawal, message: `Minimum withdrawal is ₦${minWithdrawal}` },
+                      min: {
+                        value: minWithdrawal,
+                        message: `Minimum withdrawal is ₦${minWithdrawal}`,
+                      },
                       max: {
                         value: Math.max(0, walletBalance - pendingAmount),
                         message: 'Insufficient available balance',
@@ -186,7 +199,10 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
               <div className="grid grid-cols-2 gap-4">
                 {/* Account Number */}
                 <div>
-                  <label className="block text-xs font-bold mb-1.5" style={{ color: 'var(--foreground)' }}>
+                  <label
+                    className="block text-xs font-bold mb-1.5"
+                    style={{ color: 'var(--foreground)' }}
+                  >
                     Account Number
                   </label>
                   <input
@@ -206,7 +222,10 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
 
                 {/* Account Name */}
                 <div>
-                  <label className="block text-xs font-bold mb-1.5" style={{ color: 'var(--foreground)' }}>
+                  <label
+                    className="block text-xs font-bold mb-1.5"
+                    style={{ color: 'var(--foreground)' }}
+                  >
                     Account Name
                   </label>
                   <input
@@ -224,7 +243,10 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
 
               {/* Note */}
               <div>
-                <label className="block text-xs font-bold mb-1.5" style={{ color: 'var(--foreground)' }}>
+                <label
+                  className="block text-xs font-bold mb-1.5"
+                  style={{ color: 'var(--foreground)' }}
+                >
                   Optional Note
                 </label>
                 <input
@@ -277,7 +299,19 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
             {withdrawalHistory.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center p-8 text-center">
                 <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 mb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                  </svg>
                 </div>
                 <h3 className="text-sm font-bold text-slate-700">No withdrawals yet</h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-[250px]">
@@ -295,29 +329,49 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
                             item.status === 'Approved'
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : item.status === 'Pending'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-rose-50 text-rose-700 border-rose-200'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-rose-50 text-rose-700 border-rose-200'
                           }`}
                         >
                           {item.status}
                         </span>
-                        <span className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
+                        <span
+                          className="text-xs font-medium"
+                          style={{ color: 'var(--muted-foreground)' }}
+                        >
                           {item.date}
                         </span>
                       </div>
-                      <span className="text-sm font-bold font-mono-nums" style={{ color: 'var(--foreground)' }}>
+                      <span
+                        className="text-sm font-bold font-mono-nums"
+                        style={{ color: 'var(--foreground)' }}
+                      >
                         ₦{item.amount.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5" style={{ color: 'var(--muted-foreground)' }}>
+                      <div
+                        className="flex items-center gap-1.5"
+                        style={{ color: 'var(--muted-foreground)' }}
+                      >
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                          <rect x="1.5" y="2.5" width="9" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+                          <rect
+                            x="1.5"
+                            y="2.5"
+                            width="9"
+                            height="7"
+                            rx="1.5"
+                            stroke="currentColor"
+                            strokeWidth="1.2"
+                          />
                           <path d="M1.5 5.5h9" stroke="currentColor" strokeWidth="1.2" />
                         </svg>
                         {item.method} ({item.account})
                       </div>
-                      <span className="font-mono text-[10px] uppercase" style={{ color: 'var(--muted-foreground)' }}>
+                      <span
+                        className="font-mono text-[10px] uppercase"
+                        style={{ color: 'var(--muted-foreground)' }}
+                      >
                         {item.id}
                       </span>
                     </div>

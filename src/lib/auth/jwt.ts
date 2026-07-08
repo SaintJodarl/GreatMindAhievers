@@ -6,9 +6,7 @@ if (!secret && process.env.NODE_ENV === 'production') {
   throw new Error('JWT_SECRET environment variable is required in production.');
 }
 
-const JWT_SECRET = new TextEncoder().encode(
-  secret || 'gma-dev-secret-key-change-in-development'
-);
+const JWT_SECRET = new TextEncoder().encode(secret || 'gma-dev-secret-key-change-in-development');
 
 export interface TokenPayload {
   sub: string;

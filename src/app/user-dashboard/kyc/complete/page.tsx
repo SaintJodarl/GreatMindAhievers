@@ -125,12 +125,12 @@ export default function CompleteKycPage() {
     if (step === 1) {
       return Boolean(
         formData.firstName &&
-          formData.lastName &&
-          formData.email &&
-          formData.phone &&
-          formData.gender &&
-          formData.dob &&
-          formData.address
+        formData.lastName &&
+        formData.email &&
+        formData.phone &&
+        formData.gender &&
+        formData.dob &&
+        formData.address
       );
     }
 
@@ -213,9 +213,7 @@ export default function CompleteKycPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Complete Registration
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Complete Registration</h1>
           <p className="text-gray-500 mt-1">Your registration details are complete.</p>
         </div>
 
@@ -245,12 +243,8 @@ export default function CompleteKycPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-          Complete Registration
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Confirm your personal details and banking information.
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Complete Registration</h1>
+        <p className="text-gray-500 mt-1">Confirm your personal details and banking information.</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-4xl">
@@ -337,9 +331,7 @@ export default function CompleteKycPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <input
                   type="tel"
                   name="phone"
@@ -423,9 +415,7 @@ export default function CompleteKycPage() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Account Name
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
                 <input
                   type="text"
                   name="accountName"

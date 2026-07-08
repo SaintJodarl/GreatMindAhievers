@@ -43,8 +43,6 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
     }
   };
 
-
-
   return (
     <div className="animate-slide-up">
       <div className="mb-6 text-center lg:text-left">
@@ -83,8 +81,6 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           <span>{authError}</span>
         </div>
       )}
-
-
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>

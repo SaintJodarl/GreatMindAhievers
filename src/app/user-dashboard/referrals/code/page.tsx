@@ -1,13 +1,11 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import React from 'react';
 
-
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import ReferralCodeClient from './ReferralCodeClient';
 
 export const dynamic = 'force-dynamic';
-
 
 export const metadata = {
   title: 'Referral Code | GMA Network',

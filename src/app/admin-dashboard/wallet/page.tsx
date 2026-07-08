@@ -4,7 +4,6 @@ import AdminWalletClient from './components/AdminWalletClient';
 
 export const dynamic = 'force-dynamic';
 
-
 export const metadata = {
   title: 'Wallet & Finance | Admin',
 };
@@ -35,4 +34,3 @@ export default async function WalletPage() {
 
   return <AdminWalletClient initialTransactions={serializedTransactions as any} />;
 }
-

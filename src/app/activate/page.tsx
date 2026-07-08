@@ -39,7 +39,7 @@ export default function ActivatePage() {
 
       setSuccess(data.message || 'Account activated successfully!');
       await checkSession(); // refresh user session
-      
+
       // Redirect after a short delay
       setTimeout(() => {
         router.push('/user-dashboard');
@@ -54,14 +54,11 @@ export default function ActivatePage() {
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-md w-full mx-auto space-y-8 bg-slate-950/40 p-8 md:p-10 rounded-3xl border border-slate-800 shadow-2xl backdrop-blur-xl">
-        
         <div className="text-center">
           <div className="w-16 h-16 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
             <KeyRound size={32} />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">
-            Activate Account
-          </h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">Activate Account</h1>
           <p className="mt-2 text-sm text-slate-400">
             Enter your activation code to unlock full platform features.
           </p>
@@ -83,7 +80,10 @@ export default function ActivatePage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="code" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            <label
+              htmlFor="code"
+              className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2"
+            >
               Activation Code
             </label>
             <input
@@ -115,15 +115,6 @@ export default function ActivatePage() {
             )}
           </button>
         </form>
-
-        <div className="text-center pt-4 border-t border-slate-800">
-          <button 
-            onClick={() => router.push('/user-dashboard')}
-            className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
-          >
-            Skip for now &rarr;
-          </button>
-        </div>
       </div>
     </div>
   );

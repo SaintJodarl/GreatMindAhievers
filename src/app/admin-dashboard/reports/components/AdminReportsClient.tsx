@@ -1,7 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BarChart3, Download, Users, Wallet, CheckCircle2, ArrowUpRight, TrendingUp, RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  BarChart3,
+  Download,
+  Users,
+  Wallet,
+  CheckCircle2,
+  ArrowUpRight,
+  TrendingUp,
+  RefreshCw,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
 
 interface UserSummary {
   total: number;
@@ -117,7 +128,9 @@ export default function AdminReportsClient() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-gray-500 mt-1">Generate system reports and view real-time data insights.</p>
+          <p className="text-gray-500 mt-1">
+            Generate system reports and view real-time data insights.
+          </p>
         </div>
         <div className="flex gap-3">
           <button
@@ -144,9 +157,13 @@ export default function AdminReportsClient() {
             <Users size={24} />
           </div>
           <div>
-            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Members</span>
+            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+              Total Members
+            </span>
             <p className="text-2xl font-bold text-gray-900 mt-0.5">{data.users.total}</p>
-            <span className="text-[10px] text-green-600 font-semibold">{data.users.active} Active accounts</span>
+            <span className="text-[10px] text-green-600 font-semibold">
+              {data.users.active} Active accounts
+            </span>
           </div>
         </div>
 
@@ -155,8 +172,12 @@ export default function AdminReportsClient() {
             <Wallet size={24} />
           </div>
           <div>
-            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total System Balance</span>
-            <p className="text-2xl font-bold text-gray-900 mt-0.5">₦{data.wallet.totalCachedBalance.toLocaleString()}</p>
+            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+              Total System Balance
+            </span>
+            <p className="text-2xl font-bold text-gray-900 mt-0.5">
+              ₦{data.wallet.totalCachedBalance.toLocaleString()}
+            </p>
             <span className="text-[10px] text-gray-500 font-medium">Sum of all wallets</span>
           </div>
         </div>
@@ -166,9 +187,15 @@ export default function AdminReportsClient() {
             <TrendingUp size={24} />
           </div>
           <div>
-            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Commission Paid</span>
-            <p className="text-2xl font-bold text-gray-900 mt-0.5">₦{data.commissions.total.toLocaleString()}</p>
-            <span className="text-[10px] text-gray-500 font-medium">Referrals + Pairings + Rewards</span>
+            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+              Total Commission Paid
+            </span>
+            <p className="text-2xl font-bold text-gray-900 mt-0.5">
+              ₦{data.commissions.total.toLocaleString()}
+            </p>
+            <span className="text-[10px] text-gray-500 font-medium">
+              Referrals + Pairings + Rewards
+            </span>
           </div>
         </div>
 
@@ -177,7 +204,9 @@ export default function AdminReportsClient() {
             <CheckCircle2 size={24} />
           </div>
           <div>
-            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Approved KYC</span>
+            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+              Approved KYC
+            </span>
             <p className="text-2xl font-bold text-gray-900 mt-0.5">{data.kyc.APPROVED}</p>
             <span className="text-[10px] text-gray-500 font-medium">
               {kycTotal > 0 ? Math.round((data.kyc.APPROVED / kycTotal) * 100) : 0}% success rate
@@ -192,19 +221,25 @@ export default function AdminReportsClient() {
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-between">
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-1">Commission Allocations</h3>
-            <p className="text-sm text-gray-500 mb-6">Visual distribution of compensation plan payments.</p>
+            <p className="text-sm text-gray-500 mb-6">
+              Visual distribution of compensation plan payments.
+            </p>
           </div>
 
           <div className="space-y-4">
             <div>
               <div className="flex justify-between text-sm font-medium text-gray-700 mb-1.5">
                 <span>Direct Referral Bonuses</span>
-                <span className="font-bold text-gray-900">₦{data.commissions.referral.toLocaleString()}</span>
+                <span className="font-bold text-gray-900">
+                  ₦{data.commissions.referral.toLocaleString()}
+                </span>
               </div>
               <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
                 <div
                   className="bg-indigo-600 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${data.commissions.total > 0 ? (data.commissions.referral / data.commissions.total) * 100 : 0}%` }}
+                  style={{
+                    width: `${data.commissions.total > 0 ? (data.commissions.referral / data.commissions.total) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -212,12 +247,16 @@ export default function AdminReportsClient() {
             <div>
               <div className="flex justify-between text-sm font-medium text-gray-700 mb-1.5">
                 <span>Pairing Leg Bonuses</span>
-                <span className="font-bold text-gray-900">₦{data.commissions.pairing.toLocaleString()}</span>
+                <span className="font-bold text-gray-900">
+                  ₦{data.commissions.pairing.toLocaleString()}
+                </span>
               </div>
               <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
                 <div
                   className="bg-blue-500 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${data.commissions.total > 0 ? (data.commissions.pairing / data.commissions.total) * 100 : 0}%` }}
+                  style={{
+                    width: `${data.commissions.total > 0 ? (data.commissions.pairing / data.commissions.total) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -225,12 +264,16 @@ export default function AdminReportsClient() {
             <div>
               <div className="flex justify-between text-sm font-medium text-gray-700 mb-1.5">
                 <span>Leadership Rewards</span>
-                <span className="font-bold text-gray-900">₦{data.commissions.leadership.toLocaleString()}</span>
+                <span className="font-bold text-gray-900">
+                  ₦{data.commissions.leadership.toLocaleString()}
+                </span>
               </div>
               <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
                 <div
                   className="bg-purple-500 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${data.commissions.total > 0 ? (data.commissions.leadership / data.commissions.total) * 100 : 0}%` }}
+                  style={{
+                    width: `${data.commissions.total > 0 ? (data.commissions.leadership / data.commissions.total) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -238,7 +281,9 @@ export default function AdminReportsClient() {
 
           <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/30 flex items-center justify-between mt-8">
             <span className="text-sm font-semibold text-indigo-900">Total Compensation Paid:</span>
-            <span className="text-xl font-extrabold text-indigo-700">₦{data.commissions.total.toLocaleString()}</span>
+            <span className="text-xl font-extrabold text-indigo-700">
+              ₦{data.commissions.total.toLocaleString()}
+            </span>
           </div>
         </div>
 
@@ -246,31 +291,53 @@ export default function AdminReportsClient() {
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-between">
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-1">Withdrawal Ledger Overview</h3>
-            <p className="text-sm text-gray-500 mb-6">Status breakdown of processed financial withdrawals.</p>
+            <p className="text-sm text-gray-500 mb-6">
+              Status breakdown of processed financial withdrawals.
+            </p>
           </div>
 
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100">
-              <span className="text-[10px] text-amber-800 font-bold uppercase tracking-wider block">Pending Requests</span>
-              <p className="text-xl font-bold text-amber-900 mt-1">{data.withdrawals.pendingCount}</p>
-              <p className="text-xs text-amber-600 font-medium mt-0.5">₦{data.withdrawals.pendingAmount.toLocaleString()}</p>
+              <span className="text-[10px] text-amber-800 font-bold uppercase tracking-wider block">
+                Pending Requests
+              </span>
+              <p className="text-xl font-bold text-amber-900 mt-1">
+                {data.withdrawals.pendingCount}
+              </p>
+              <p className="text-xs text-amber-600 font-medium mt-0.5">
+                ₦{data.withdrawals.pendingAmount.toLocaleString()}
+              </p>
             </div>
 
             <div className="bg-green-50/50 p-4 rounded-2xl border border-green-100">
-              <span className="text-[10px] text-green-800 font-bold uppercase tracking-wider block">Approved Requests</span>
-              <p className="text-xl font-bold text-green-900 mt-1">{data.withdrawals.approvedCount}</p>
-              <p className="text-xs text-green-600 font-medium mt-0.5">₦{data.withdrawals.approvedAmount.toLocaleString()}</p>
+              <span className="text-[10px] text-green-800 font-bold uppercase tracking-wider block">
+                Approved Requests
+              </span>
+              <p className="text-xl font-bold text-green-900 mt-1">
+                {data.withdrawals.approvedCount}
+              </p>
+              <p className="text-xs text-green-600 font-medium mt-0.5">
+                ₦{data.withdrawals.approvedAmount.toLocaleString()}
+              </p>
             </div>
 
             <div className="bg-red-50/50 p-4 rounded-2xl border border-red-100">
-              <span className="text-[10px] text-red-800 font-bold uppercase tracking-wider block">Rejected Requests</span>
-              <p className="text-xl font-bold text-red-900 mt-1">{data.withdrawals.rejectedCount}</p>
-              <p className="text-xs text-red-600 font-medium mt-0.5">₦{data.withdrawals.rejectedAmount.toLocaleString()}</p>
+              <span className="text-[10px] text-red-800 font-bold uppercase tracking-wider block">
+                Rejected Requests
+              </span>
+              <p className="text-xl font-bold text-red-900 mt-1">
+                {data.withdrawals.rejectedCount}
+              </p>
+              <p className="text-xs text-red-600 font-medium mt-0.5">
+                ₦{data.withdrawals.rejectedAmount.toLocaleString()}
+              </p>
             </div>
           </div>
 
           <div className="space-y-3 mt-8">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">KYC Verification Distribution</h4>
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              KYC Verification Distribution
+            </h4>
             <div className="flex w-full h-4 rounded-full overflow-hidden shadow-sm">
               <div
                 className="bg-green-500 h-full hover:opacity-90 transition-opacity"

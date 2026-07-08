@@ -13,20 +13,14 @@ export async function POST(req: NextRequest) {
     const currentUser = await getCurrentUser();
 
     if (!currentUser) {
-      return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      return NextResponse.json(
-        { message: 'No file provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'No file provided' }, { status: 400 });
     }
 
     // Validate file type
@@ -36,8 +30,7 @@ export async function POST(req: NextRequest) {
     if (!extension || !validExtensions.includes(extension)) {
       return NextResponse.json(
         {
-          message:
-            'Invalid file type. Only PDF, JPG, PNG, HEIC, and WEBP are allowed.',
+          message: 'Invalid file type. Only PDF, JPG, PNG, HEIC, and WEBP are allowed.',
         },
         { status: 400 }
       );
@@ -45,10 +38,7 @@ export async function POST(req: NextRequest) {
 
     // Validate file size (5 MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { message: 'File size exceeds the 5MB limit.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'File size exceeds the 5MB limit.' }, { status: 400 });
     }
 
     // Convert the uploaded file to a Data URI

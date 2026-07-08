@@ -12,6 +12,7 @@ interface RegisterFormData {
   username: string;
   email: string;
   phone: string;
+  activationCode: string;
   password: string;
   confirmPassword: string;
   agreeTerms: boolean;
@@ -35,6 +36,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<RegisterFormData>();
 
@@ -53,6 +55,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         username: data.username,
         email: data.email,
         phone: data.phone,
+        activationCode: data.activationCode.trim().toUpperCase(),
         password: data.password,
       };
 
@@ -95,7 +98,8 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         <div className="space-y-2">
           <h3 className="text-xl font-bold text-gray-900">Registration Successful!</h3>
           <p className="text-sm text-gray-500 max-w-sm mx-auto leading-relaxed">
-            Your account has been created. Please sign in below to complete your profile and activate your account.
+            Your account has been created. Please sign in below to complete your profile and
+            activate your account.
           </p>
         </div>
         <button
@@ -126,7 +130,9 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         {/* Name details */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">First Name</label>
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              First Name
+            </label>
             <input
               type="text"
               placeholder="First name"
@@ -134,11 +140,15 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
               {...register('firstName', { required: 'Required' })}
             />
             {errors.firstName && (
-              <p className="text-[10px] font-semibold text-rose-600 mt-0.5">{errors.firstName.message}</p>
+              <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
+                {errors.firstName.message}
+              </p>
             )}
           </div>
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Last Name</label>
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              Last Name
+            </label>
             <input
               type="text"
               placeholder="Last name"
@@ -146,14 +156,18 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
               {...register('lastName', { required: 'Required' })}
             />
             {errors.lastName && (
-              <p className="text-[10px] font-semibold text-rose-600 mt-0.5">{errors.lastName.message}</p>
+              <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
+                {errors.lastName.message}
+              </p>
             )}
           </div>
         </div>
 
         {/* Username */}
         <div className="space-y-1">
-          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Username</label>
+          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            Username
+          </label>
           <input
             type="text"
             placeholder="Choose a username"
@@ -165,13 +179,17 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
             })}
           />
           {errors.username && (
-            <p className="text-[10px] font-semibold text-rose-600 mt-0.5">{errors.username.message}</p>
+            <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
+              {errors.username.message}
+            </p>
           )}
         </div>
 
         {/* Email Address */}
         <div className="space-y-1">
-          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Email Address</label>
+          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            Email Address
+          </label>
           <input
             type="email"
             placeholder="your@email.com"
@@ -188,7 +206,9 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
 
         {/* Phone Number */}
         <div className="space-y-1">
-          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Phone Number</label>
+          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            Phone Number
+          </label>
           <input
             type="tel"
             placeholder="e.g. +2348031234567"
@@ -200,11 +220,40 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           )}
         </div>
 
+        {/* Activation Code */}
+        <div className="space-y-1">
+          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            Activation Code
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. GMA-123456"
+            className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 font-mono uppercase tracking-wider"
+            {...register('activationCode', {
+              required: 'Activation code is required',
+              pattern: { value: /^GMA-\d{6}$/i, message: 'Format: GMA-123456' },
+              onChange: (e) => {
+                setValue('activationCode', e.target.value.toUpperCase(), { shouldValidate: true });
+              },
+            })}
+          />
+          {errors.activationCode && (
+            <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
+              {errors.activationCode.message}
+            </p>
+          )}
+          <p className="text-[10px] text-gray-400 mt-0.5">
+            Enter the code issued by the admin desk
+          </p>
+        </div>
+
         {/* Passwords */}
         <div className="space-y-3">
           {/* Password */}
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Password</label>
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              Password
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -228,13 +277,17 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
               </button>
             </div>
             {errors.password && (
-              <p className="text-[10px] font-semibold text-rose-600 mt-0.5">{errors.password.message}</p>
+              <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
+                {errors.password.message}
+              </p>
             )}
           </div>
 
           {/* Confirm Password */}
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Confirm Password</label>
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              Confirm Password
+            </label>
             <div className="relative">
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
@@ -254,7 +307,9 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
               </button>
             </div>
             {errors.confirmPassword && (
-              <p className="text-[10px] font-semibold text-rose-600 mt-0.5">{errors.confirmPassword.message}</p>
+              <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
+                {errors.confirmPassword.message}
+              </p>
             )}
           </div>
         </div>
@@ -267,9 +322,9 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
             {...register('agreeTerms', { required: 'You must agree to the terms' })}
           />
           <span className="text-[11px] text-gray-500 leading-relaxed font-semibold">
-            I agree to the{' '}
-            <span className="text-indigo-600 hover:underline">Terms of Service</span> and{' '}
-            <span className="text-indigo-600 hover:underline">Privacy Policy</span> of Great Mind Achievers.
+            I agree to the <span className="text-indigo-600 hover:underline">Terms of Service</span>{' '}
+            and <span className="text-indigo-600 hover:underline">Privacy Policy</span> of Great
+            Mind Achievers.
           </span>
         </label>
         {errors.agreeTerms && (

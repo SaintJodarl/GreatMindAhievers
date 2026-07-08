@@ -103,10 +103,14 @@ export default function UserKPIGrid({ summary }: UserKPIGridProps) {
             <div>
               {/* Card Header */}
               <div className="flex items-center justify-between mb-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${kpi.iconBg} ${kpi.iconColor}`}>
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${kpi.iconBg} ${kpi.iconColor}`}
+                >
                   <IconComponent size={20} strokeWidth={2.5} />
                 </div>
-                <button className={`${kpi.labelColor} hover:${kpi.valueColor} transition-colors p-1 rounded-full hover:bg-white/50`}>
+                <button
+                  className={`${kpi.labelColor} hover:${kpi.valueColor} transition-colors p-1 rounded-full hover:bg-white/50`}
+                >
                   <MoreVertical size={18} />
                 </button>
               </div>
@@ -114,7 +118,9 @@ export default function UserKPIGrid({ summary }: UserKPIGridProps) {
               {/* Value */}
               <div className="space-y-1">
                 <h3 className={`text-[13px] font-semibold ${kpi.labelColor}`}>{kpi.label}</h3>
-                <div className={`text-2xl font-bold tracking-tight ${kpi.valueColor}`}>{kpi.value}</div>
+                <div className={`text-2xl font-bold tracking-tight ${kpi.valueColor}`}>
+                  {kpi.value}
+                </div>
               </div>
             </div>
 
