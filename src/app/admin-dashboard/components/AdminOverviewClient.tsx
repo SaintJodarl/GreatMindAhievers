@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Copy, Check } from 'lucide-react';
+import { generateReferralLink } from '@/lib/referral-link';
 
 export default function AdminOverviewClient() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function AdminOverviewClient() {
 
   const handleCopy = () => {
     if (user?.referralCode) {
-      const link = `https://app.greatmindachievers.org/register?ref=${user.referralCode}`;
+      const link = generateReferralLink(user.referralCode);
       navigator.clipboard.writeText(link);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -50,7 +51,7 @@ export default function AdminOverviewClient() {
         <div className="flex items-center gap-2">
           <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 flex-1 text-xs font-mono text-gray-600 overflow-hidden text-ellipsis whitespace-nowrap">
             {user?.referralCode
-              ? `https://app.greatmindachievers.org/register?ref=${user.referralCode}`
+              ? generateReferralLink(user.referralCode)
               : 'Loading...'}
           </div>
           <button

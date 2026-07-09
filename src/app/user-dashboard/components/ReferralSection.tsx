@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { generateReferralLink } from '@/lib/referral-link';
 
 interface ReferralSectionProps {
   initialReferrals?: any[];
@@ -9,7 +10,7 @@ interface ReferralSectionProps {
 export default function ReferralSection({ initialReferrals = [], summary }: ReferralSectionProps) {
   const [copied, setCopied] = useState(false);
   const referralCode = summary?.referralCode || 'YOUR-CODE';
-  const referralLink = `https://gma.network/join?ref=${referralCode}`;
+  const referralLink = generateReferralLink(referralCode);
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(referralLink);

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Copy, Check, QrCode, Download, Share2 } from 'lucide-react';
+import { generateReferralLink } from '@/lib/referral-link';
 
 interface ReferralCodeClientProps {
   referralCode: string;
@@ -9,13 +10,7 @@ interface ReferralCodeClientProps {
 
 export default function ReferralCodeClient({ referralCode }: ReferralCodeClientProps) {
   const [copied, setCopied] = useState(false);
-  const [origin, setOrigin] = useState('');
-
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
-
-  const referralLink = `${origin || 'https://gma.network'}/sign-up-login-screen?mode=register&ref=${referralCode}`;
+  const referralLink = generateReferralLink(referralCode);
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(referralLink)}`;
 
   const handleCopy = async () => {

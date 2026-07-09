@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { NextRequest } from 'next/server';
 import { generateUniqueReferralCode } from '@/lib/referral-code';
+import { generateReferralLink } from '@/lib/referral-link';
 import { executePlacementWithTx } from '@/lib/binary-placement/utils';
 import { BinaryPosition } from '@/lib/binary-placement/constants';
 import { emitOutboxEvent } from '@/lib/events/outbox';
@@ -210,7 +211,7 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const referralCode = await generateUniqueReferralCode(prisma);
-    const referralLink = `https://app.greatmindachievers.org/register?ref=${referralCode}`;
+    const referralLink = generateReferralLink(referralCode);
 
     let result;
     try {

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Copy, Check, Share2, Send, Mail, MessageSquare } from 'lucide-react';
+import { generateReferralLink } from '@/lib/referral-link';
 
 interface ReferralLinkClientProps {
   referralCode: string;
@@ -10,13 +11,7 @@ interface ReferralLinkClientProps {
 export default function ReferralLinkClient({ referralCode }: ReferralLinkClientProps) {
   const [position, setPosition] = useState<'LEFT' | 'RIGHT'>('LEFT');
   const [copied, setCopied] = useState(false);
-  const [origin, setOrigin] = useState('');
-
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
-
-  const referralLink = `${origin || 'https://gma.network'}/sign-up-login-screen?mode=register&ref=${referralCode}&position=${position}`;
+  const referralLink = generateReferralLink(referralCode) + `&position=${position}`;
 
   const handleCopy = async () => {
     try {

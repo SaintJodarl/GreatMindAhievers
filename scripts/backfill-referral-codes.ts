@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { generateReferralLink } from '../src/lib/referral-link';
 
 export function generateReferralCode(length = 8): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -52,7 +53,7 @@ async function main() {
   for (const user of usersWithoutReferralCode) {
     try {
       const newReferralCode = await generateUniqueReferralCode(prisma);
-      const newReferralLink = `https://app.greatmindachievers.org/register?ref=${newReferralCode}`;
+      const newReferralLink = generateReferralLink(newReferralCode);
 
       await prisma.user.update({
         where: { id: user.id },

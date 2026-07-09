@@ -15,6 +15,7 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
+import { generateReferralLink } from '@/lib/referral-link';
 import UserKPIGrid from './UserKPIGrid';
 import BinaryTreeSection from './BinaryTreeSection';
 import EarningsChartSection from './EarningsChartSection';
@@ -459,7 +460,7 @@ export default function UserDashboardContent() {
                   {summary.referralCode && (
                     <button
                       onClick={() => {
-                        const link = `https://app.greatmindachievers.org/register?ref=${summary.referralCode}`;
+                        const link = generateReferralLink(summary.referralCode);
                         navigator.clipboard.writeText(link);
                         setCopiedLink(true);
                         setTimeout(() => setCopiedLink(false), 2000);
