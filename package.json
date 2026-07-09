@@ -26,7 +26,6 @@
     "@tailwindcss/typography": "^0.5.16",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
-    "cloudinary": "^2.10.0",
     "decimal.js": "^10.6.0",
     "jose": "^6.2.3",
     "lucide-react": "^1.7.0",

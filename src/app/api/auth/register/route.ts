@@ -7,6 +7,7 @@ import { generateUniqueReferralCode } from '@/lib/referral-code';
 import { executePlacementWithTx } from '@/lib/binary-placement/utils';
 import { BinaryPosition } from '@/lib/binary-placement/constants';
 import { emitOutboxEvent } from '@/lib/events/outbox';
+import { signAccessToken } from '@/lib/auth/jwt';
 
 export const maxDuration = 60; // Allow enough time for Neon cold starts and MLM placement
 
@@ -17,24 +18,66 @@ const PROTECTED_ADMIN_EMAILS = new Set([
   'stellarmediang@gmail.com',
 ]);
 
+const cleanRequiredText = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+
 export async function POST(req: NextRequest) {
   console.log('[AUTH DEBUG] Registration started');
-  console.log('SIGNUP START - Request received');
   try {
     const body = await req.json();
-    const { name, password, sponsorCode, activationCode, registrationCode } = body;
+    const { password, sponsorCode, activationCode, registrationCode } = body;
     let { firstName, lastName, email, username, phone } = body;
 
-    // Fallback split name into firstName and lastName if only name is provided
-    if (name && (!firstName || !lastName)) {
-      const parts = name.trim().split(/\s+/);
-      firstName = parts[0] || '';
-      lastName = parts.slice(1).join(' ') || '';
+    // KYC Fields
+    const gender = cleanRequiredText(body.gender);
+    const dob = cleanRequiredText(body.dob);
+    const address = cleanRequiredText(body.address);
+    const state = cleanRequiredText(body.state);
+    const lga = cleanRequiredText(body.lga);
+    const idType = cleanRequiredText(body.idType);
+    const idNumber = cleanRequiredText(body.idNumber);
+
+    // Next of Kin Fields
+    const nextOfKinName = cleanRequiredText(body.nextOfKinName);
+    const nextOfKinPhone = cleanRequiredText(body.nextOfKinPhone);
+    const relationship = cleanRequiredText(body.relationship);
+    const nextOfKinAddress = cleanRequiredText(body.nextOfKinAddress);
+
+    // Banking Fields
+    const bankName = cleanRequiredText(body.bankName);
+    const accountNumber = cleanRequiredText(body.accountNumber);
+    const accountName = cleanRequiredText(body.accountName);
+
+    // Basic required fields check
+    if (!email || !password || !firstName || !lastName || !phone) {
+      return NextResponse.json(
+        { message: 'First name, last name, phone, email, and password are required' },
+        { status: 400 }
+      );
     }
 
-    if (!email || !password || !firstName || !lastName) {
+    // KYC required fields check
+    if (!gender || !dob || !address || !state || !lga || !idType || !idNumber) {
       return NextResponse.json(
-        { message: 'First name, last name, email, and password are required' },
+        {
+          message:
+            'All KYC fields (gender, dob, address, state, lga, idType, idNumber) are required',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Banking required fields check
+    if (!bankName || !accountNumber || !accountName) {
+      return NextResponse.json(
+        { message: 'All banking fields (bankName, accountNumber, accountName) are required' },
+        { status: 400 }
+      );
+    }
+
+    // Next of Kin required fields check
+    if (!nextOfKinName || !nextOfKinPhone || !relationship || !nextOfKinAddress) {
+      return NextResponse.json(
+        { message: 'All Next of Kin fields (name, phone, relationship, address) are required' },
         { status: 400 }
       );
     }
@@ -57,15 +100,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (gender !== 'Male' && gender !== 'Female') {
+      return NextResponse.json(
+        { message: 'Gender must be either Male or Female.' },
+        { status: 400 }
+      );
+    }
+
+    const parsedDob = new Date(dob);
+    if (Number.isNaN(parsedDob.getTime())) {
+      return NextResponse.json({ message: 'Date of birth must be a valid date.' }, { status: 400 });
+    }
+
     // Check unique email
     const exists = await prisma.user.findUnique({
       where: { email },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        status: true,
-      },
+      select: { email: true, role: true },
     });
 
     if (exists) {
@@ -96,67 +146,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Sponsor validation - MUST HAVE SPONSOR
+    if (!sponsorCode) {
+      return NextResponse.json(
+        { message: 'A sponsor / referral code is required to register.' },
+        { status: 400 }
+      );
+    }
+
     let sponsorId: string | null = null;
     let autoCalculatedPosition: 'LEFT' | 'RIGHT' = 'LEFT';
 
-    if (sponsorCode) {
-      const sponsor = await prisma.user.findUnique({
-        where: { referralCode: sponsorCode.toUpperCase().trim() },
-      });
-      if (sponsor) {
-        sponsorId = sponsor.id;
-        // Auto-assign placement position based on sponsor's preference
-        autoCalculatedPosition = sponsor.preferredPosition === 'RIGHT' ? 'RIGHT' : 'LEFT';
-      } else {
-        return NextResponse.json(
-          { message: 'Sponsor / referral code is invalid' },
-          { status: 400 }
-        );
-      }
+    const sponsor = await prisma.user.findUnique({
+      where: { referralCode: sponsorCode.toUpperCase().trim() },
+    });
+
+    if (sponsor) {
+      sponsorId = sponsor.id;
+      autoCalculatedPosition = sponsor.preferredPosition === 'RIGHT' ? 'RIGHT' : 'LEFT';
+    } else {
+      return NextResponse.json({ message: 'Sponsor / referral code is invalid' }, { status: 400 });
     }
 
-    const ipAddress =
-      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-      req.headers.get('x-real-ip')?.trim() ||
-      (req as any).ip ||
-      null;
-
-    let recentSignupsCount = 0;
-    if (ipAddress) {
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-      recentSignupsCount = await prisma.auditLog.count({
-        where: {
-          ipAddress,
-          action: 'USER_REGISTER',
-          createdAt: {
-            gte: oneHourAgo,
-          },
-        },
-      });
-    }
-
-    if (ipAddress && recentSignupsCount >= 5) {
-      console.warn(
-        `[SIGNUP FARMING WARNING] High registration frequency detected from IP: ${ipAddress} (${recentSignupsCount} signups in the last hour)`
-      );
-      await prisma.auditLog.create({
-        data: {
-          adminId: 'SYSTEM',
-          action: 'SIGNUP_FARMING_ALERT',
-          targetType: 'IPAddress',
-          targetId: ipAddress,
-          details: `High registration frequency detected from IP: ${ipAddress}. ${recentSignupsCount} signups in the last hour.`,
-          ipAddress,
-          userAgent: req.headers.get('user-agent') || null,
-        },
-      });
-    }
-
+    // Activation code validation
     const rawCode = activationCode || registrationCode;
     const codeToValidate =
       typeof rawCode === 'string' && rawCode.trim() ? rawCode.trim().toUpperCase() : null;
 
-    // Activation code is REQUIRED for registration
     if (!codeToValidate) {
       return NextResponse.json(
         { message: 'Activation code is required to complete registration' },
@@ -190,9 +206,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Activation code has expired' }, { status: 400 });
     }
 
+    const ipAddress =
+      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      req.headers.get('x-real-ip')?.trim() ||
+      (req as any).ip ||
+      null;
+
+    let recentSignupsCount = 0;
+    if (ipAddress) {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      recentSignupsCount = await prisma.auditLog.count({
+        where: {
+          ipAddress,
+          action: 'USER_REGISTER',
+          createdAt: {
+            gte: oneHourAgo,
+          },
+        },
+      });
+    }
+
+    if (ipAddress && recentSignupsCount >= 5) {
+      console.warn(
+        `[SIGNUP FARMING WARNING] High registration frequency detected from IP: ${ipAddress} (${recentSignupsCount} signups in the last hour)`
+      );
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log('[AUTH DEBUG] Password hashed for user:', email);
     const referralCode = await generateUniqueReferralCode(prisma);
+    const referralLink = `https://app.greatmindachievers.org/register?ref=${referralCode}`;
 
     let result;
     try {
@@ -205,14 +247,20 @@ export async function POST(req: NextRequest) {
             data: {
               name: `${firstName} ${lastName}`,
               email,
-              username: username.toLowerCase().trim(),
+              username: username!.toLowerCase().trim(),
               password: hashedPassword,
               role: 'MEMBER',
               status: 'ACTIVE',
-              onboardingStatus: 'INCOMPLETE',
+              onboardingStatus: 'COMPLETE',
+              onboardingStep: 4,
+              kycStatus: 'COMPLETE',
               autoPlacement: true,
               referralCode,
+              referralLink,
               sponsorId,
+              bankName,
+              accountNumber,
+              accountName,
             },
             select: {
               id: true,
@@ -223,6 +271,7 @@ export async function POST(req: NextRequest) {
               role: true,
               status: true,
               onboardingStatus: true,
+              sessionVersion: true,
               createdAt: true,
             },
           });
@@ -253,23 +302,48 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          // 2. Create empty MemberProfile
+          // 2. Create MemberProfile
           await tx.memberProfile.create({
             data: {
               userId: createdUser.id,
               firstName,
               lastName,
               phone: phone || '',
+              gender,
+              dob: parsedDob,
+              address,
+              state,
+              lga,
+              nextOfKinName,
+              nextOfKinPhone,
+              relationship,
+              nextOfKinAddress,
+            },
+          });
+
+          // 2.1 Create KYCSubmission
+          await tx.kYCSubmission.create({
+            data: {
+              userId: createdUser.id,
+              fullName: `${firstName} ${lastName}`,
+              phone: phone || '',
+              gender,
+              dateOfBirth: parsedDob,
+              address,
+              state,
+              lga,
+              idType,
+              idNumber,
+              status: 'SUBMITTED',
             },
           });
 
           // 3. Guarded activation code redemption
-          // Activation code is always present (required above)
           {
             const redeemResult = await tx.activationCode.updateMany({
               where: {
-                id: dbCode.id,
-                code: codeToValidate,
+                id: dbCode!.id,
+                code: codeToValidate!,
                 status: 'UNUSED',
                 redeemedBy: null,
                 OR: [{ expirationDate: null }, { expirationDate: { gt: now } }],
@@ -290,7 +364,7 @@ export async function POST(req: NextRequest) {
             await distributeMultiLevelCommission(tx, {
               buyerId: createdUser.id,
               amountPerLevel: [10000, 5000, 3000, 1000, 1000],
-              orderId: dbCode.id,
+              orderId: dbCode!.id,
               description: `Activation Commission for User ${createdUser.id}`,
             });
           }
@@ -298,7 +372,6 @@ export async function POST(req: NextRequest) {
           // 4. MLM Placement Logic
           let placement = null;
           if (MLM_EVENT_MODE) {
-            // GREEN MODE: Emit event, respond instantly
             await emitOutboxEvent(
               tx,
               'MLM_DEFERRED_OPERATION',
@@ -312,7 +385,6 @@ export async function POST(req: NextRequest) {
               `reg_spillover_${createdUser.id}`
             );
           } else {
-            // BLUE MODE (LEGACY): Block request, calculate synchronously
             if (LEGACY_WRITE_DISABLED) {
               throw new Error('Legacy financial writes disabled');
             }
@@ -323,7 +395,21 @@ export async function POST(req: NextRequest) {
             });
           }
 
-          // 5. Log standard successful USER_REGISTER audit event
+          // 5. Log audit events
+          if (ipAddress && recentSignupsCount >= 5) {
+            await tx.auditLog.create({
+              data: {
+                adminId: 'SYSTEM',
+                action: 'SIGNUP_FARMING_ALERT',
+                targetType: 'IPAddress',
+                targetId: ipAddress,
+                details: `High registration frequency detected from IP: ${ipAddress}. ${recentSignupsCount} signups in the last hour.`,
+                ipAddress,
+                userAgent: req.headers.get('user-agent') || null,
+              },
+            });
+          }
+
           await tx.auditLog.create({
             data: {
               adminId: createdUser.id,
@@ -336,14 +422,10 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          console.log(
-            '[AUTH DEBUG] User created and placed successfully in database:',
-            createdUser.id
-          );
           return { user: createdUser, placement };
         },
         {
-          timeout: 20000, // 20s timeout safety for user creation
+          timeout: 20000,
         }
       );
     } catch (createError: any) {
@@ -372,7 +454,16 @@ export async function POST(req: NextRequest) {
     const placementResult = result.placement;
     const user = result.user;
 
-    return NextResponse.json(
+    // Issue JWT immediately so user is logged in
+    const accessToken = await signAccessToken({
+      sub: user.id,
+      role: user.role,
+      status: user.status,
+      onboardingStatus: user.onboardingStatus,
+      sessionVersion: user.sessionVersion,
+    });
+
+    const response = NextResponse.json(
       {
         message: placementResult
           ? 'Registration successful'
@@ -392,6 +483,16 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 }
     );
+
+    response.cookies.set('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 15 * 60,
+    });
+
+    return response;
   } catch (error: any) {
     console.error('SIGNUP END (FAILED) - Registration error:', error);
 
@@ -406,12 +507,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.error('[AUTH DEBUG] Registration failed with error:', error);
     return NextResponse.json(
       { message: error.message || 'An error occurred during registration' },
       { status: 500 }
     );
-  } finally {
-    console.log('SIGNUP END - Request finalized');
   }
 }

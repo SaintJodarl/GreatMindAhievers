@@ -11,11 +11,7 @@ interface AppLayoutProps {
 }
 
 const isAllowedRoute = (path: string) => {
-  return (
-    path === '/user-dashboard' ||
-    path.startsWith('/user-dashboard/kyc') ||
-    path.startsWith('/user-dashboard/account')
-  );
+  return path === '/user-dashboard' || path.startsWith('/user-dashboard/account');
 };
 
 export default function AppLayout({ children, role = 'user' }: AppLayoutProps) {
@@ -160,8 +156,7 @@ export default function AppLayout({ children, role = 'user' }: AppLayoutProps) {
                     <span className="font-semibold text-indigo-600">
                       {status?.replace('_', ' ')}
                     </span>{' '}
-                    status. Please return to the Dashboard Overview to complete your KYC
-                    verification and submit your Activation Code.
+                    status. Please contact support if you believe this is an error.
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
@@ -170,12 +165,6 @@ export default function AppLayout({ children, role = 'user' }: AppLayoutProps) {
                     className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-indigo-600/10 text-sm"
                   >
                     Go to Overview
-                  </Link>
-                  <Link
-                    href="/user-dashboard/kyc/complete"
-                    className="inline-flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-5 py-2.5 rounded-xl transition-all text-sm"
-                  >
-                    Complete KYC
                   </Link>
                 </div>
               </div>

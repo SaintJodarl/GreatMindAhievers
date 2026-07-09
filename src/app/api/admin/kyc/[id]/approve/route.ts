@@ -28,21 +28,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       );
     }
 
-    const allRequiredDocumentsApproved =
-      Boolean(submission.governmentIdUrl || submission.idDocument) &&
-      Boolean(submission.selfieUrl || submission.selfie) &&
-      Boolean(submission.addressProofUrl || submission.proofOfAddress) &&
-      submission.govIdStatus === 'APPROVED' &&
-      submission.selfieStatus === 'APPROVED' &&
-      submission.addressStatus === 'APPROVED';
-
-    if (!allRequiredDocumentsApproved) {
-      return NextResponse.json(
-        { message: 'Approve each required document before approving overall KYC.' },
-        { status: 400 }
-      );
-    }
-
     const result = await prisma.$transaction(async (tx) => {
       // 1. Update KYCSubmission
       const updatedSubmission = await tx.kYCSubmission.update({

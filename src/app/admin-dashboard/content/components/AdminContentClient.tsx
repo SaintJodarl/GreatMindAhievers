@@ -461,8 +461,8 @@ export default function AdminContentClient({ initialContents }: AdminContentClie
 
             <p className="text-gray-600 text-sm">
               Are you sure you want to delete{' '}
-              <span className="font-semibold text-gray-900">"{title}"</span>? This action is
-              permanent and cannot be undone.
+              <span className="font-semibold text-gray-900">&quot;{title}&quot;</span>? This action
+              is permanent and cannot be undone.
             </p>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">

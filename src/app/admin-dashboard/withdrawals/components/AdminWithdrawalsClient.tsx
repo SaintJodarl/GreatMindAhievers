@@ -298,7 +298,7 @@ export default function AdminWithdrawalsClient({
                 </div>
               ) : (
                 <p className="text-xs text-gray-500 pt-1">
-                  Confirming this action will debit the member's wallet balance and mark this
+                  Confirming this action will debit the member&apos;s wallet balance and mark this
                   request as completed.
                 </p>
               )}

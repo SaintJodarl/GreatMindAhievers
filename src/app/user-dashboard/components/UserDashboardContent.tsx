@@ -19,9 +19,6 @@ import EarningsChartSection from './EarningsChartSection';
 import CommissionHistoryTable from './CommissionHistoryTable';
 import ReferralSection from './ReferralSection';
 import WithdrawalSection from './WithdrawalSection';
-import KYCStatusCard from './KYCStatusCard';
-import OnboardingWidget from './OnboardingWidget';
-import UserActionRequiredCards from './UserActionRequiredCards';
 import { useAuth } from '@/context/AuthContext';
 
 export default function UserDashboardContent() {
@@ -33,10 +30,6 @@ export default function UserDashboardContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('');
-
-  // Modal states
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [onboardingStartStep, setOnboardingStartStep] = useState(1);
 
   // Extra data for overview
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
@@ -167,8 +160,8 @@ export default function UserDashboardContent() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h1>
             <p className="mt-1 text-sm font-medium text-slate-500">
-              Welcome back, <span className="font-semibold text-slate-700">{userName}</span>! Here's
-              what's happening today.
+              Welcome back, <span className="font-semibold text-slate-700">{userName}</span>!
+              Here&apos;s what&apos;s happening today.
             </p>
             <div className="flex items-center gap-3 mt-4 text-[11px] font-semibold">
               <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-mono border border-slate-200/60">
@@ -249,14 +242,6 @@ export default function UserDashboardContent() {
       {/* 3. Content Panel */}
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-fade-in">
-          <UserActionRequiredCards
-            summary={summary}
-            onOpenAction={(step) => {
-              setOnboardingStartStep(step);
-              setShowOnboardingModal(true);
-            }}
-          />
-
           {/* KPI metrics grid */}
           <UserKPIGrid summary={summary} />
 
@@ -455,33 +440,7 @@ export default function UserDashboardContent() {
           </div>
 
           {/* Quick links to core modules */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl border border-gray-150 border-t-4 border-t-cyan-500 p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex flex-col justify-between">
-              <div>
-                <h3 className="font-bold text-gray-900 text-sm">Registration Completion</h3>
-                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
-                  Confirm your personal and banking details for handover-ready access.
-                </p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
-                    summary.kycStatus === 'APPROVED' || summary.kycStatus === 'COMPLETE'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                      : 'bg-amber-50 text-amber-700 border-amber-100'
-                  }`}
-                >
-                  {summary.kycStatus}
-                </span>
-                <Link
-                  href="/user-dashboard/kyc/complete"
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-0.5 hover:underline"
-                >
-                  Manage <ChevronRight size={14} />
-                </Link>
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl border border-gray-150 border-t-4 border-t-indigo-500 p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex flex-col justify-between">
               <div>
                 <h3 className="font-bold text-gray-900 text-sm">Referral Link</h3>
@@ -544,27 +503,6 @@ export default function UserDashboardContent() {
       {activeTab === 'withdrawals' && (
         <div className="animate-fade-in">
           <WithdrawalSection summary={summary} />
-        </div>
-      )}
-
-      {/* Onboarding Modal Overlay */}
-      {showOnboardingModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-            onClick={() => setShowOnboardingModal(false)}
-          />
-
-          {/* Modal Content */}
-          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl">
-            <OnboardingWidget
-              summary={summary}
-              onRefresh={handleRefreshAll}
-              initialStep={onboardingStartStep}
-              onClose={() => setShowOnboardingModal(false)}
-            />
-          </div>
         </div>
       )}
 

@@ -23,16 +23,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Determine matcher targets
-  const isOnboardingRoute = path.startsWith('/complete-profile');
   const isAdminRoute = path.startsWith('/admin-dashboard') || path.startsWith('/api/admin');
   const isMemberRoute =
     path.startsWith('/user-dashboard') ||
     path.startsWith('/activate') ||
     path.startsWith('/api/user') ||
     path.startsWith('/api/network') ||
-    path.startsWith('/api/wallet') ||
-    isOnboardingRoute;
+    path.startsWith('/api/wallet');
 
   if (!isAdminRoute && !isMemberRoute) {
     return NextResponse.next();
@@ -87,8 +84,6 @@ export async function middleware(req: NextRequest) {
         '/api/user/dashboard-summary',
         '/api/user/activation/submit',
         '/api/auth',
-        '/api/user/onboarding',
-        '/api/user/kyc',
         '/api/user/account/profile',
       ];
       const allowedInactivePages = ['/activate'];
@@ -110,8 +105,15 @@ export async function middleware(req: NextRequest) {
 
     const onboardingStatus = (payload.onboardingStatus as string) || 'INCOMPLETE';
 
-    // Users are allowed to access dashboard immediately. No hard-blocking redirect.
-    // If they want to complete onboarding, they can visit /complete-profile voluntarily.
+    if (!isAdminUser && onboardingStatus !== 'COMPLETE' && path.startsWith('/user-dashboard')) {
+      if (isApiRequest) {
+        return NextResponse.json(
+          { message: 'Forbidden: Registration incomplete.' },
+          { status: 403 }
+        );
+      }
+      return NextResponse.redirect(new URL('/sign-up-login-screen?error=incomplete', req.url));
+    }
 
     // Role-Based Access Control (RBAC) Checks
     if (isAdminRoute) {
@@ -159,7 +161,6 @@ export const config = {
     '/user-dashboard/:path*',
     '/activate',
     '/admin-dashboard/:path*',
-    '/complete-profile',
     '/api/admin/:path*',
     '/api/user/:path*',
     '/api/network/:path*',

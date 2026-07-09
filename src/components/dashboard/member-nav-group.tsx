@@ -13,11 +13,7 @@ interface MemberNavGroupProps {
 }
 
 const isAllowedRoute = (path: string) => {
-  return (
-    path === '/user-dashboard' ||
-    path.startsWith('/user-dashboard/kyc') ||
-    path.startsWith('/user-dashboard/account')
-  );
+  return path === '/user-dashboard' || path.startsWith('/user-dashboard/account');
 };
 
 export default function MemberNavGroup({

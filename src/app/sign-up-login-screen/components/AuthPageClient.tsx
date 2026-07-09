@@ -111,8 +111,8 @@ export default function AuthPageClient({
             className="text-sm italic leading-relaxed mb-3"
             style={{ color: 'var(--secondary-foreground)' }}
           >
-            "Within 6 months, my binary team grew to 340 members and I hit Diamond rank. GMA's
-            system is transparent and the payouts are always on time."
+            &quot;Within 6 months, my binary team grew to 340 members and I hit Diamond rank.
+            GMA&apos;s system is transparent and the payouts are always on time.&quot;
           </p>
           <div className="flex items-center gap-2">
             <div

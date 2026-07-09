@@ -434,8 +434,8 @@ export default function AdminWelcomeClient({ initialMessages }: AdminWelcomeClie
 
             <p className="text-gray-600 text-sm">
               Are you sure you want to delete{' '}
-              <span className="font-semibold text-gray-900">"{subject}"</span>? This welcome message
-              will be permanently removed.
+              <span className="font-semibold text-gray-900">&quot;{subject}&quot;</span>? This
+              welcome message will be permanently removed.
             </p>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">

@@ -147,15 +147,6 @@ export async function GET(req: NextRequest) {
       profile: user.profile,
       kycSubmission: user.kycSubmission
         ? {
-            idDocument: user.kycSubmission.idDocument,
-            governmentIdUrl: user.kycSubmission.governmentIdUrl,
-            selfie: user.kycSubmission.selfie,
-            selfieUrl: user.kycSubmission.selfieUrl,
-            proofOfAddress: user.kycSubmission.proofOfAddress,
-            addressProofUrl: user.kycSubmission.addressProofUrl,
-            govIdStatus: user.kycSubmission.govIdStatus,
-            selfieStatus: user.kycSubmission.selfieStatus,
-            addressStatus: user.kycSubmission.addressStatus,
             status: user.kycSubmission.status,
           }
         : null,

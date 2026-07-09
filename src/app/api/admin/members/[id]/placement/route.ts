@@ -67,7 +67,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const result = await prisma.$transaction(async (tx) => {
       // 1. Check if user already has children - moving subtrees is too risky without full recalculation
       if (user.binaryTree?.leftChildId || user.binaryTree?.rightChildId) {
-        throw new Error('Cannot move user with existing children - subtree move requires full recalculation');
+        throw new Error(
+          'Cannot move user with existing children - subtree move requires full recalculation'
+        );
       }
 
       // 2. Check for self-placement

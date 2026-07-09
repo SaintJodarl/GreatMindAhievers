@@ -17,15 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       select: {
         id: true,
         userId: true,
-        idDocument: true,
-        governmentIdUrl: true,
-        proofOfAddress: true,
-        addressProofUrl: true,
-        selfie: true,
-        selfieUrl: true,
-        govIdStatus: true,
-        addressStatus: true,
-        selfieStatus: true,
+
         status: true,
         adminNote: true,
         createdAt: true,
@@ -87,33 +79,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (!decision || !['APPROVED', 'REJECTED'].includes(decision)) {
       return NextResponse.json({ message: 'Invalid decision' }, { status: 400 });
-    }
-
-    if (decision === 'REJECTED') {
-      return NextResponse.json(
-        {
-          message:
-            'Reject a specific KYC document from the document review endpoint instead of rejecting the whole submission.',
-        },
-        { status: 400 }
-      );
-    }
-
-    if (
-      decision === 'APPROVED' &&
-      !(
-        (submission.governmentIdUrl || submission.idDocument) &&
-        (submission.addressProofUrl || submission.proofOfAddress) &&
-        (submission.selfieUrl || submission.selfie) &&
-        submission.govIdStatus === 'APPROVED' &&
-        submission.addressStatus === 'APPROVED' &&
-        submission.selfieStatus === 'APPROVED'
-      )
-    ) {
-      return NextResponse.json(
-        { message: 'Approve each required document before approving overall KYC.' },
-        { status: 400 }
-      );
     }
 
     const result = await prisma.$transaction(async (tx) => {

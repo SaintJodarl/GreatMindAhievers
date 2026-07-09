@@ -5,9 +5,6 @@ import {
   UserPlus,
   GitMerge,
   History,
-  ShieldCheck,
-  FileCheck,
-  Files,
   Link,
   QrCode,
   Megaphone,
@@ -64,19 +61,10 @@ export const memberNavigation: NavGroup[] = [
       },
     ],
   },
-  {
-    title: 'KYC & Verification',
-    items: [
-      { label: 'Complete KYC', href: '/user-dashboard/kyc/complete', icon: ShieldCheck },
-      { label: 'KYC Status', href: '/user-dashboard/kyc/status', icon: FileCheck },
-      { label: 'Documents', href: '/user-dashboard/kyc/documents', icon: Files },
-    ],
-  },
+
   {
     title: 'Rewards & Wallet',
-    items: [
-      { label: 'Rewards', href: '/user-dashboard/rewards', icon: Trophy },
-    ],
+    items: [{ label: 'Rewards', href: '/user-dashboard/rewards', icon: Trophy }],
   },
   {
     title: 'Referral Center',

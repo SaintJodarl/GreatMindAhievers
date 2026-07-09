@@ -56,7 +56,7 @@ export default function ReferralCodeClient({ referralCode }: ReferralCodeClientP
           <h2 className="text-xl font-bold text-gray-900 mb-2">Manual Referral Code</h2>
           <p className="text-gray-550 text-sm mb-8">
             When prospective members register manually on the GMA Network website, they can input
-            this unique code in the "Sponsor Code" field.
+            this unique code in the &quot;Sponsor Code&quot; field.
           </p>
         </div>
 
