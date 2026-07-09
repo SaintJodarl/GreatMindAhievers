@@ -19,6 +19,8 @@ import {
   Settings,
   LogOut,
   UserCheck,
+  Trophy,
+  Wallet,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -68,6 +70,12 @@ export const memberNavigation: NavGroup[] = [
       { label: 'Complete KYC', href: '/user-dashboard/kyc/complete', icon: ShieldCheck },
       { label: 'KYC Status', href: '/user-dashboard/kyc/status', icon: FileCheck },
       { label: 'Documents', href: '/user-dashboard/kyc/documents', icon: Files },
+    ],
+  },
+  {
+    title: 'Rewards & Wallet',
+    items: [
+      { label: 'Rewards', href: '/user-dashboard/rewards', icon: Trophy },
     ],
   },
   {

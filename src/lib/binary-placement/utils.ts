@@ -273,8 +273,11 @@ export async function executePlacementWithTx(
   await assignPlacementInTransaction(tx, context.userId, result);
   await updateAncestorCounters(tx, context.userId, result.binaryPosition);
 
-  // Trigger qualification engine for the placed user
+  // Trigger qualification checks for both the placed user and the parent whose leg changed.
   await checkUserQualification(tx, context.userId);
+  if (result.parentId) {
+    await checkUserQualification(tx, result.parentId);
+  }
 
   return result;
 }

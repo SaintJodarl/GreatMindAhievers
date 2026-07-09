@@ -144,8 +144,14 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
                   <option value="Zenith">Zenith Bank</option>
                   <option value="Access">Access Bank</option>
                   <option value="UBA">UBA</option>
+                  <option value="ALAT by Wema">ALAT by Wema</option>
+                  <option value="Kuda Bank">Kuda Bank</option>
+                  <option value="Moniepoint Microfinance Bank">Moniepoint Microfinance Bank</option>
                   <option value="Opay">OPay</option>
+                  <option value="Paga">Paga</option>
                   <option value="Palmpay">PalmPay</option>
+                  <option value="Sparkle">Sparkle</option>
+                  <option value="VBank">VBank</option>
                 </select>
                 {errors.method && (
                   <p className="text-xs text-rose-500 mt-1 font-medium">{errors.method.message}</p>

@@ -3,6 +3,42 @@
 import React, { useState, useEffect } from 'react';
 import { User, CreditCard, Bell, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
+const BANKS = [
+  'Access Bank',
+  'ALAT by Wema',
+  'Citibank Nigeria',
+  'Ecobank Nigeria',
+  'FCMB (First City Monument Bank)',
+  'Fidelity Bank',
+  'First Bank of Nigeria',
+  'Globus Bank',
+  'Guaranty Trust Bank (GTCO)',
+  'Keystone Bank',
+  'Kuda Bank',
+  'Moniepoint Microfinance Bank',
+  'Nova Commercial Bank',
+  'OPay',
+  'Optimus Bank',
+  'Paga',
+  'PalmPay',
+  'Parallex Bank',
+  'Polaris Bank',
+  'PremiumTrust Bank',
+  'Providus Bank',
+  'Sparkle',
+  'Stanbic IBTC Bank',
+  'Standard Chartered Bank Nigeria',
+  'Sterling Bank',
+  'Titan Trust Bank',
+  'Union Bank of Nigeria',
+  'United Bank for Africa (UBA)',
+  'Unity Bank',
+  'VBank',
+  'VFD Microfinance Bank',
+  'Wema Bank',
+  'Zenith Bank',
+];
+
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'personal' | 'bank' | 'notifications'>('personal');
   const [profile, setProfile] = useState({
@@ -259,14 +295,19 @@ export default function ProfilePage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     Bank Name
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="bankName"
                     value={profile.bankName}
-                    onChange={handleChange}
+                    onChange={(e) => setProfile((prev) => ({ ...prev, bankName: e.target.value }))}
                     className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    placeholder="e.g. Zenith Bank, GTBank"
-                  />
+                  >
+                    <option value="">Select bank...</option>
+                    {BANKS.map((bank) => (
+                      <option key={bank} value={bank}>
+                        {bank}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

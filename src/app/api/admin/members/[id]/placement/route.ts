@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
+import { updateAncestorCounters } from '@/lib/binary-placement/utils';
+import { checkUserQualification } from '@/lib/qualification/engine';
+import { BinaryPosition } from '@/lib/binary-placement/constants';
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -62,7 +65,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const newDepth = parentTree.depth + 1;
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Remove user from old parent's child pointer (if they had a parent)
+      // 1. Check if user already has children - moving subtrees is too risky without full recalculation
+      if (user.binaryTree?.leftChildId || user.binaryTree?.rightChildId) {
+        throw new Error('Cannot move user with existing children - subtree move requires full recalculation');
+      }
+
+      // 2. Check for self-placement
+      if (user.id === placementId) {
+        throw new Error('Cannot place user as their own parent');
+      }
+
+      // 3. Remove user from old parent's child pointer (if they had a parent)
       if (user.binaryTree && user.binaryTree.parentId) {
         const oldParent = await tx.binaryTree.findUnique({
           where: { userId: user.binaryTree.parentId },
@@ -76,13 +89,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         }
       }
 
-      // 2. Set new parent's child pointer
+      // 4. Set new parent's child pointer
       await tx.binaryTree.update({
         where: { userId: placementId },
         data: binaryPosition === 'LEFT' ? { leftChildId: user.id } : { rightChildId: user.id },
       });
 
-      // 3. Update user's BinaryTree row
+      // 5. Update user's BinaryTree row
       const updatedTree = await tx.binaryTree.update({
         where: { userId: user.id },
         data: {
@@ -92,7 +105,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         },
       });
 
-      // 4. Update user's User row
+      // 6. Update user's User row
       const updatedUser = await tx.user.update({
         where: { id: user.id },
         data: {
@@ -101,14 +114,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         },
       });
 
-      // 5. Log action to Audit log
+      // 7. Update ancestor counters for the NEW placement
+      await updateAncestorCounters(tx, user.id, binaryPosition as BinaryPosition);
+
+      // 8. Trigger qualification checks for both the moved user and the new parent
+      await checkUserQualification(tx, user.id);
+      await checkUserQualification(tx, placementId);
+
+      // 9. Log action to Audit log
       await tx.auditLog.create({
         data: {
           adminId: auth.user!.id,
           action: 'MANUAL_PLACEMENT_OVERRIDE',
           targetType: 'User',
           targetId: user.id,
-          details: `Manually moved user ${user.email} to parent ${placementId} position ${binaryPosition}`,
+          details: `Manually moved user ${user.email} to parent ${placementId} position ${binaryPosition} with counter and qualification recalculation`,
         },
       });
 

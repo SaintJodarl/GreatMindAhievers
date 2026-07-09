@@ -1,7 +1,9 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function processWalletCredit(event: any) {
-  const { walletId, userId, amount, type, description } = event.payload;
+  const { walletId, userId, type, description } = event.payload;
+  const amount = new Prisma.Decimal(event.payload.amount);
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -44,7 +46,8 @@ export async function processWalletCredit(event: any) {
 }
 
 export async function processWalletDebit(event: any) {
-  const { walletId, userId, amount, type, description } = event.payload;
+  const { walletId, userId, type, description } = event.payload;
+  const amount = new Prisma.Decimal(event.payload.amount);
 
   try {
     await prisma.$transaction(async (tx) => {

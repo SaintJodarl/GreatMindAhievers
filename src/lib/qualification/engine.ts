@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { STAGES, STAGE_CONFIG } from './constants';
 import { Decimal } from 'decimal.js';
+import { emitOutboxEvent } from '@/lib/events/outbox';
 
 type TxClient =
   | Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>
@@ -149,6 +150,18 @@ export async function checkUserQualification(
     });
 
     if (!existingReward) {
+      // First ensure wallet exists
+      const wallet = await tx.wallet.upsert({
+        where: { userId },
+        update: {},
+        create: {
+          id: userId,
+          userId,
+          balance: new Decimal(0),
+        },
+      });
+
+      // Create reward
       await tx.reward.create({
         data: {
           userId,
@@ -158,6 +171,22 @@ export async function checkUserQualification(
           status: 'EARNED',
         },
       });
+
+      // Emit outbox event to trigger wallet credit
+      const idempotencyKey = `stage_reward:${userId}:${currentStageName}`;
+      await emitOutboxEvent(
+        tx,
+        'WALLET_CREDIT',
+        userId,
+        {
+          walletId: wallet.id,
+          userId,
+          amount: targetConfig.rewardValue.toString(),
+          type: 'STAGE_BONUS',
+          description: `Stage bonus for ${currentStageName} qualification`,
+        },
+        idempotencyKey
+      );
     }
 
     // Move to next stage
@@ -187,7 +216,8 @@ export async function checkUserQualification(
     }
 
     // Also, if the user completed a stage, they might immediately qualify for the next stage
-    // if their downline had already completed it. So let's re-run for this user!
-    await checkUserQualification(tx, userId, visited);
+    // if their downline had already completed it. Re-run with a fresh guard because stage
+    // progression is finite, while the parent cascade above still uses the current guard.
+    await checkUserQualification(tx, userId);
   }
 }
