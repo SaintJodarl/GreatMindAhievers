@@ -81,6 +81,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<RegisterFormData>({
     defaultValues: {
@@ -89,6 +90,16 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   });
 
   const password = watch('password');
+
+  React.useEffect(() => {
+    if (sponsorFromUrl) {
+      setValue('sponsorCode', sponsorFromUrl.toUpperCase());
+    }
+  }, [sponsorFromUrl, setValue]);
+
+  const onError = () => {
+    setAuthError('');
+  };
 
   const onSubmit = async (data: RegisterFormData) => {
     if (isLoading) return;
@@ -128,10 +139,10 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
       // Autologin on success using useAuth context
       try {
         await login(data.email.toLowerCase().trim(), data.password);
-      } catch (loginErr) {
+      } catch (_loginErr) {
         setSubmitted(true);
       }
-    } catch (error) {
+    } catch (_error) {
       setAuthError('An error occurred during registration. Please try again.');
     } finally {
       setIsLoading(false);
@@ -177,7 +188,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-6">
         {/* Section 1: Account Information */}
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-indigo-900 border-b pb-1">
