@@ -15,16 +15,8 @@ interface RegisterFormData {
   password: string;
   confirmPassword: string;
   gender: string;
-  dob: string;
   address: string;
   state: string;
-  lga: string;
-  idType: string;
-  idNumber: string;
-  nextOfKinName: string;
-  nextOfKinPhone: string;
-  relationship: string;
-  nextOfKinAddress: string;
   bankName: string;
   accountNumber: string;
   accountName: string;
@@ -111,16 +103,8 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         phone: data.phone,
         password: data.password,
         gender: data.gender,
-        dob: data.dob,
         address: data.address,
         state: data.state,
-        lga: data.lga,
-        idType: data.idType,
-        idNumber: data.idNumber,
-        nextOfKinName: data.nextOfKinName,
-        nextOfKinPhone: data.nextOfKinPhone,
-        relationship: data.relationship,
-        nextOfKinAddress: data.nextOfKinAddress,
         bankName: data.bankName,
         accountNumber: data.accountNumber,
         accountName: data.accountName,
@@ -366,16 +350,16 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
             </div>
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Date of Birth
+                State
               </label>
               <input
-                type="date"
+                type="text"
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
-                {...register('dob', { required: 'Required' })}
+                {...register('state', { required: 'Required' })}
               />
-              {errors.dob && (
+              {errors.state && (
                 <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
-                  {errors.dob.message}
+                  {errors.state.message}
                 </p>
               )}
             </div>
@@ -397,153 +381,9 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                State
-              </label>
-              <input
-                type="text"
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
-                {...register('state', { required: 'Required' })}
-              />
-              {errors.state && (
-                <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
-                  {errors.state.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                LGA
-              </label>
-              <input
-                type="text"
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
-                {...register('lga', { required: 'Required' })}
-              />
-              {errors.lga && (
-                <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
-                  {errors.lga.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                ID Type
-              </label>
-              <select
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
-                {...register('idType', { required: 'Required' })}
-              >
-                <option value="">Select ID Type</option>
-                <option value="NIN">NIN</option>
-                <option value="Voters Card">Voters Card</option>
-                <option value="Drivers License">Drivers License</option>
-                <option value="International Passport">International Passport</option>
-              </select>
-              {errors.idType && (
-                <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
-                  {errors.idType.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                ID Number
-              </label>
-              <input
-                type="text"
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
-                {...register('idNumber', { required: 'Required' })}
-              />
-              {errors.idNumber && (
-                <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
-                  {errors.idNumber.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <h4 className="text-xs font-bold text-gray-700 mt-4 mb-2">Next of Kin</h4>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Full Name
-              </label>
-              <input
-                type="text"
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
-                {...register('nextOfKinName', { required: 'Required' })}
-              />
-              {errors.nextOfKinName && (
-                <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
-                  {errors.nextOfKinName.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Phone
-              </label>
-              <input
-                type="tel"
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
-                {...register('nextOfKinPhone', { required: 'Required' })}
-              />
-              {errors.nextOfKinPhone && (
-                <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
-                  {errors.nextOfKinPhone.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Relationship
-              </label>
-              <input
-                type="text"
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
-                {...register('relationship', { required: 'Required' })}
-              />
-              {errors.relationship && (
-                <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
-                  {errors.relationship.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Address
-              </label>
-              <input
-                type="text"
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
-                {...register('nextOfKinAddress', { required: 'Required' })}
-              />
-              {errors.nextOfKinAddress && (
-                <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
-                  {errors.nextOfKinAddress.message}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Section 3: Banking Information */}
-        <div className="space-y-4 mt-6">
-          <h3 className="text-sm font-bold text-indigo-900 border-b pb-1">
-            3. Banking Information
-          </h3>
-          <div className="space-y-1">
+          <div className="space-y-1 mt-4">
             <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Bank Name
+              Select Bank
             </label>
             <select
               className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
@@ -562,6 +402,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
               </p>
             )}
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
@@ -599,28 +440,9 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           </div>
         </div>
 
-        {/* Section 4: Codes */}
+        {/* Section 3: Codes */}
         <div className="space-y-4 mt-6">
-          <h3 className="text-sm font-bold text-indigo-900 border-b pb-1">4. Codes</h3>
-          <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Activation Code
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. GMA-123456"
-              className="w-full px-3.5 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 uppercase"
-              {...register('activationCode', {
-                required: 'Activation Code is required',
-                pattern: { value: /^GMA-\d{6}$/i, message: 'Format: GMA-XXXXXX' },
-              })}
-            />
-            {errors.activationCode && (
-              <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
-                {errors.activationCode.message}
-              </p>
-            )}
-          </div>
+          <h3 className="text-sm font-bold text-indigo-900 border-b pb-1">3. Codes</h3>
 
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
@@ -641,6 +463,26 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
             {sponsorFromUrl && (
               <p className="text-[10px] text-gray-500 font-medium">
                 Sponsor code applied from referral link.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              Activation Code
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. GMA-123456"
+              className="w-full px-3.5 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 uppercase"
+              {...register('activationCode', {
+                required: 'Activation Code is required',
+                pattern: { value: /^GMA-\d{6}$/i, message: 'Format: GMA-XXXXXX' },
+              })}
+            />
+            {errors.activationCode && (
+              <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
+                {errors.activationCode.message}
               </p>
             )}
           </div>

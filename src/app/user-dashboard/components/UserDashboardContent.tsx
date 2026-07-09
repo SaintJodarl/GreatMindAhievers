@@ -12,6 +12,8 @@ import {
   ChevronRight,
   Info,
   Users,
+  Copy,
+  Check,
 } from 'lucide-react';
 import UserKPIGrid from './UserKPIGrid';
 import BinaryTreeSection from './BinaryTreeSection';
@@ -36,6 +38,7 @@ export default function UserDashboardContent() {
   const [recentReferrals, setRecentReferrals] = useState<any[]>([]);
   const [loadingExtra, setLoadingExtra] = useState(true);
   const [selectedTxn, setSelectedTxn] = useState<any | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const fetchSummary = async () => {
     try {
@@ -449,14 +452,30 @@ export default function UserDashboardContent() {
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-[10px] font-mono bg-gray-50 px-2 py-0.5 border border-gray-100 rounded text-gray-600 font-bold">
-                  {summary.referralCode || 'N/A'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono bg-gray-50 px-2 py-0.5 border border-gray-100 rounded text-gray-600 font-bold">
+                    {summary.referralCode || 'N/A'}
+                  </span>
+                  {summary.referralCode && (
+                    <button
+                      onClick={() => {
+                        const link = `https://app.greatmindachievers.org/register?ref=${summary.referralCode}`;
+                        navigator.clipboard.writeText(link);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2000);
+                      }}
+                      className="text-indigo-600 hover:text-indigo-800 transition-colors p-1 bg-indigo-50 hover:bg-indigo-100 rounded"
+                      title="Copy Link"
+                    >
+                      {copiedLink ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  )}
+                </div>
                 <Link
                   href="/user-dashboard/referrals/link"
                   className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-0.5 hover:underline"
                 >
-                  Get Link <ChevronRight size={14} />
+                  More info <ChevronRight size={14} />
                 </Link>
               </div>
             </div>

@@ -395,9 +395,40 @@ export default function AdminMembersClient() {
                     </td>
 
                     <td className="px-6 py-4">
-                      <span className="font-mono font-bold text-xs bg-gray-50 border border-gray-100 px-2 py-1 rounded text-gray-700 tracking-wider">
-                        {member.referralCode || 'Direct'}
-                      </span>
+                      {member.referralCode ? (
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-xs bg-gray-50 border border-gray-100 px-2 py-1 rounded text-gray-700 tracking-wider">
+                            {member.referralCode}
+                          </span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(member.referralCode!);
+                              alert('Referral code copied!');
+                            }}
+                            className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                            title="Copy code"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="font-mono font-bold text-xs bg-gray-50 border border-gray-100 px-2 py-1 rounded text-gray-400 tracking-wider">
+                          Direct
+                        </span>
+                      )}
                     </td>
 
                     <td className="px-6 py-4">

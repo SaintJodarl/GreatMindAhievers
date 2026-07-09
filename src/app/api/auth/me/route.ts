@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
         email: true,
         role: true,
         status: true,
+        referralCode: true,
         onboardingStatus: true,
         sessionVersion: true,
       },

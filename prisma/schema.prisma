@@ -148,9 +148,9 @@ model KYCSubmission {
   dateOfBirth     DateTime?
   address         String
   state           String
-  lga             String
-  idType          String
-  idNumber        String
+  lga             String?
+  idType          String?
+  idNumber        String?
   status          String    @default("PENDING")
   adminNote       String?
   reviewedBy      String?

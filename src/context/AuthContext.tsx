@@ -11,6 +11,7 @@ interface User {
   role: string;
   status: string;
   onboardingStatus: string;
+  referralCode?: string;
 }
 
 interface AuthContextType {

@@ -29,18 +29,8 @@ export async function POST(req: NextRequest) {
 
     // KYC Fields
     const gender = cleanRequiredText(body.gender);
-    const dob = cleanRequiredText(body.dob);
     const address = cleanRequiredText(body.address);
     const state = cleanRequiredText(body.state);
-    const lga = cleanRequiredText(body.lga);
-    const idType = cleanRequiredText(body.idType);
-    const idNumber = cleanRequiredText(body.idNumber);
-
-    // Next of Kin Fields
-    const nextOfKinName = cleanRequiredText(body.nextOfKinName);
-    const nextOfKinPhone = cleanRequiredText(body.nextOfKinPhone);
-    const relationship = cleanRequiredText(body.relationship);
-    const nextOfKinAddress = cleanRequiredText(body.nextOfKinAddress);
 
     // Banking Fields
     const bankName = cleanRequiredText(body.bankName);
@@ -56,11 +46,10 @@ export async function POST(req: NextRequest) {
     }
 
     // KYC required fields check
-    if (!gender || !dob || !address || !state || !lga || !idType || !idNumber) {
+    if (!gender || !address || !state) {
       return NextResponse.json(
         {
-          message:
-            'All KYC fields (gender, dob, address, state, lga, idType, idNumber) are required',
+          message: 'All KYC fields (gender, address, state) are required',
         },
         { status: 400 }
       );
@@ -70,14 +59,6 @@ export async function POST(req: NextRequest) {
     if (!bankName || !accountNumber || !accountName) {
       return NextResponse.json(
         { message: 'All banking fields (bankName, accountNumber, accountName) are required' },
-        { status: 400 }
-      );
-    }
-
-    // Next of Kin required fields check
-    if (!nextOfKinName || !nextOfKinPhone || !relationship || !nextOfKinAddress) {
-      return NextResponse.json(
-        { message: 'All Next of Kin fields (name, phone, relationship, address) are required' },
         { status: 400 }
       );
     }
@@ -105,11 +86,6 @@ export async function POST(req: NextRequest) {
         { message: 'Gender must be either Male or Female.' },
         { status: 400 }
       );
-    }
-
-    const parsedDob = new Date(dob);
-    if (Number.isNaN(parsedDob.getTime())) {
-      return NextResponse.json({ message: 'Date of birth must be a valid date.' }, { status: 400 });
     }
 
     // Check unique email
@@ -310,14 +286,8 @@ export async function POST(req: NextRequest) {
               lastName,
               phone: phone || '',
               gender,
-              dob: parsedDob,
               address,
               state,
-              lga,
-              nextOfKinName,
-              nextOfKinPhone,
-              relationship,
-              nextOfKinAddress,
             },
           });
 
@@ -328,12 +298,8 @@ export async function POST(req: NextRequest) {
               fullName: `${firstName} ${lastName}`,
               phone: phone || '',
               gender,
-              dateOfBirth: parsedDob,
               address,
               state,
-              lga,
-              idType,
-              idNumber,
               status: 'SUBMITTED',
             },
           });
