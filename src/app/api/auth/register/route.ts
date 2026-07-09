@@ -157,30 +157,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!/^GMA-\d{6}$/.test(codeToValidate)) {
+    const OWNER_BOOTSTRAP_CODE = 'OWNER-SUPER-001';
+    const isOwnerBootstrapCode = codeToValidate === OWNER_BOOTSTRAP_CODE;
+
+    if (!/^GMA-\d{6}$/.test(codeToValidate!) && !isOwnerBootstrapCode) {
       return NextResponse.json(
-        { message: 'Invalid activation code format. Required format: GMA-123456' },
+        { message: 'Invalid activation code format. Required format: GMA-123456 or OWNER-SUPER-001' },
         { status: 400 }
       );
     }
 
     const dbCode = await prisma.activationCode.findUnique({
-      where: { code: codeToValidate },
+      where: { code: codeToValidate! },
     });
 
     if (!dbCode) {
       return NextResponse.json({ message: 'Invalid activation code' }, { status: 400 });
     }
 
-    if (dbCode.status !== 'UNUSED') {
-      return NextResponse.json(
-        { message: `Activation code is already ${dbCode.status.toLowerCase()}` },
-        { status: 400 }
-      );
-    }
+    if (!isOwnerBootstrapCode) {
+      if (dbCode.status !== 'UNUSED') {
+        return NextResponse.json(
+          { message: `Activation code is already ${dbCode.status.toLowerCase()}` },
+          { status: 400 }
+        );
+      }
 
-    if (dbCode.expirationDate && new Date(dbCode.expirationDate) < new Date()) {
-      return NextResponse.json({ message: 'Activation code has expired' }, { status: 400 });
+      if (dbCode.expirationDate && new Date(dbCode.expirationDate) < new Date()) {
+        return NextResponse.json({ message: 'Activation code has expired' }, { status: 400 });
+      }
     }
 
     const ipAddress =
@@ -306,7 +311,7 @@ export async function POST(req: NextRequest) {
           });
 
           // 3. Guarded activation code redemption
-          {
+          if (!isOwnerBootstrapCode) {
             const redeemResult = await tx.activationCode.updateMany({
               where: {
                 id: dbCode!.id,

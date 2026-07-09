@@ -235,6 +235,29 @@ async function main() {
     });
   }
 
+  // =========================
+  // BOOTSTRAP ACTIVATION CODE
+  // =========================
+  // This code is used by the owner to register their root member account
+  await prisma.activationCode.upsert({
+    where: { code: "OWNER-SUPER-001" },
+    update: {
+      status: "UNUSED",
+      redeemedBy: null,
+      redeemedDate: null,
+      expirationDate: null,
+      createdBy: ownerAdmin.id,
+    },
+    create: {
+      code: "OWNER-SUPER-001",
+      status: "UNUSED",
+      redeemedBy: null,
+      redeemedDate: null,
+      expirationDate: null,
+      createdBy: ownerAdmin.id,
+    }
+  });
+
   console.log("✅ Seed complete.");
   console.log("  - Super Admin 1 (Owner):", ownerAdmin.email);
   console.log("  - Super Admin 2 (GMA):  ", gmaAdmin.email);
