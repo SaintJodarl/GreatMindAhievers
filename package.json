@@ -15,7 +15,8 @@
     "seed": "tsx scripts/seed.ts",
     "delete:old-test-user": "tsx scripts/delete-old-test-user.ts",
     "clean:handover:dry-run": "tsx scripts/clean-handover-data.ts",
-    "clean:handover": "tsx scripts/clean-handover-data.ts --execute"
+    "clean:handover": "tsx scripts/clean-handover-data.ts --execute",
+    "reset:member-data": "tsx scripts/reset-production-member-data.ts --confirm-reset-member-data"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

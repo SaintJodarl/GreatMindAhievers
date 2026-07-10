@@ -36,6 +36,7 @@ async function main() {
 
   const usersWithoutReferralCode = await prisma.user.findMany({
     where: {
+      role: 'MEMBER',
       referralCode: null,
     },
     select: {
@@ -63,7 +64,9 @@ async function main() {
         },
       });
 
-      console.log(`[SUCCESS] Backfilled user ${user.email} (Role: ${user.role}) with code ${newReferralCode}`);
+      console.log(
+        `[SUCCESS] Backfilled user ${user.email} (Role: ${user.role}) with code ${newReferralCode}`
+      );
       successCount++;
     } catch (error: any) {
       console.error(`[ERROR] Failed to backfill user ${user.id} (${user.email}):`, error.message);
