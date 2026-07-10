@@ -1,61 +1,79 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+const APPROVED_SUPER_ADMIN_EMAILS = [
+  'makatablessing2026@gmail.com',
+  'gmanetworkng@gmail.com',
+  'stellarmediang@gmail.com',
+] as const;
+const STARTUP_ACTIVATION_CODE = 'GMA-000001';
+const BOOTSTRAP_REFERRAL_CODE = 'ROOT-PARENT-001';
+
 async function main() {
-  console.log("Starting verification...");
+  console.info('Verifying first-member bootstrap readiness...');
 
-  // 1. Verify owner/root member has OWNER-SUPER-001 as a referralCode.
-  const ownerUser = await prisma.user.findUnique({
-    where: { referralCode: "OWNER-SUPER-001" },
-  });
+  const [approvedAdmins, normalMemberCount, activationCodes, bootstrapReferralUser] =
+    await Promise.all([
+      prisma.user.findMany({
+        where: { email: { in: [...APPROVED_SUPER_ADMIN_EMAILS] } },
+        select: { email: true, role: true, referralCode: true },
+        orderBy: { email: 'asc' },
+      }),
+      prisma.user.count({
+        where: {
+          role: 'MEMBER',
+          NOT: { email: { in: [...APPROVED_SUPER_ADMIN_EMAILS] } },
+        },
+      }),
+      prisma.activationCode.findMany({
+        select: { code: true, status: true, redeemedBy: true, expirationDate: true },
+        orderBy: { code: 'asc' },
+      }),
+      prisma.user.findUnique({
+        where: { referralCode: BOOTSTRAP_REFERRAL_CODE },
+        select: { id: true },
+      }),
+    ]);
 
-  if (!ownerUser) {
-    console.error("❌ Verification failed: Owner user with referralCode OWNER-SUPER-001 does not exist.");
-    process.exit(1);
+  for (const email of APPROVED_SUPER_ADMIN_EMAILS) {
+    const admin = approvedAdmins.find((row) => row.email === email);
+    if (!admin || admin.role !== 'SUPER_ADMIN') {
+      throw new Error(`Approved super admin is missing or not SUPER_ADMIN: ${email}`);
+    }
+    if (admin.referralCode) {
+      throw new Error(`Approved super admin must not carry a member referral code: ${email}`);
+    }
   }
-  
-  console.log(
-    `✅ Owner User exists with ID: ${ownerUser.id} and referralCode: ${ownerUser.referralCode}`
-  );
 
-  // 2. Verify OWNER-SUPER-001 is not required as an activation code.
-  const activationCode = await prisma.activationCode.findUnique({
-    where: { code: "OWNER-SUPER-001" },
-  });
-
-  if (activationCode) {
-    console.log(
-      "ℹ️ OWNER-SUPER-001 still exists in ActivationCode from older data, but registration no longer accepts it as an activation code."
-    );
-  } else {
-    console.log("✅ OWNER-SUPER-001 is not seeded as an activation code.");
-  }
-
-  // 3. Verify owner/root member can have a BinaryTree record without parent (or it can be created)
-  const binaryTree = await prisma.binaryTree.findUnique({
-    where: { userId: ownerUser.id },
-  });
-
-  if (binaryTree) {
-    console.log(
-      `✅ BinaryTree record for Owner exists. ParentId is ${
-        binaryTree.parentId === null ? "null (Root)" : binaryTree.parentId
-      }`
-    );
-  } else {
-    console.log(
-      "ℹ️ BinaryTree record for Owner does not exist yet. This is expected before first downline registration or until explicitly created."
+  if (normalMemberCount !== 0) {
+    throw new Error(
+      `Expected zero normal members before first registration, found ${normalMemberCount}.`
     );
   }
 
-  console.log("✅ Verification successful.");
+  if (activationCodes.length !== 1 || activationCodes[0]?.code !== STARTUP_ACTIVATION_CODE) {
+    throw new Error('Expected GMA-000001 to be the only activation code.');
+  }
+
+  const startupCode = activationCodes[0];
+  if (startupCode.status !== 'UNUSED' || startupCode.redeemedBy || startupCode.expirationDate) {
+    throw new Error('GMA-000001 must be unused, unredeemed, and non-expiring.');
+  }
+
+  if (bootstrapReferralUser) {
+    throw new Error('ROOT-PARENT-001 must not exist as a real user referral code.');
+  }
+
+  console.info('Bootstrap readiness verified.');
+  console.info(`First activation code: ${STARTUP_ACTIVATION_CODE}`);
+  console.info(`One-time first-parent referral code: ${BOOTSTRAP_REFERRAL_CODE}`);
 }
 
 main()
-  .catch((e) => {
-    console.error("❌ Verification failed with error:", e);
-    process.exit(1);
+  .catch((error) => {
+    console.error('Bootstrap verification failed:', error);
+    process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();
