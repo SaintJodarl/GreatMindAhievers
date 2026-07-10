@@ -20,22 +20,6 @@ interface User {
 
 const users: User[] = [
   {
-    id: 'usr-001',
-    name: 'Adebayo Okafor',
-    email: 'adebayo.okafor@gma.network',
-    memberId: 'GMA-00142',
-    sponsorId: 'GMA-00001',
-    position: 'Left',
-    rank: 'Silver',
-    leftVol: 14820,
-    rightVol: 12480,
-    walletBalance: 3847500,
-    kycStatus: 'Approved',
-    accountStatus: 'Active',
-    joinDate: 'Jan 12, 2026',
-    state: 'Lagos',
-  },
-  {
     id: 'usr-002',
     name: 'Chidinma Obi',
     email: 'chidinma.obi@email.com',

@@ -44,15 +44,13 @@ export default function AdminOverviewClient() {
       </div>
 
       <div className="pt-4 border-t border-gray-100">
-        <h3 className="text-sm font-bold text-gray-800 mb-2">My Admin Referral Link</h3>
+        <h3 className="text-sm font-bold text-gray-800 mb-2">Your Referral Link</h3>
         <p className="text-xs text-gray-500 mb-3">
-          Share this link to register members directly under your admin account.
+          Share your registration invite link with new members to grow your downline.
         </p>
         <div className="flex items-center gap-2">
           <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 flex-1 text-xs font-mono text-gray-600 overflow-hidden text-ellipsis whitespace-nowrap">
-            {user?.referralCode
-              ? generateReferralLink(user.referralCode)
-              : 'Loading...'}
+            {user?.referralCode ? generateReferralLink(user.referralCode) : 'Loading...'}
           </div>
           <button
             onClick={handleCopy}

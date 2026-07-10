@@ -473,14 +473,14 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
             )}
             {sponsorFromUrl && (
               <p className="text-[10px] text-gray-500 font-medium">
-                Sponsor code applied from referral link.
+                Sponsor code applied from referral link. You still need a separate activation code.
               </p>
             )}
           </div>
 
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Activation Code
+              Activation Code (Separate)
             </label>
             <input
               type="text"
@@ -488,7 +488,10 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
               className="w-full px-3.5 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 uppercase"
               {...register('activationCode', {
                 required: 'Activation Code is required',
-                pattern: { value: /^GMA-\d{6}$/i, message: 'Format: GMA-XXXXXX' },
+                pattern: {
+                  value: /^GMA-\d{6}$/i,
+                  message: 'Use a GMA activation code, not your sponsor code',
+                },
               })}
             />
             {errors.activationCode && (

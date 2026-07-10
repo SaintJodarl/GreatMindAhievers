@@ -20,21 +20,6 @@ interface WithdrawalRequest {
 
 const withdrawalRequests: WithdrawalRequest[] = [
   {
-    id: 'wr-001',
-    memberId: 'GMA-00142',
-    memberName: 'Adebayo Okafor',
-    email: 'adebayo.okafor@gma.network',
-    amount: 500000,
-    method: 'Bank Transfer',
-    accountDetails: 'GTBank · ****4821 · Adebayo Okafor',
-    requestDate: 'Apr 28, 2026',
-    kycStatus: 'Approved',
-    accountStatus: 'Active',
-    walletBalance: 3847500,
-    previousWithdrawals: 2900000,
-    status: 'Pending',
-  },
-  {
     id: 'wr-002',
     memberId: 'GMA-00218',
     memberName: 'Chidinma Obi',

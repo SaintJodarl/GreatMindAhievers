@@ -8,7 +8,7 @@ export default async function RegisterPage({
   const resolvedParams = await searchParams;
   const ref = resolvedParams.ref || resolvedParams.sponsor;
   if (ref) {
-    redirect(`/sign-up-login-screen?ref=${ref}`);
+    redirect(`/sign-up-login-screen?mode=register&ref=${ref}`);
   } else {
     redirect('/sign-up-login-screen');
   }

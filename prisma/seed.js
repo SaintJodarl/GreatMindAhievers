@@ -20,32 +20,11 @@ async function main() {
     },
   });
 
-  // Create member user (INACTIVE — must activate via activation code, matching production flow)
-  const memberPassword = await bcrypt.hash('Member@2026', 10);
-  const member = await prisma.user.upsert({
-    where: { email: 'adebayo.okafor@gma.network' },
-    update: { password: memberPassword, role: 'MEMBER' },
-    create: {
-      email: 'adebayo.okafor@gma.network',
-      name: 'Adebayo Okafor',
-      password: memberPassword,
-      role: 'MEMBER',
-      status: 'INACTIVE',
-      referralCode: 'GMA-MBR1',
-    },
-  });
-
   // Ensure wallets exist
   const adminWallet = await prisma.wallet.upsert({
     where: { userId: admin.id },
     update: {},
     create: { id: admin.id, userId: admin.id, balance: 100000 },
-  });
-
-  const memberWallet = await prisma.wallet.upsert({
-    where: { userId: member.id },
-    update: {},
-    create: { id: member.id, userId: member.id, balance: 500 },
   });
 
   // Create some sample admin codes
@@ -112,7 +91,6 @@ async function main() {
   }
 
   console.log('Seed complete. Admin:', admin.email);
-  console.log('Seed complete. Member:', member.email);
   console.log('Sample codes created:', codes.map(c => c.code).join(', '));
 }
 

@@ -157,12 +157,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const OWNER_BOOTSTRAP_CODE = 'OWNER-SUPER-001';
-    const isOwnerBootstrapCode = codeToValidate === OWNER_BOOTSTRAP_CODE;
-
-    if (!/^GMA-\d{6}$/.test(codeToValidate!) && !isOwnerBootstrapCode) {
+    if (!/^GMA-\d{6}$/.test(codeToValidate!)) {
       return NextResponse.json(
-        { message: 'Invalid activation code format. Required format: GMA-123456 or OWNER-SUPER-001' },
+        { message: 'Invalid activation code format. Required format: GMA-123456' },
         { status: 400 }
       );
     }
@@ -175,17 +172,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid activation code' }, { status: 400 });
     }
 
-    if (!isOwnerBootstrapCode) {
-      if (dbCode.status !== 'UNUSED') {
-        return NextResponse.json(
-          { message: `Activation code is already ${dbCode.status.toLowerCase()}` },
-          { status: 400 }
-        );
-      }
+    if (dbCode.status !== 'UNUSED') {
+      return NextResponse.json(
+        { message: `Activation code is already ${dbCode.status.toLowerCase()}` },
+        { status: 400 }
+      );
+    }
 
-      if (dbCode.expirationDate && new Date(dbCode.expirationDate) < new Date()) {
-        return NextResponse.json({ message: 'Activation code has expired' }, { status: 400 });
-      }
+    if (dbCode.expirationDate && new Date(dbCode.expirationDate) < new Date()) {
+      return NextResponse.json({ message: 'Activation code has expired' }, { status: 400 });
     }
 
     const ipAddress =
@@ -311,35 +306,33 @@ export async function POST(req: NextRequest) {
           });
 
           // 3. Guarded activation code redemption
-          if (!isOwnerBootstrapCode) {
-            const redeemResult = await tx.activationCode.updateMany({
-              where: {
-                id: dbCode!.id,
-                code: codeToValidate!,
-                status: 'UNUSED',
-                redeemedBy: null,
-                OR: [{ expirationDate: null }, { expirationDate: { gt: now } }],
-              },
-              data: {
-                status: 'USED',
-                redeemedBy: createdUser.id,
-                redeemedDate: now,
-              },
-            });
+          const redeemResult = await tx.activationCode.updateMany({
+            where: {
+              id: dbCode!.id,
+              code: codeToValidate!,
+              status: 'UNUSED',
+              redeemedBy: null,
+              OR: [{ expirationDate: null }, { expirationDate: { gt: now } }],
+            },
+            data: {
+              status: 'USED',
+              redeemedBy: createdUser.id,
+              redeemedDate: now,
+            },
+          });
 
-            if (redeemResult.count !== 1) {
-              throw new Error('Invalid or already used activation code.');
-            }
-
-            // 3.1 Distribute multi-level commission
-            const { distributeMultiLevelCommission } = await import('@/lib/wallet/service');
-            await distributeMultiLevelCommission(tx, {
-              buyerId: createdUser.id,
-              amountPerLevel: [10000, 5000, 3000, 1000, 1000],
-              orderId: dbCode!.id,
-              description: `Activation Commission for User ${createdUser.id}`,
-            });
+          if (redeemResult.count !== 1) {
+            throw new Error('Invalid or already used activation code.');
           }
+
+          // 3.1 Distribute multi-level commission
+          const { distributeMultiLevelCommission } = await import('@/lib/wallet/service');
+          await distributeMultiLevelCommission(tx, {
+            buyerId: createdUser.id,
+            amountPerLevel: [10000, 5000, 3000, 1000, 1000],
+            orderId: dbCode!.id,
+            description: `Activation Commission for User ${createdUser.id}`,
+          });
 
           // 4. MLM Placement Logic
           let placement = null;

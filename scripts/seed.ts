@@ -87,35 +87,13 @@ async function main() {
   });
 
   // =========================
-  // MEMBER USER (INACTIVE — must activate via code)
-  // =========================
-  const memberPassword = await bcrypt.hash("Member@2026", 10);
-  const member = await prisma.user.upsert({
-    where: { email: "adebayo.okafor@gma.network" },
-    update: {
-      role: "MEMBER",
-      status: "INACTIVE",
-    },
-    create: {
-      email: "adebayo.okafor@gma.network",
-      name: "Adebayo Okafor",
-      password: memberPassword,
-      role: "MEMBER",
-      status: "INACTIVE",
-      referralCode: "GMA-MBR1",
-      username: "adebayo_okafor",
-    },
-  });
-
-  // =========================
   // ENSURE WALLETS EXIST
   // =========================
-  const usersWithWallets = [ownerAdmin, gmaAdmin, devAdmin, member];
+  const usersWithWallets = [ownerAdmin, gmaAdmin, devAdmin];
   const walletBalances: Record<string, number> = {
     [ownerAdmin.id]: 100000,
     [gmaAdmin.id]: 100000,
     [devAdmin.id]: 100000,
-    [member.id]: 500,
   };
 
   for (const u of usersWithWallets) {
@@ -235,34 +213,10 @@ async function main() {
     });
   }
 
-  // =========================
-  // BOOTSTRAP ACTIVATION CODE
-  // =========================
-  // This code is used by the owner to register their root member account
-  await prisma.activationCode.upsert({
-    where: { code: "OWNER-SUPER-001" },
-    update: {
-      status: "UNUSED",
-      redeemedBy: null,
-      redeemedDate: null,
-      expirationDate: null,
-      createdBy: ownerAdmin.id,
-    },
-    create: {
-      code: "OWNER-SUPER-001",
-      status: "UNUSED",
-      redeemedBy: null,
-      redeemedDate: null,
-      expirationDate: null,
-      createdBy: ownerAdmin.id,
-    }
-  });
-
   console.log("✅ Seed complete.");
   console.log("  - Super Admin 1 (Owner):", ownerAdmin.email);
   console.log("  - Super Admin 2 (GMA):  ", gmaAdmin.email);
   console.log("  - Super Admin 3 (Dev):  ", devAdmin.email);
-  console.log("  - Sample Member:        ", member.email);
 }
 
 main()

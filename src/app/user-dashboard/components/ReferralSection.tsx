@@ -26,7 +26,7 @@ export default function ReferralSection({ initialReferrals = [], summary }: Refe
           <div>
             <h3 className="text-lg font-bold text-slate-900 mb-1">Your Referral Link</h3>
             <p className="text-xs text-slate-500 font-medium">
-              Share this link to earn ₦50,000 per direct referral + binary volume credits
+              Share your registration invite link with new members to grow your downline.
             </p>
           </div>
           <div className="flex items-center gap-2">

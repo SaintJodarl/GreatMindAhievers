@@ -13,5 +13,5 @@ export function generateReferralLink(referralCode: string): string {
   // Ensure baseUrl doesn't end with a slash
   baseUrl = baseUrl.replace(/\/$/, '');
 
-  return `${baseUrl}/sign-up-login-screen?ref=${encodeURIComponent(referralCode)}`;
+  return `${baseUrl}/sign-up-login-screen?mode=register&ref=${encodeURIComponent(referralCode)}`;
 }
