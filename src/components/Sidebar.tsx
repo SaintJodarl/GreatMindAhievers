@@ -232,10 +232,10 @@ export default function Sidebar({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold truncate" style={{ color: 'var(--foreground)' }}>
-                {role === 'admin' ? 'Admin User' : 'Marcus Chen'}
+                {role === 'admin' ? 'Admin User' : 'Member'}
               </p>
               <p className="text-xs truncate" style={{ color: 'var(--muted-foreground)' }}>
-                {role === 'admin' ? 'admin@gma.network' : 'ID: GMA-00142'}
+                {role === 'admin' ? 'Admin account' : 'ID: Pending'}
               </p>
             </div>
             <Link

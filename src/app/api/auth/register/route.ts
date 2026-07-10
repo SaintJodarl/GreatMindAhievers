@@ -13,11 +13,13 @@ import { signAccessToken } from '@/lib/auth/jwt';
 export const maxDuration = 60; // Allow enough time for Neon cold starts and MLM placement
 
 const ADMIN_ROLES = ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'];
-const PROTECTED_ADMIN_EMAILS = new Set([
+const FIRST_PARENT_BOOTSTRAP_REFERRAL_CODE = 'ROOT-PARENT-001';
+const PROTECTED_ADMIN_EMAIL_LIST = [
   'makatablessing2026@gmail.com',
   'gmanetworkng@gmail.com',
   'stellarmediang@gmail.com',
-]);
+] as const;
+const PROTECTED_ADMIN_EMAILS = new Set<string>(PROTECTED_ADMIN_EMAIL_LIST);
 
 const cleanRequiredText = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
@@ -123,8 +125,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Sponsor validation - MUST HAVE SPONSOR
-    if (!sponsorCode) {
+    const normalizedSponsorCode =
+      typeof sponsorCode === 'string' && sponsorCode.trim() ? sponsorCode.trim().toUpperCase() : '';
+
+    // Sponsor validation - the one-time root bootstrap code is allowed only before
+    // any normal member exists.
+    if (!normalizedSponsorCode) {
       return NextResponse.json(
         { message: 'A sponsor / referral code is required to register.' },
         { status: 400 }
@@ -133,16 +139,49 @@ export async function POST(req: NextRequest) {
 
     let sponsorId: string | null = null;
     let autoCalculatedPosition: 'LEFT' | 'RIGHT' = 'LEFT';
+    const isFirstParentBootstrap = normalizedSponsorCode === FIRST_PARENT_BOOTSTRAP_REFERRAL_CODE;
 
-    const sponsor = await prisma.user.findUnique({
-      where: { referralCode: sponsorCode.toUpperCase().trim() },
+    const existingNormalMemberCount = await prisma.user.count({
+      where: {
+        role: 'MEMBER',
+        NOT: { email: { in: [...PROTECTED_ADMIN_EMAIL_LIST] } },
+      },
     });
 
-    if (sponsor) {
+    if (isFirstParentBootstrap) {
+      if (existingNormalMemberCount > 0) {
+        return NextResponse.json(
+          {
+            message:
+              'The first-parent bootstrap referral code has already been used. Please use a member referral code.',
+          },
+          { status: 400 }
+        );
+      }
+    } else {
+      const sponsor = await prisma.user.findUnique({
+        where: { referralCode: normalizedSponsorCode },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          preferredPosition: true,
+        },
+      });
+
+      if (
+        !sponsor ||
+        sponsor.role !== 'MEMBER' ||
+        (sponsor.email && PROTECTED_ADMIN_EMAILS.has(sponsor.email.toLowerCase()))
+      ) {
+        return NextResponse.json(
+          { message: 'Sponsor / referral code is invalid' },
+          { status: 400 }
+        );
+      }
+
       sponsorId = sponsor.id;
       autoCalculatedPosition = sponsor.preferredPosition === 'RIGHT' ? 'RIGHT' : 'LEFT';
-    } else {
-      return NextResponse.json({ message: 'Sponsor / referral code is invalid' }, { status: 400 });
     }
 
     // Activation code validation
@@ -336,7 +375,13 @@ export async function POST(req: NextRequest) {
 
           // 4. MLM Placement Logic
           let placement = null;
-          if (MLM_EVENT_MODE) {
+          if (isFirstParentBootstrap) {
+            placement = await executePlacementWithTx(tx, {
+              sponsorId: null,
+              preferredPosition: autoCalculatedPosition as BinaryPosition,
+              userId: createdUser.id,
+            });
+          } else if (MLM_EVENT_MODE) {
             await emitOutboxEvent(
               tx,
               'MLM_DEFERRED_OPERATION',

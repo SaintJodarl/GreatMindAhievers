@@ -46,31 +46,6 @@ export async function findPlacementForUser(
   });
 
   if (!sponsorTree) {
-    const sponsorUser = await tx.user.findUnique({
-      where: { id: sponsorId },
-      select: { referralCode: true, id: true },
-    });
-
-    if (sponsorUser?.referralCode === 'OWNER-SUPER-001') {
-      // Safely ensure the owner has a root BinaryTree record
-      await tx.binaryTree.upsert({
-        where: { userId: sponsorId },
-        update: {},
-        create: {
-          userId: sponsorId,
-          parentId: null,
-          path: `root/${sponsorId}`,
-          depth: 0,
-          leftVolume: 0,
-          rightVolume: 0,
-          cyclesCompleted: 0,
-        },
-      });
-
-      // Continue with the newly created root tree
-      return findPlacementForUser(tx, context);
-    }
-
     throw new Error(`Sponsor ${sponsorId} has no BinaryTree record`);
   }
 
