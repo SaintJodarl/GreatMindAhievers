@@ -12,16 +12,14 @@ import {
   ChevronRight,
   Info,
   Users,
-  Copy,
-  Check,
 } from 'lucide-react';
-import { generateReferralLink } from '@/lib/referral-link';
 import UserKPIGrid from './UserKPIGrid';
 import BinaryTreeSection from './BinaryTreeSection';
 import EarningsChartSection from './EarningsChartSection';
 import CommissionHistoryTable from './CommissionHistoryTable';
 import ReferralSection from './ReferralSection';
 import WithdrawalSection from './WithdrawalSection';
+import ReferralLinkCard from './ReferralLinkCard';
 import { useAuth } from '@/context/AuthContext';
 
 export default function UserDashboardContent() {
@@ -39,7 +37,6 @@ export default function UserDashboardContent() {
   const [recentReferrals, setRecentReferrals] = useState<any[]>([]);
   const [loadingExtra, setLoadingExtra] = useState(true);
   const [selectedTxn, setSelectedTxn] = useState<any | null>(null);
-  const [copiedLink, setCopiedLink] = useState(false);
 
   const fetchSummary = async () => {
     try {
@@ -139,23 +136,6 @@ export default function UserDashboardContent() {
     });
   };
 
-  const getRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 60) {
-      return `${diffMins} min ago`;
-    } else if (diffHours < 24) {
-      return `${diffHours} hours ago`;
-    } else {
-      return `${diffDays} days ago`;
-    }
-  };
-
   return (
     <div className="space-y-6 pb-12 animate-fade-in">
       {/* 1. Header Navigation Bar / Welcome Banner Container */}
@@ -215,18 +195,20 @@ export default function UserDashboardContent() {
 
       {/* 2. Overlapping Tab Navigation Bar */}
       <div className="flex items-center justify-between flex-wrap gap-4 border-b border-gray-200 pb-2">
-        <div className="flex gap-1.5 p-1 bg-slate-50 rounded-xl overflow-x-auto scrollbar-none max-w-full">
+        <div className="flex gap-2 p-1.5 bg-slate-100/80 rounded-xl overflow-x-auto scrollbar-none max-w-full shadow-inner border border-slate-200/50">
           {tabs.map((tab) => (
             <button
               key={`user-tab-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold whitespace-nowrap transition-all duration-200 border-2 ${
                 activeTab === tab.id
-                  ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/60'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
-              }`}
+                  ? 'bg-white text-indigo-700 border-indigo-600 shadow-sm ring-4 ring-indigo-50'
+                  : 'text-slate-500 border-transparent hover:text-slate-900 hover:bg-white/60 hover:border-slate-300'
+              } focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
             >
-              <span>{tab.icon}</span>
+              <span className={activeTab === tab.id ? 'opacity-100' : 'opacity-70'}>
+                {tab.icon}
+              </span>
               {tab.label}
             </button>
           ))}
@@ -246,7 +228,13 @@ export default function UserDashboardContent() {
       {/* 3. Content Panel */}
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-fade-in">
-          {/* KPI metrics grid */}
+          {/* Binary Tree View (First Section) */}
+          <BinaryTreeSection summary={summary} />
+
+          {/* Referral Link Card (Second Section) */}
+          <ReferralLinkCard referralCode={summary?.referralCode} />
+
+          {/* KPI metrics grid (Third Section) */}
           <UserKPIGrid summary={summary} />
 
           {/* Two-Column Section */}
@@ -444,47 +432,11 @@ export default function UserDashboardContent() {
           </div>
 
           {/* Quick links to core modules */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl border border-gray-150 border-t-4 border-t-indigo-500 p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex flex-col justify-between">
-              <div>
-                <h3 className="font-bold text-gray-900 text-sm">Referral Link</h3>
-                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
-                  Share your registration invite link with new members to grow your downline.
-                </p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono bg-gray-50 px-2 py-0.5 border border-gray-100 rounded text-gray-600 font-bold">
-                    {summary.referralCode || 'N/A'}
-                  </span>
-                  {summary.referralCode && (
-                    <button
-                      onClick={() => {
-                        const link = generateReferralLink(summary.referralCode);
-                        navigator.clipboard.writeText(link);
-                        setCopiedLink(true);
-                        setTimeout(() => setCopiedLink(false), 2000);
-                      }}
-                      className="text-indigo-600 hover:text-indigo-800 transition-colors p-1 bg-indigo-50 hover:bg-indigo-100 rounded"
-                      title="Copy Link"
-                    >
-                      {copiedLink ? <Check size={14} /> : <Copy size={14} />}
-                    </button>
-                  )}
-                </div>
-                <Link
-                  href="/user-dashboard/referrals/link"
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-0.5 hover:underline"
-                >
-                  More info <ChevronRight size={14} />
-                </Link>
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 gap-6">
             <div className="bg-white rounded-xl border border-gray-150 border-t-4 border-t-rose-500 p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex flex-col justify-between">
               <div>
                 <h3 className="font-bold text-gray-900 text-sm">Support & Help</h3>
-                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed max-w-md">
                   Submit support requests to our staff if you run into any operational problems.
                 </p>
               </div>

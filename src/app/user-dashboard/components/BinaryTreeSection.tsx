@@ -33,7 +33,7 @@ function TreeNodeCard({ node, isRoot = false }: { node: TreeNode; isRoot?: boole
         onClick={() => hasChildren && setExpanded(!expanded)}
       >
         <div
-          className="px-4 py-3 rounded-xl text-center min-w-[130px]"
+          className="px-4 py-3 rounded-xl text-center w-full max-w-[220px] md:min-w-[130px]"
           style={
             isRoot
               ? {
@@ -97,39 +97,53 @@ function TreeNodeCard({ node, isRoot = false }: { node: TreeNode; isRoot?: boole
 
       {/* Children */}
       {hasChildren && expanded && (
-        <div className="mt-6">
-          {/* Connector lines */}
+        <div className="mt-4 md:mt-6">
+          {/* Connector line from parent */}
           <div className="relative flex items-start justify-center">
             <div
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4"
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4 md:h-4"
               style={{ background: 'var(--border)' }}
             />
           </div>
-          <div className="flex gap-8 mt-4 relative">
-            {/* Horizontal connector */}
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 mt-4 relative w-full justify-center">
+            {/* Horizontal connector (desktop only) */}
             <div
-              className="absolute top-0 left-[calc(25%)] h-0.5"
+              className="hidden md:block absolute top-0 left-[calc(25%)] h-0.5"
               style={{ width: '50%', background: 'var(--border)', top: '-8px' }}
             />
             {/* Left child */}
-            <div className="flex flex-col items-center">
-              <div className="w-0.5 h-4 mb-0 -mt-2" style={{ background: 'var(--border)' }} />
+            <div className="flex flex-col items-center relative w-full md:w-auto">
+              {/* Desktop vertical joiner */}
               <div
-                className="text-xs font-semibold mb-2 px-2 py-0.5 rounded"
+                className="hidden md:block w-0.5 h-4 mb-0 -mt-2"
+                style={{ background: 'var(--border)' }}
+              />
+              {/* Mobile vertical joiner (connects to parent or previous sibling) */}
+              <div className="md:hidden w-0.5 h-6 -mt-6" style={{ background: 'var(--border)' }} />
+
+              <div
+                className="text-[10px] md:text-xs font-semibold mb-2 px-2 py-0.5 rounded uppercase tracking-wider"
                 style={{ background: 'rgba(108,71,255,0.1)', color: 'var(--primary)' }}
               >
-                L
+                Left Leg
               </div>
               {node.leftChild ? <TreeNodeCard node={node.leftChild} /> : <EmptySlot side="Left" />}
             </div>
             {/* Right child */}
-            <div className="flex flex-col items-center">
-              <div className="w-0.5 h-4 mb-0 -mt-2" style={{ background: 'var(--border)' }} />
+            <div className="flex flex-col items-center relative w-full md:w-auto">
+              {/* Desktop vertical joiner */}
               <div
-                className="text-xs font-semibold mb-2 px-2 py-0.5 rounded"
+                className="hidden md:block w-0.5 h-4 mb-0 -mt-2"
+                style={{ background: 'var(--border)' }}
+              />
+              {/* Mobile vertical joiner (connects to left sibling on mobile) */}
+              <div className="md:hidden w-0.5 h-6 -mt-6" style={{ background: 'var(--border)' }} />
+
+              <div
+                className="text-[10px] md:text-xs font-semibold mb-2 px-2 py-0.5 rounded uppercase tracking-wider"
                 style={{ background: 'rgba(56,189,248,0.1)', color: 'var(--info)' }}
               >
-                R
+                Right Leg
               </div>
               {node.rightChild ? (
                 <TreeNodeCard node={node.rightChild} />
@@ -147,7 +161,7 @@ function TreeNodeCard({ node, isRoot = false }: { node: TreeNode; isRoot?: boole
 function EmptySlot({ side }: { side: string }) {
   return (
     <div
-      className="px-4 py-3 rounded-xl text-center min-w-[120px] cursor-pointer transition-all duration-150 hover:border-primary"
+      className="px-4 py-3 rounded-xl text-center w-full max-w-[200px] md:min-w-[120px] cursor-pointer transition-all duration-150 hover:border-primary"
       style={{
         background: 'rgba(108,71,255,0.04)',
         border: '1px dashed var(--border)',
@@ -235,8 +249,8 @@ export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
         </div>
       </div>
 
-      <div className="overflow-x-auto pb-4">
-        <div className="min-w-[400px] flex justify-center py-6">
+      <div className="overflow-x-hidden md:overflow-visible pb-4">
+        <div className="w-full flex justify-center py-6 px-2 md:px-0">
           <TreeNodeCard node={rootNode} isRoot />
         </div>
       </div>
