@@ -13,11 +13,20 @@ interface TreeNode {
 }
 
 const rankColors: Record<string, string> = {
+  'Registered / Active': '#6B7280',
+  'Starter Stage - Entry Stage': '#64748B',
+  'Starter Stage — Entry Stage': '#64748B',
+  'Emerald — Stage 1': '#10B981',
   Silver: '#C0C0C0',
+  'Silver — Stage 2': '#94A3B8',
   Bronze: '#CD7F32',
   Entry: '#6B7280',
   Gold: '#F59E0B',
+  'Gold — Stage 3': '#F59E0B',
+  'Jasper — Stage 4': '#EF4444',
+  'Sapphire — Stage 5': '#3B82F6',
   Diamond: '#38BDF8',
+  'Diamond — Stage 6 — Final Stage': '#38BDF8',
 };
 
 function TreeNodeCard({ node, isRoot = false }: { node: TreeNode; isRoot?: boolean }) {
@@ -215,7 +224,7 @@ export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
   const rootNode: TreeNode = {
     id: summary.id || 'User',
     name: summary.name || 'You',
-    rank: summary.rank || 'Entry',
+    rank: summary.currentStageName || summary.rank || 'Entry',
     volume: Math.min(summary.leftVolume || 0, summary.rightVolume || 0),
     status: summary.status === 'ACTIVE' ? 'Active' : 'Pending',
     joinDate: summary.createdAt || new Date().toISOString(),
@@ -238,7 +247,7 @@ export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
           </p>
         </div>
         <div className="flex gap-3">
-          {['Silver', 'Bronze', 'Entry'].map((r) => (
+          {['Emerald — Stage 1', 'Silver — Stage 2', 'Diamond — Stage 6 — Final Stage'].map((r) => (
             <div key={r} className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: rankColors[r] }} />
               <span className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>

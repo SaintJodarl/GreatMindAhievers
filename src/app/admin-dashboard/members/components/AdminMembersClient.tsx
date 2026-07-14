@@ -23,6 +23,13 @@ interface MemberData {
   email: string | null;
   username: string | null;
   status: string; // ACTIVE, PENDING_PROFILE_COMPLETION, PENDING_KYC_REVIEW, PENDING_ACTIVATION, SUSPENDED
+  currentStage: string;
+  currentStageName: string;
+  currentStageNumberLabel: string;
+  highestStageName: string;
+  stageUpdatedAt: string | null;
+  compensationPlanStatus: string;
+  finalStageCompletedAt: string | null;
   referralCode: string | null;
   kycStatus: string; // PENDING, SUBMITTED, APPROVED, REJECTED
   createdAt: string;
@@ -361,6 +368,9 @@ export default function AdminMembersClient() {
                     Lifecycle Status
                   </th>
                   <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
+                    Compensation Stage
+                  </th>
+                  <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
                     Onboarding Progress
                   </th>
                   <th className="px-6 py-4 font-bold text-xs text-gray-500 uppercase tracking-wider">
@@ -437,6 +447,22 @@ export default function AdminMembersClient() {
                       >
                         {member.status?.replace(/_/g, ' ')}
                       </span>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="space-y-0.5">
+                        <span className="block text-xs font-bold text-gray-800">
+                          {member.currentStageName}
+                        </span>
+                        <span className="block text-[10px] font-semibold text-gray-400">
+                          {member.currentStageNumberLabel}
+                        </span>
+                        {member.compensationPlanStatus === 'COMPLETED' && (
+                          <span className="inline-flex rounded bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-700">
+                            Diamond completed
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     <td className="px-6 py-4">

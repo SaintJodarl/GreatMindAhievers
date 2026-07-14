@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
+import {
+  getNextStage,
+  getRequirementText,
+  getStageDisplayName,
+  getStageNumberLabel,
+  normalizeStageId,
+} from '@/lib/qualification/constants';
 
 // GET: Profile details with sponsor, placement, wallet, KYC
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -25,6 +32,44 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         placement: {
           select: { id: true, name: true, email: true, referralCode: true },
         },
+        stageProgress: {
+          orderBy: { createdAt: 'asc' },
+        },
+        stageHistory: {
+          include: {
+            contributors: {
+              include: {
+                contributorMember: {
+                  select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    email: true,
+                    currentStage: true,
+                  },
+                },
+              },
+              orderBy: [
+                { contributorQualifiedAt: 'asc' },
+                { genealogyDepth: 'asc' },
+                { contributorMemberId: 'asc' },
+              ],
+            },
+          },
+          orderBy: { qualifiedAt: 'asc' },
+        },
+        rewards: {
+          include: { claims: true },
+          orderBy: { createdAt: 'desc' },
+        },
+        stageLoans: {
+          include: {
+            auditEntries: {
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+          orderBy: { issuedAt: 'desc' },
+        },
       },
     });
 
@@ -32,7 +77,48 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ message: 'Member not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ user });
+    const currentStage = normalizeStageId(user.currentStage);
+    const nextStage = getNextStage(currentStage);
+
+    return NextResponse.json({
+      user: {
+        ...user,
+        currentStageName: getStageDisplayName(user.currentStage),
+        currentStageNumberLabel: getStageNumberLabel(user.currentStage),
+        highestStageName: getStageDisplayName(user.highestStage),
+        nextStage,
+        nextStageName: nextStage ? getStageDisplayName(nextStage) : null,
+        nextRequirement: getRequirementText(nextStage),
+        stageProgress: user.stageProgress.map((item) => ({
+          ...item,
+          stageName: getStageDisplayName(item.stage),
+          requirementStageName: item.requirementStage
+            ? getStageDisplayName(item.requirementStage)
+            : null,
+        })),
+        stageHistory: user.stageHistory.map((item) => ({
+          ...item,
+          fromStageName: getStageDisplayName(item.fromStage),
+          toStageName: getStageDisplayName(item.toStage),
+          contributors: item.contributors.map((contributor) => ({
+            ...contributor,
+            contributorStageName: getStageDisplayName(contributor.contributorStageAtQualification),
+            contributorMember: {
+              ...contributor.contributorMember,
+              currentStageName: getStageDisplayName(contributor.contributorMember.currentStage),
+            },
+          })),
+        })),
+        rewards: user.rewards.map((reward) => ({
+          ...reward,
+          stageName: getStageDisplayName(reward.stage),
+        })),
+        stageLoans: user.stageLoans.map((loan) => ({
+          ...loan,
+          stageName: getStageDisplayName(loan.stage),
+        })),
+      },
+    });
   } catch (error: any) {
     console.error('Get member details error:', error);
     return NextResponse.json(

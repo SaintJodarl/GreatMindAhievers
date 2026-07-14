@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
+import { STAGE_ORDER, getStageDisplayName, normalizeStageId } from '@/lib/qualification/constants';
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,6 +18,8 @@ export async function GET(req: NextRequest) {
       walletSum,
       withdrawalsSummary,
       commissionsSummary,
+      stageStatsGrouped,
+      diamondCompleted,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { status: 'ACTIVE' } }),
@@ -38,6 +41,17 @@ export async function GET(req: NextRequest) {
         where: {
           status: 'COMPLETED',
           type: { in: ['REFERRAL_BONUS', 'PAIRING_BONUS', 'LEADERSHIP_BONUS'] },
+        },
+      }),
+      prisma.user.groupBy({
+        by: ['currentStage'],
+        _count: true,
+        where: { role: 'MEMBER' },
+      }),
+      prisma.user.count({
+        where: {
+          role: 'MEMBER',
+          compensationPlanStatus: 'COMPLETED',
         },
       }),
     ]);
@@ -89,6 +103,20 @@ export async function GET(req: NextRequest) {
       if (comm.type === 'LEADERSHIP_BONUS') commissions.leadership = amt;
     }
 
+    const stages = STAGE_ORDER.map((stage) => ({
+      stage,
+      stageName: getStageDisplayName(stage),
+      count: 0,
+    }));
+    const stageIndex = new Map(stages.map((item) => [item.stage, item]));
+    for (const stat of stageStatsGrouped) {
+      const stage = normalizeStageId(stat.currentStage);
+      const existing = stageIndex.get(stage);
+      if (existing) {
+        existing.count += stat._count;
+      }
+    }
+
     return NextResponse.json({
       users: {
         total: totalUsers,
@@ -101,6 +129,10 @@ export async function GET(req: NextRequest) {
       },
       withdrawals,
       commissions,
+      stages: {
+        distribution: stages,
+        diamondCompleted,
+      },
     });
   } catch (error: any) {
     console.error('Reports summary error:', error);

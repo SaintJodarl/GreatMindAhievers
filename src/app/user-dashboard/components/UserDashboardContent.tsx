@@ -163,6 +163,9 @@ export default function UserDashboardContent() {
                 />
                 {summary.status}
               </span>
+              <span className="bg-sky-50 text-sky-700 px-2.5 py-1 rounded-md border border-sky-200">
+                {summary.currentStageName || 'Registered / Active'}
+              </span>
             </div>
           </div>
 

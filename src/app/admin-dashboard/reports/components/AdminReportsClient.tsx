@@ -47,12 +47,24 @@ interface CommissionSummary {
   total: number;
 }
 
+interface StageDistributionItem {
+  stage: string;
+  stageName: string;
+  count: number;
+}
+
+interface StageSummary {
+  distribution: StageDistributionItem[];
+  diamondCompleted: number;
+}
+
 interface ReportsSummaryData {
   users: UserSummary;
   kyc: KycSummary;
   wallet: WalletSummary;
   withdrawals: WithdrawalSummary;
   commissions: CommissionSummary;
+  stages: StageSummary;
 }
 
 export default function AdminReportsClient() {
@@ -217,6 +229,30 @@ export default function AdminReportsClient() {
 
       {/* Main Analytics Graphs */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm lg:col-span-2">
+          <div className="flex flex-col gap-1 mb-6">
+            <h3 className="text-lg font-bold text-gray-900">Compensation Stage Distribution</h3>
+            <p className="text-sm text-gray-500">
+              Registered / Active is account status; Starter is Entry Stage and Emerald is Stage 1.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {data.stages.distribution.map((item) => (
+              <div key={item.stage} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+                  {item.stageName}
+                </p>
+                <p className="mt-2 text-2xl font-extrabold text-gray-900">{item.count}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 rounded-xl border border-sky-100 bg-sky-50 p-4 text-sm font-semibold text-sky-800">
+            Diamond completed members: {data.stages.diamondCompleted}
+          </div>
+        </div>
+
         {/* Commissions Breakdown */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-between">
           <div>

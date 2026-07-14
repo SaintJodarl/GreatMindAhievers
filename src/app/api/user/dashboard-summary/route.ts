@@ -2,6 +2,13 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import {
+  getNextStage,
+  getRequirementText,
+  getStageDisplayName,
+  getStageNumberLabel,
+  normalizeStageId,
+} from '@/lib/qualification/constants';
 
 const getSimplifiedOnboardingStep = (
   step: number | null | undefined,
@@ -52,41 +59,55 @@ export async function GET(req: NextRequest) {
     }
 
     // Run independent counts and aggregates in parallel after user details are retrieved
-    const [directReferrals, earnings, withdrawals, openTicketsCount, announcementsCount] =
-      await Promise.all([
-        prisma.user.count({
-          where: { sponsorId: userId },
-        }),
-        user.wallet
-          ? prisma.walletTransaction.aggregate({
-              where: {
-                walletId: user.wallet.id,
-                status: 'COMPLETED',
-                type: {
-                  in: ['REFERRAL_BONUS', 'PAIRING_BONUS', 'LEADERSHIP_BONUS'],
-                },
+    const currentStage = normalizeStageId(user.currentStage);
+    const nextStage = getNextStage(currentStage);
+
+    const [
+      directReferrals,
+      earnings,
+      withdrawals,
+      openTicketsCount,
+      announcementsCount,
+      currentStageProgress,
+    ] = await Promise.all([
+      prisma.user.count({
+        where: { sponsorId: userId },
+      }),
+      user.wallet
+        ? prisma.walletTransaction.aggregate({
+            where: {
+              walletId: user.wallet.id,
+              status: 'COMPLETED',
+              type: {
+                in: ['REFERRAL_BONUS', 'PAIRING_BONUS', 'LEADERSHIP_BONUS'],
               },
-              _sum: {
-                amount: true,
-              },
-            })
-          : Promise.resolve({ _sum: { amount: null } }),
-        prisma.withdrawal.aggregate({
-          where: {
-            userId,
-            status: 'PENDING',
-          },
-          _sum: {
-            amount: true,
-          },
-        }),
-        prisma.ticket.count({
-          where: { userId, status: { in: ['OPEN', 'IN_PROGRESS'] } },
-        }),
-        prisma.content.count({
-          where: { isPublished: true },
-        }),
-      ]);
+            },
+            _sum: {
+              amount: true,
+            },
+          })
+        : Promise.resolve({ _sum: { amount: null } }),
+      prisma.withdrawal.aggregate({
+        where: {
+          userId,
+          status: 'PENDING',
+        },
+        _sum: {
+          amount: true,
+        },
+      }),
+      prisma.ticket.count({
+        where: { userId, status: { in: ['OPEN', 'IN_PROGRESS'] } },
+      }),
+      prisma.content.count({
+        where: { isPublished: true },
+      }),
+      nextStage
+        ? prisma.stageProgress.findUnique({
+            where: { userId_stage: { userId, stage: nextStage } },
+          })
+        : Promise.resolve(null),
+    ]);
 
     const lifetimeEarnings = Number(earnings._sum.amount || 0);
     const pendingWithdrawals = Number(withdrawals._sum.amount || 0);
@@ -106,6 +127,26 @@ export async function GET(req: NextRequest) {
       email: user.email,
       role: user.role,
       status: user.status,
+      currentStage,
+      currentStageName: getStageDisplayName(currentStage),
+      currentStageNumberLabel: getStageNumberLabel(currentStage),
+      highestStage: normalizeStageId(user.highestStage),
+      highestStageName: getStageDisplayName(user.highestStage),
+      stageUpdatedAt: user.stageUpdatedAt,
+      compensationPlanStatus: user.compensationPlanStatus,
+      finalStageCompletedAt: user.finalStageCompletedAt,
+      nextStage,
+      nextStageName: nextStage ? getStageDisplayName(nextStage) : null,
+      nextRequirement: getRequirementText(nextStage),
+      stageProgress: currentStageProgress
+        ? {
+            stage: currentStageProgress.stage,
+            stageName: getStageDisplayName(currentStageProgress.stage),
+            qualifiedContributorCount: currentStageProgress.qualifiedContributorCount,
+            requiredContributorCount: currentStageProgress.requiredContributorCount,
+            remainingContributorCount: currentStageProgress.remainingContributorCount,
+          }
+        : null,
       onboardingStatus: user.onboardingStatus,
       kycStatus: user.kycStatus,
       kycSubmittedAt: user.kycSubmittedAt,

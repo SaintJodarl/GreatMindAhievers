@@ -154,6 +154,23 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      const tree = await tx.binaryTree.findUnique({
+        where: { userId },
+        select: { parentId: true },
+      });
+      const activatedUser = await tx.user.findUnique({
+        where: { id: userId },
+        select: { sponsorId: true },
+      });
+      const { checkUserQualification } = await import('@/lib/qualification/engine');
+      await checkUserQualification(tx, userId);
+      if (tree?.parentId) {
+        await checkUserQualification(tx, tree.parentId, new Set<string>(), userId);
+      }
+      if (activatedUser?.sponsorId && activatedUser.sponsorId !== tree?.parentId) {
+        await checkUserQualification(tx, activatedUser.sponsorId, new Set<string>(), userId);
+      }
+
       return { user: updatedUser };
     });
 

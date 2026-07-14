@@ -88,6 +88,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
     });
 
+    if (status === 'ACTIVE') {
+      await prisma.$transaction(async (tx) => {
+        const tree = await tx.binaryTree.findUnique({
+          where: { userId: id },
+          select: { parentId: true },
+        });
+        const activatedUser = await tx.user.findUnique({
+          where: { id },
+          select: { sponsorId: true },
+        });
+        const { checkUserQualification } = await import('@/lib/qualification/engine');
+        await checkUserQualification(tx, id);
+        if (tree?.parentId) {
+          await checkUserQualification(tx, tree.parentId, new Set<string>(), id);
+        }
+        if (activatedUser?.sponsorId && activatedUser.sponsorId !== tree?.parentId) {
+          await checkUserQualification(tx, activatedUser.sponsorId, new Set<string>(), id);
+        }
+      });
+    }
+
     return NextResponse.json({
       message: `Member status successfully updated to ${status}`,
       user: updated,

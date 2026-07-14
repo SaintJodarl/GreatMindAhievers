@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
+import { getStageDisplayName, getStageNumberLabel } from '@/lib/qualification/constants';
 
 export async function GET(req: NextRequest) {
   try {
@@ -46,6 +47,11 @@ export async function GET(req: NextRequest) {
           name: true,
           email: true,
           status: true,
+          currentStage: true,
+          highestStage: true,
+          stageUpdatedAt: true,
+          compensationPlanStatus: true,
+          finalStageCompletedAt: true,
           referralCode: true,
           kycStatus: true,
           createdAt: true,
@@ -63,7 +69,12 @@ export async function GET(req: NextRequest) {
     ]);
 
     return NextResponse.json({
-      members,
+      members: members.map((member) => ({
+        ...member,
+        currentStageName: getStageDisplayName(member.currentStage),
+        currentStageNumberLabel: getStageNumberLabel(member.currentStage),
+        highestStageName: getStageDisplayName(member.highestStage),
+      })),
       pagination: {
         page,
         limit,

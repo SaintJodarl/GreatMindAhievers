@@ -9,71 +9,83 @@ datasource db {
 }
 
 model User {
-  id                  String              @id @default(cuid())
-  name                String?
-  email               String?             @unique
-  emailVerified       DateTime?
-  image               String?
-  password            String?
-  role                String              @default("MEMBER")
-  status              String              @default("PENDING")
-  currentStage        String              @default("STARTER")
-  referralCode        String?             @unique
-  referralLink        String?
-  username            String?             @unique
-  sponsorId           String?
-  placementId         String?
-  binaryPosition      String?
-  onboardingStatus    String              @default("INCOMPLETE")
-  onboardingStep      Int                 @default(1)
-  autoPlacement       Boolean             @default(true)
-  kycStatus           String              @default("PENDING")
-  kycSubmittedAt      DateTime?
-  kycApprovedAt       DateTime?
-  kycRejectedAt       DateTime?
-  kycRejectionReason  String?
-  adminRole           String?
-  preferredPosition   String              @default("LEFT")
-  bankName            String?
-  accountNumber       String?
-  accountName         String?
-  notifyEmail         Boolean             @default(true)
-  notifySms           Boolean             @default(false)
-  resetToken          String?
-  resetTokenExpiry    DateTime?
-  leftLegCount        Int                 @default(0)
-  rightLegCount       Int                 @default(0)
-  totalDownlines      Int                 @default(0)
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  depth               Int                 @default(0)
-  path                String?
-  sessionVersion      Int                 @default(0)
-  isPasswordTemporary Boolean             @default(false)
-  resetRequests       PasswordResetRequest[]
-  activationCode      ActivationCode?     @relation("UserActivation")
-  kycCode             AdminCode?          @relation("KycCode")
-  regCode             AdminCode?          @relation("RegistrationCode")
-  binaryTree          BinaryTree?
-  commissionsSent     CommissionLog[]     @relation("CommissionSource")
-  commissionsReceived CommissionLog[]     @relation("CommissionRecipient")
-  kycSubmission       KYCSubmission?
-  profile             MemberProfile?
-  refreshTokens       RefreshToken[]
-  tickets             Ticket[]
-  placement           User?               @relation("PlacementRelation", fields: [placementId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  placed              User[]              @relation("PlacementRelation")
-  sponsor             User?               @relation("SponsorRelation", fields: [sponsorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  sponsored           User[]              @relation("SponsorRelation")
-  wallet              Wallet?
-  transactions        WalletTransaction[]
-  withdrawals         Withdrawal[]
-  stageProgress       StageProgress[]
-  rewards             Reward[]
-  rewardClaims        RewardClaim[]
+  id                         String                     @id @default(cuid())
+  name                       String?
+  email                      String?                    @unique
+  emailVerified              DateTime?
+  image                      String?
+  password                   String?
+  role                       String                     @default("MEMBER")
+  status                     String                     @default("PENDING")
+  currentStage               String                     @default("REGISTERED_ACTIVE")
+  highestStage               String                     @default("REGISTERED_ACTIVE")
+  stageUpdatedAt             DateTime?
+  finalStageCompletedAt      DateTime?
+  compensationPlanStatus     String                     @default("ACTIVE")
+  referralCode               String?                    @unique
+  referralLink               String?
+  username                   String?                    @unique
+  sponsorId                  String?
+  placementId                String?
+  binaryPosition             String?
+  onboardingStatus           String                     @default("INCOMPLETE")
+  onboardingStep             Int                        @default(1)
+  autoPlacement              Boolean                    @default(true)
+  kycStatus                  String                     @default("PENDING")
+  kycSubmittedAt             DateTime?
+  kycApprovedAt              DateTime?
+  kycRejectedAt              DateTime?
+  kycRejectionReason         String?
+  adminRole                  String?
+  preferredPosition          String                     @default("LEFT")
+  bankName                   String?
+  accountNumber              String?
+  accountName                String?
+  notifyEmail                Boolean                    @default(true)
+  notifySms                  Boolean                    @default(false)
+  resetToken                 String?
+  resetTokenExpiry           DateTime?
+  leftLegCount               Int                        @default(0)
+  rightLegCount              Int                        @default(0)
+  totalDownlines             Int                        @default(0)
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime                   @updatedAt
+  depth                      Int                        @default(0)
+  path                       String?
+  sessionVersion             Int                        @default(0)
+  isPasswordTemporary        Boolean                    @default(false)
+  resetRequests              PasswordResetRequest[]
+  activationCode             ActivationCode?            @relation("UserActivation")
+  kycCode                    AdminCode?                 @relation("KycCode")
+  regCode                    AdminCode?                 @relation("RegistrationCode")
+  binaryTree                 BinaryTree?
+  commissionsSent            CommissionLog[]            @relation("CommissionSource")
+  commissionsReceived        CommissionLog[]            @relation("CommissionRecipient")
+  kycSubmission              KYCSubmission?
+  profile                    MemberProfile?
+  refreshTokens              RefreshToken[]
+  tickets                    Ticket[]
+  placement                  User?                      @relation("PlacementRelation", fields: [placementId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  placed                     User[]                     @relation("PlacementRelation")
+  sponsor                    User?                      @relation("SponsorRelation", fields: [sponsorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sponsored                  User[]                     @relation("SponsorRelation")
+  wallet                     Wallet?
+  transactions               WalletTransaction[]
+  withdrawals                Withdrawal[]
+  stageProgress              StageProgress[]
+  stageHistory               StageHistory[]             @relation("StageHistoryMember")
+  triggeredStageHistory      StageHistory[]             @relation("StageHistoryTrigger")
+  qualificationSelections    QualificationContributor[] @relation("QualificationContributorQualifyingMember")
+  qualificationContributions QualificationContributor[] @relation("QualificationContributorContributorMember")
+  stageLoans                 StageLoan[]
+  rewards                    Reward[]
+  rewardClaims               RewardClaim[]
 
   @@index([role])
   @@index([status])
+  @@index([currentStage])
+  @@index([highestStage])
+  @@index([compensationPlanStatus])
   @@index([kycStatus])
   @@index([sponsorId])
   @@index([placementId])
@@ -140,24 +152,24 @@ model BinaryTree {
 }
 
 model KYCSubmission {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  fullName        String
-  phone           String
-  gender          String?
-  dateOfBirth     DateTime?
-  address         String
-  state           String
-  lga             String?
-  idType          String?
-  idNumber        String?
-  status          String    @default("PENDING")
-  adminNote       String?
-  reviewedBy      String?
-  reviewedAt      DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  fullName    String
+  phone       String
+  gender      String?
+  dateOfBirth DateTime?
+  address     String
+  state       String
+  lga         String?
+  idType      String?
+  idNumber    String?
+  status      String    @default("PENDING")
+  adminNote   String?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status])
 }
@@ -437,24 +449,30 @@ model PasswordResetRequest {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([email])
   @@index([status])
 }
 
 model StageProgress {
-  id                  String    @id @default(cuid())
-  userId              String
-  stage               String
-  status              String    @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
-  leftQualifiedCount  Int       @default(0)
-  rightQualifiedCount Int       @default(0)
-  qualifiedAt         DateTime?
-  movedToNextStageAt  DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  id                        String    @id @default(cuid())
+  userId                    String
+  stage                     String
+  status                    String    @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
+  leftQualifiedCount        Int       @default(0)
+  rightQualifiedCount       Int       @default(0)
+  qualifiedContributorCount Int       @default(0)
+  requiredContributorCount  Int       @default(0)
+  remainingContributorCount Int       @default(0)
+  requirementStage          String?
+  calculationId             String?
+  qualifiedAt               DateTime?
+  movedToNextStageAt        DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
 
-  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, stage])
   @@index([userId])
@@ -462,18 +480,97 @@ model StageProgress {
   @@index([status])
 }
 
+model StageHistory {
+  id                       String                     @id @default(cuid())
+  memberId                 String
+  fromStage                String
+  toStage                  String
+  qualifiedAt              DateTime
+  qualificationRuleVersion String
+  triggerMemberId          String?
+  calculationId            String
+  createdAt                DateTime                   @default(now())
+  member                   User                       @relation("StageHistoryMember", fields: [memberId], references: [id], onDelete: Cascade)
+  triggerMember            User?                      @relation("StageHistoryTrigger", fields: [triggerMemberId], references: [id], onDelete: SetNull)
+  contributors             QualificationContributor[]
+
+  @@unique([memberId, toStage])
+  @@index([memberId])
+  @@index([toStage])
+  @@index([qualifiedAt])
+  @@index([triggerMemberId])
+  @@index([calculationId])
+}
+
+model QualificationContributor {
+  id                              String       @id @default(cuid())
+  stageHistoryId                  String
+  qualifyingMemberId              String
+  contributorMemberId             String
+  contributorStageAtQualification String
+  genealogyDepth                  Int
+  contributorQualifiedAt          DateTime
+  createdAt                       DateTime     @default(now())
+  stageHistory                    StageHistory @relation(fields: [stageHistoryId], references: [id], onDelete: Cascade)
+  qualifyingMember                User         @relation("QualificationContributorQualifyingMember", fields: [qualifyingMemberId], references: [id], onDelete: Cascade)
+  contributorMember               User         @relation("QualificationContributorContributorMember", fields: [contributorMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([stageHistoryId, contributorMemberId])
+  @@index([qualifyingMemberId])
+  @@index([contributorMemberId])
+  @@index([contributorStageAtQualification])
+}
+
+model StageLoan {
+  id                 String           @id @default(cuid())
+  userId             String
+  stage              String
+  principal          Decimal
+  interestRate       Decimal
+  interestAmount     Decimal
+  totalRepayable     Decimal
+  issuedAt           DateTime         @default(now())
+  amountRepaid       Decimal          @default(0)
+  outstandingBalance Decimal
+  status             String           @default("ISSUED")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auditEntries       StageLoanAudit[]
+
+  @@unique([userId, stage])
+  @@index([userId])
+  @@index([stage])
+  @@index([status])
+}
+
+model StageLoanAudit {
+  id        String    @id @default(cuid())
+  loanId    String
+  adminId   String?
+  action    String
+  details   String
+  createdAt DateTime  @default(now())
+  loan      StageLoan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId])
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+}
+
 model Reward {
-  id            String        @id @default(cuid())
+  id            String   @id @default(cuid())
   userId        String
   stage         String
   rewardValue   Decimal
   rewardPackage String?
-  status        String        @default("EARNED") // EARNED, CLAIMED
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  status        String   @default("EARNED") // EARNED, CLAIMED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  claims        RewardClaim[]
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claims RewardClaim[]
 
   @@unique([userId, stage])
   @@index([userId])
@@ -485,7 +582,7 @@ model RewardClaim {
   id                 String    @id @default(cuid())
   rewardId           String
   userId             String
-  selectedOption     String    // CASH or FOOD
+  selectedOption     String // CASH or FOOD
   status             String    @default("PENDING_ADMIN_PROCESSING") // PENDING_ADMIN_PROCESSING, PROCESSING, PAID, FULFILLED, REJECTED, CANCELLED
   adminNote          String?
   processedByAdminId String?
@@ -493,8 +590,8 @@ model RewardClaim {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  reward             Reward    @relation(fields: [rewardId], references: [id], onDelete: Cascade)
-  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reward Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([rewardId])
   @@index([userId])

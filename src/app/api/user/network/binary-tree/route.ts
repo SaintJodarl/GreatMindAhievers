@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/options';
 import { prisma } from '@/lib/prisma';
-import { STAGE_CONFIG } from '@/lib/qualification/constants';
+import { getStageDisplayName } from '@/lib/qualification/constants';
 
 // We want to return exactly 3 levels.
 // Root -> 1
@@ -81,7 +81,7 @@ export async function GET(req: Request) {
         userId: nodeData.userId,
         username: nodeData.user.username || 'Unknown',
         isPlaceholder: false,
-        stage: nodeData.user.currentStage || 'STARTER',
+        stage: getStageDisplayName(nodeData.user.currentStage),
         left: currentDepth < 3 ? buildTree(nodeData.leftChildId, currentDepth + 1) : undefined,
         right: currentDepth < 3 ? buildTree(nodeData.rightChildId, currentDepth + 1) : undefined,
       };

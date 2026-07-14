@@ -7,6 +7,7 @@
     "postinstall": "prisma generate",
     "build": "prisma generate && next build",
     "start": "next start",
+    "test": "tsx scripts/verify-dynamic-stage-qualification.ts",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",

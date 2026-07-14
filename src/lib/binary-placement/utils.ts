@@ -278,6 +278,9 @@ export async function executePlacementWithTx(
   if (result.parentId) {
     await checkUserQualification(tx, result.parentId);
   }
+  if (context.sponsorId && context.sponsorId !== result.parentId) {
+    await checkUserQualification(tx, context.sponsorId, new Set<string>(), context.userId);
+  }
 
   return result;
 }
