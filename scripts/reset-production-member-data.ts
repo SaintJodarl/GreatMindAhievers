@@ -277,7 +277,7 @@ async function resetData() {
           sponsorId: null,
           placementId: null,
           binaryPosition: null,
-          currentStage: 'STARTER',
+          currentStage: 'REGISTERED_ACTIVE',
           kycStatus: 'PENDING',
           kycSubmittedAt: null,
           kycApprovedAt: null,
