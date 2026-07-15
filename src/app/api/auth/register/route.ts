@@ -9,6 +9,7 @@ import { executePlacementWithTx } from '@/lib/binary-placement/utils';
 import { BinaryPosition } from '@/lib/binary-placement/constants';
 import { emitOutboxEvent } from '@/lib/events/outbox';
 import { signAccessToken } from '@/lib/auth/jwt';
+import { getRegistrationPauseDecision } from '@/lib/registration-pause';
 
 export const maxDuration = 60; // Allow enough time for Neon cold starts and MLM placement
 
@@ -25,6 +26,14 @@ const cleanRequiredText = (value: unknown) => (typeof value === 'string' ? value
 
 export async function POST(req: NextRequest) {
   console.log('[AUTH DEBUG] Registration started');
+  const pauseDecision = getRegistrationPauseDecision();
+  if (pauseDecision) {
+    return NextResponse.json(
+      { message: pauseDecision.message, code: pauseDecision.code },
+      { status: pauseDecision.status }
+    );
+  }
+
   try {
     const body = await req.json();
     const { password, sponsorCode, activationCode, registrationCode } = body;

@@ -22,6 +22,7 @@ type Member = {
   path: string;
   depth: number;
   createdAt: Date;
+  role: string;
   status: string;
   activated: boolean;
   isDeleted: boolean;
@@ -29,6 +30,7 @@ type Member = {
   adminDisqualified: boolean;
   stage: StageId;
   history: StageId[];
+  contributorsByStage: Partial<Record<StageId, string[]>>;
   rewards: StageId[];
   loans: { stage: StageId; principal: number; interestAmount: number; totalRepayable: number }[];
 };
@@ -53,6 +55,7 @@ function buildMember(
     path: parent ? `${parent.path}/${id}` : `root/${id}`,
     depth: parent ? parent.depth + 1 : 0,
     createdAt,
+    role: 'MEMBER',
     status: 'ACTIVE',
     activated: true,
     isDeleted: false,
@@ -60,6 +63,7 @@ function buildMember(
     adminDisqualified: false,
     stage: STAGE_IDS.REGISTERED_ACTIVE,
     history: [],
+    contributorsByStage: {},
     rewards: [],
     loans: [],
   };
@@ -110,48 +114,63 @@ function countEligibleDescendants(
 ) {
   const unique = new Map<string, Member>();
   for (const descendant of descendantsOf(members, member)) {
-    if (descendant.status === 'ACTIVE' && isStageAtLeast(descendant.stage, requiredStage)) {
+    if (
+      descendant.role === 'MEMBER' &&
+      descendant.status === 'ACTIVE' &&
+      isStageAtLeast(descendant.stage, requiredStage)
+    ) {
       unique.set(descendant.id, descendant);
     }
   }
   return [...unique.values()];
 }
 
-function getDescendantLeg(root: Member, descendant: Member): 'left' | 'right' | null {
-  if (
-    root.leftChildId &&
-    (descendant.id === root.leftChildId ||
-      descendant.path.startsWith(`${root.path}/${root.leftChildId}/`))
-  ) {
-    return 'left';
-  }
-
-  if (
-    root.rightChildId &&
-    (descendant.id === root.rightChildId ||
-      descendant.path.startsWith(`${root.path}/${root.rightChildId}/`))
-  ) {
-    return 'right';
-  }
-
-  return null;
-}
-
 function countEligibleEmeraldFirstTree(members: Map<string, Member>, member: Member) {
   const requiredPerLeg = REQUIRED_DESCENDANT_COUNT / 2;
-  const maxDepth = member.depth + 3;
   const byLeg: Record<'left' | 'right', Map<string, Member>> = {
     left: new Map<string, Member>(),
     right: new Map<string, Member>(),
   };
+  let frontier: Array<{ id: string; leg: 'left' | 'right'; depth: number }> = [
+    ...(member.leftChildId ? [{ id: member.leftChildId, leg: 'left' as const, depth: 1 }] : []),
+    ...(member.rightChildId ? [{ id: member.rightChildId, leg: 'right' as const, depth: 1 }] : []),
+  ];
 
-  for (const descendant of descendantsOf(members, member)) {
-    if (descendant.depth > maxDepth) continue;
-    if (descendant.status !== 'ACTIVE') continue;
-    if (!isStageAtLeast(descendant.stage, STAGE_IDS.STARTER_ENTRY_STAGE)) continue;
+  for (let level = 1; level <= 3 && frontier.length > 0; level++) {
+    const positionById = new Map(frontier.map((position) => [position.id, position]));
+    const nextFrontier: typeof frontier = [];
 
-    const leg = getDescendantLeg(member, descendant);
-    if (leg) byLeg[leg].set(descendant.id, descendant);
+    for (const position of positionById.values()) {
+      const descendant = members.get(position.id);
+      if (!descendant) continue;
+
+      if (
+        descendant.role === 'MEMBER' &&
+        descendant.status === 'ACTIVE' &&
+        isStageAtLeast(descendant.stage, STAGE_IDS.STARTER_ENTRY_STAGE)
+      ) {
+        byLeg[position.leg].set(descendant.id, descendant);
+      }
+
+      if (level < 3) {
+        if (descendant.leftChildId) {
+          nextFrontier.push({
+            id: descendant.leftChildId,
+            leg: position.leg,
+            depth: position.depth + 1,
+          });
+        }
+        if (descendant.rightChildId) {
+          nextFrontier.push({
+            id: descendant.rightChildId,
+            leg: position.leg,
+            depth: position.depth + 1,
+          });
+        }
+      }
+    }
+
+    frontier = nextFrontier;
   }
 
   return {
@@ -164,6 +183,7 @@ function countEligibleEmeraldFirstTree(members: Map<string, Member>, member: Mem
 
 function isEligibleSponsoredMember(member: Member) {
   return (
+    member.role === 'MEMBER' &&
     member.status === 'ACTIVE' &&
     member.activated &&
     !member.isDeleted &&
@@ -185,24 +205,36 @@ function countEligibleSponsoredMembers(members: Map<string, Member>, sponsor: Me
 function promoteOne(members: Map<string, Member>, member: Member) {
   const nextStage = getNextStage(member.stage);
   if (!nextStage) return false;
+  let selectedContributors: Member[] = [];
 
   if (nextStage === STAGE_IDS.STARTER_ENTRY_STAGE) {
-    if (countEligibleSponsoredMembers(members, member).length < 2) return false;
+    const sponsoredMembers = countEligibleSponsoredMembers(members, member);
+    if (sponsoredMembers.length < 2) return false;
+    selectedContributors = sponsoredMembers.slice(0, 2);
   } else if (nextStage === STAGE_IDS.EMERALD_STAGE_1) {
     const emeraldProgress = countEligibleEmeraldFirstTree(members, member);
     if (emeraldProgress.qualifiedCount < REQUIRED_DESCENDANT_COUNT) {
       return false;
     }
+    selectedContributors = [
+      ...emeraldProgress.left.slice(0, REQUIRED_DESCENDANT_COUNT / 2),
+      ...emeraldProgress.right.slice(0, REQUIRED_DESCENDANT_COUNT / 2),
+    ];
   } else {
     const requiredStage = STAGE_CONFIG[nextStage].requiredContributorStage!;
-    if (
-      countEligibleDescendants(members, member, requiredStage).length < REQUIRED_DESCENDANT_COUNT
-    ) {
+    const descendants = countEligibleDescendants(members, member, requiredStage);
+    if (descendants.length < REQUIRED_DESCENDANT_COUNT) {
       return false;
     }
+    selectedContributors = descendants.slice(0, REQUIRED_DESCENDANT_COUNT);
   }
 
   if (!member.history.includes(nextStage)) member.history.push(nextStage);
+  if (!member.contributorsByStage[nextStage]) {
+    member.contributorsByStage[nextStage] = selectedContributors.map(
+      (contributor) => contributor.id
+    );
+  }
   if (STAGE_CONFIG[nextStage].hasReward && !member.rewards.includes(nextStage)) {
     member.rewards.push(nextStage);
   }
@@ -430,6 +462,34 @@ test('Starter: repeated qualification checks do not create duplicate promotions 
   assert.equal(root.rewards.filter((stage) => stage === STAGE_IDS.STARTER_ENTRY_STAGE).length, 0);
 });
 
+test('Starter: zero eligible sponsored members does not qualify', () => {
+  const members = new Map<string, Member>();
+  const root = buildMember('upline-root', null, new Date(Date.UTC(2026, 0, 1)));
+  members.set(root.id, root);
+  assert.equal(countEligibleSponsoredMembers(members, root).length, 0);
+  assert.equal(promoteOne(members, root), false);
+});
+
+test('Starter: one eligible sponsored member does not qualify', () => {
+  const members = new Map<string, Member>();
+  const root = buildMember('upline-root', null, new Date(Date.UTC(2026, 0, 1)));
+  members.set(root.id, root);
+  addSponsoredMember(members, root, 'only-sponsored', root);
+  assert.equal(countEligibleSponsoredMembers(members, root).length, 1);
+  assert.equal(promoteOne(members, root), false);
+});
+
+test('Starter: non-member sponsored accounts do not count', () => {
+  const members = new Map<string, Member>();
+  const root = buildMember('upline-root', null, new Date(Date.UTC(2026, 0, 1)));
+  members.set(root.id, root);
+  const admin = addSponsoredMember(members, root, 'admin-sponsored', root);
+  admin.role = 'ADMIN';
+  addSponsoredMember(members, root, 'eligible-sponsored', root);
+  assert.equal(countEligibleSponsoredMembers(members, root).length, 1);
+  assert.equal(promoteOne(members, root), false);
+});
+
 const stageRequirements: [string, StageId, StageId][] = [
   [
     '10. Emerald requires the first 14-position tree with Starter-or-higher descendants',
@@ -477,18 +537,136 @@ for (const [name, targetStage, contributorStage] of stageRequirements) {
   });
 }
 
+const recursiveStageRequirements = stageRequirements.filter(
+  ([, targetStage]) => targetStage !== STAGE_IDS.EMERALD_STAGE_1
+);
+
+for (const [, targetStage, contributorStage] of recursiveStageRequirements) {
+  const targetName = STAGE_CONFIG[targetStage].shortName;
+
+  test(`${targetName}: 13 recursive contributors at ${contributorStage} does not qualify`, () => {
+    const { members, root } = makeRootWithActiveChildren();
+    root.stage = STAGE_CONFIG[targetStage].previousStage!;
+    addQualifiedDescendants(members, root, contributorStage, REQUIRED_DESCENDANT_COUNT - 1);
+    assert.equal(countEligibleDescendants(members, root, contributorStage).length, 13);
+    assert.equal(promoteOne(members, root), false);
+    assert.equal(root.stage, STAGE_CONFIG[targetStage].previousStage);
+  });
+
+  test(`${targetName}: exactly 14 recursive contributors at ${contributorStage} qualifies`, () => {
+    const { members, root } = makeRootWithActiveChildren();
+    root.stage = STAGE_CONFIG[targetStage].previousStage!;
+    addQualifiedDescendants(members, root, contributorStage, REQUIRED_DESCENDANT_COUNT);
+    assert.equal(countEligibleDescendants(members, root, contributorStage).length, 14);
+    assert.equal(promoteOne(members, root), true);
+    assert.equal(root.stage, targetStage);
+  });
+
+  test(`${targetName}: higher-stage contributors also qualify`, () => {
+    const { members, root } = makeRootWithActiveChildren();
+    const higherStage = getNextStage(contributorStage) ?? contributorStage;
+    root.stage = STAGE_CONFIG[targetStage].previousStage!;
+    addQualifiedDescendants(members, root, higherStage, REQUIRED_DESCENDANT_COUNT);
+    assert.equal(countEligibleDescendants(members, root, contributorStage).length, 14);
+    assert.equal(promoteOne(members, root), true);
+    assert.equal(root.stage, targetStage);
+  });
+
+  test(`${targetName}: contributors below ${contributorStage} do not count`, () => {
+    const { members, root } = makeRootWithActiveChildren();
+    const lowerStage = STAGE_CONFIG[contributorStage].previousStage ?? STAGE_IDS.REGISTERED_ACTIVE;
+    root.stage = STAGE_CONFIG[targetStage].previousStage!;
+    addQualifiedDescendants(members, root, contributorStage, REQUIRED_DESCENDANT_COUNT - 1);
+    const belowRequired = buildMember(
+      `${targetStage}-below-required`,
+      members.get(root.leftChildId!)!,
+      new Date(Date.UTC(2026, 5, 1))
+    );
+    belowRequired.stage = lowerStage;
+    members.set(belowRequired.id, belowRequired);
+    assert.equal(countEligibleDescendants(members, root, contributorStage).length, 13);
+    assert.equal(promoteOne(members, root), false);
+  });
+
+  test(`${targetName}: contributors may qualify recursively deep in the binary subtree`, () => {
+    const { members, root } = makeRootWithActiveChildren();
+    root.stage = STAGE_CONFIG[targetStage].previousStage!;
+    let parent = members.get(root.leftChildId!)!;
+    for (let i = 0; i < REQUIRED_DESCENDANT_COUNT; i++) {
+      const child = buildMember(
+        `${targetStage}-deep-${i}`,
+        parent,
+        new Date(Date.UTC(2026, 6, i + 1))
+      );
+      child.stage = contributorStage;
+      child.history.push(contributorStage);
+      members.set(child.id, child);
+      parent = child;
+    }
+    assert.equal(countEligibleDescendants(members, root, contributorStage).length, 14);
+    assert.equal(promoteOne(members, root), true);
+    assert.equal(root.stage, targetStage);
+  });
+
+  test(`${targetName}: self and duplicate contributor references do not inflate totals`, () => {
+    const { members, root } = makeRootWithActiveChildren();
+    root.stage = STAGE_CONFIG[targetStage].previousStage!;
+    root.history.push(contributorStage);
+    addQualifiedDescendants(members, root, contributorStage, REQUIRED_DESCENDANT_COUNT - 1);
+    const duplicated = members.get(`${contributorStage}-0`)!;
+    members.set(duplicated.id, duplicated);
+    assert.equal(countEligibleDescendants(members, root, contributorStage).length, 13);
+    assert.equal(promoteOne(members, root), false);
+  });
+
+  test(`${targetName}: contributor records remain immutable after qualification`, () => {
+    const { members, root } = makeRootWithActiveChildren();
+    root.stage = STAGE_CONFIG[targetStage].previousStage!;
+    addQualifiedDescendants(members, root, contributorStage, REQUIRED_DESCENDANT_COUNT);
+    assert.equal(promoteOne(members, root), true);
+    const before = [...(root.contributorsByStage[targetStage] ?? [])];
+    const extra = buildMember(
+      `${targetStage}-extra-after-qualification`,
+      members.get(root.rightChildId!)!,
+      new Date(Date.UTC(2026, 7, 1))
+    );
+    extra.stage = contributorStage;
+    members.set(extra.id, extra);
+    evaluate(members, root);
+    assert.deepEqual(root.contributorsByStage[targetStage], before);
+  });
+
+  test(`${targetName}: repeated evaluation is idempotent and does not demote`, () => {
+    const { members, root } = makeRootWithActiveChildren();
+    root.stage = STAGE_CONFIG[targetStage].previousStage!;
+    addQualifiedDescendants(members, root, contributorStage, REQUIRED_DESCENDANT_COUNT);
+    evaluate(members, root);
+    evaluate(members, root);
+    assert.equal(root.stage, targetStage);
+    assert.equal(root.history.filter((stage) => stage === targetStage).length, 1);
+    assert.equal(
+      root.rewards.filter((stage) => stage === targetStage).length,
+      STAGE_CONFIG[targetStage].hasReward ? 1 : 0
+    );
+    assert.equal(
+      root.loans.filter((loan) => loan.stage === targetStage).length,
+      STAGE_CONFIG[targetStage].loan ? 1 : 0
+    );
+  });
+}
+
 test('Emerald requires 7 qualified members on the left and 7 on the right', () => {
   const { members, root } = makeRootWithActiveChildren();
   root.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
-  const left = members.get(root.leftChildId!)!;
-  for (let i = 0; i < REQUIRED_DESCENDANT_COUNT; i++) {
-    const member = buildMember(`left-heavy-${i}`, left, new Date(Date.UTC(2026, 2, i + 1)));
-    member.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
-    members.set(member.id, member);
+  addQualifiedFirstThreeLevelTree(members, root, STAGE_IDS.STARTER_ENTRY_STAGE);
+  const rightRoot = members.get(root.rightChildId!)!;
+  for (const member of descendantsOf(members, rightRoot)) {
+    member.stage = STAGE_IDS.REGISTERED_ACTIVE;
   }
+  rightRoot.stage = STAGE_IDS.REGISTERED_ACTIVE;
 
   const progress = countEligibleEmeraldFirstTree(members, root);
-  assert.equal(progress.left.length, 14);
+  assert.equal(progress.left.length, 7);
   assert.equal(progress.right.length, 0);
   assert.equal(progress.qualifiedCount, 7);
   assert.equal(promoteOne(members, root), false);
@@ -508,6 +686,87 @@ test('Emerald ignores qualified descendants below the first three binary levels'
   }
 
   assert.equal(countEligibleEmeraldFirstTree(members, root).qualifiedCount, 4);
+  assert.equal(promoteOne(members, root), false);
+});
+
+test('Emerald: exactly 7 left and 7 right qualifies regardless of sponsor', () => {
+  const { members, root } = makeRootWithActiveChildren();
+  root.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
+  addQualifiedFirstThreeLevelTree(members, root, STAGE_IDS.STARTER_ENTRY_STAGE);
+  for (const member of members.values()) {
+    if (member.id !== root.id) member.sponsorId = 'external-sponsor';
+  }
+  const progress = countEligibleEmeraldFirstTree(members, root);
+  assert.equal(progress.left.length, 7);
+  assert.equal(progress.right.length, 7);
+  assert.equal(progress.qualifiedCount, 14);
+  assert.equal(promoteOne(members, root), true);
+});
+
+test('Emerald: 8 left and 6 right does not qualify', () => {
+  const { members, root } = makeRootWithActiveChildren();
+  root.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
+  addQualifiedFirstThreeLevelTree(members, root, STAGE_IDS.STARTER_ENTRY_STAGE);
+  const rightLeaf = members.get(members.get(root.rightChildId!)!.leftChildId!)!;
+  rightLeaf.stage = STAGE_IDS.REGISTERED_ACTIVE;
+  const malformedExtra = buildMember(
+    'malformed-extra-left',
+    members.get(root.leftChildId!)!,
+    new Date(Date.UTC(2026, 4, 1))
+  );
+  malformedExtra.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
+  members.set(malformedExtra.id, malformedExtra);
+
+  const progress = countEligibleEmeraldFirstTree(members, root);
+  assert.equal(progress.left.length, 7);
+  assert.equal(progress.right.length, 6);
+  assert.equal(progress.qualifiedCount, 13);
+  assert.equal(promoteOne(members, root), false);
+});
+
+test('Emerald: 6 left and 8 right does not qualify', () => {
+  const { members, root } = makeRootWithActiveChildren();
+  root.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
+  addQualifiedFirstThreeLevelTree(members, root, STAGE_IDS.STARTER_ENTRY_STAGE);
+  const leftLeaf = members.get(members.get(root.leftChildId!)!.leftChildId!)!;
+  leftLeaf.stage = STAGE_IDS.REGISTERED_ACTIVE;
+  const malformedExtra = buildMember(
+    'malformed-extra-right',
+    members.get(root.rightChildId!)!,
+    new Date(Date.UTC(2026, 4, 2))
+  );
+  malformedExtra.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
+  members.set(malformedExtra.id, malformedExtra);
+
+  const progress = countEligibleEmeraldFirstTree(members, root);
+  assert.equal(progress.left.length, 6);
+  assert.equal(progress.right.length, 7);
+  assert.equal(progress.qualifiedCount, 13);
+  assert.equal(promoteOne(members, root), false);
+});
+
+test('Emerald: duplicate child references do not inflate totals', () => {
+  const members = new Map<string, Member>();
+  const root = buildMember('upline-root', null, new Date(Date.UTC(2026, 0, 1)));
+  members.set(root.id, root);
+  const shared = addChild(members, root, 'shared-child', 'left');
+  root.rightChildId = shared.id;
+  shared.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
+  root.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
+  const progress = countEligibleEmeraldFirstTree(members, root);
+  assert.equal(progress.qualifiedCount, 1);
+  assert.equal(promoteOne(members, root), false);
+});
+
+test('Emerald: only active member accounts at Starter-or-higher count', () => {
+  const { members, root } = makeRootWithActiveChildren();
+  root.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
+  addQualifiedFirstThreeLevelTree(members, root, STAGE_IDS.STARTER_ENTRY_STAGE);
+  const left = members.get(root.leftChildId!)!;
+  left.role = 'ADMIN';
+  const right = members.get(root.rightChildId!)!;
+  right.status = 'SUSPENDED';
+  assert.equal(countEligibleEmeraldFirstTree(members, root).qualifiedCount, 12);
   assert.equal(promoteOne(members, root), false);
 });
 
@@ -577,7 +836,7 @@ test('20. A downline may overtake an upline', () => {
 test('21. Genealogy placement never changes', () => {
   const { members, root } = makeRootWithActiveChildren();
   root.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
-  addQualifiedDescendants(members, root, STAGE_IDS.STARTER_ENTRY_STAGE);
+  addQualifiedFirstThreeLevelTree(members, root, STAGE_IDS.STARTER_ENTRY_STAGE);
   const before = JSON.stringify(
     [...members.values()].map((m) => [m.id, m.parentId, m.path, m.depth])
   );
@@ -598,7 +857,11 @@ test('22. Multi-stage promotion records every intermediate stage', () => {
     STAGE_IDS.JASPER_STAGE_4,
     STAGE_IDS.SAPPHIRE_STAGE_5,
   ]) {
-    addQualifiedDescendants(members, root, stage);
+    if (stage === STAGE_IDS.STARTER_ENTRY_STAGE) {
+      addQualifiedFirstThreeLevelTree(members, root, stage);
+    } else {
+      addQualifiedDescendants(members, root, stage);
+    }
   }
   evaluate(members, root);
   assert.deepEqual(root.history, [
@@ -615,11 +878,9 @@ test('22. Multi-stage promotion records every intermediate stage', () => {
 test('23. Cascade promotion works', () => {
   const { members, root } = makeRootWithActiveChildren();
   const child = members.get(root.leftChildId!)!;
-  child.stage = STAGE_IDS.REGISTERED_ACTIVE;
-  addChild(members, child, 'child-left', 'left');
-  addChild(members, child, 'child-right', 'right');
   root.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
-  addQualifiedDescendants(members, root, STAGE_IDS.STARTER_ENTRY_STAGE);
+  addQualifiedFirstThreeLevelTree(members, root, STAGE_IDS.STARTER_ENTRY_STAGE);
+  child.stage = STAGE_IDS.REGISTERED_ACTIVE;
   cascade(members, child);
   assert.equal(child.stage, STAGE_IDS.STARTER_ENTRY_STAGE);
   assert.equal(root.stage, STAGE_IDS.EMERALD_STAGE_1);
@@ -635,7 +896,7 @@ test('24. Duplicate promotion is prevented', () => {
 test('25. Duplicate rewards are prevented', () => {
   const { members, root } = makeRootWithActiveChildren();
   root.stage = STAGE_IDS.STARTER_ENTRY_STAGE;
-  addQualifiedDescendants(members, root, STAGE_IDS.STARTER_ENTRY_STAGE);
+  addQualifiedFirstThreeLevelTree(members, root, STAGE_IDS.STARTER_ENTRY_STAGE);
   promoteOne(members, root);
   promoteOne(members, root);
   assert.equal(root.rewards.filter((stage) => stage === STAGE_IDS.EMERALD_STAGE_1).length, 1);

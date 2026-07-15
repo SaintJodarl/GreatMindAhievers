@@ -5,8 +5,12 @@ import RegisterForm from './RegisterForm';
 
 export default function AuthPageClient({
   defaultMode = 'login',
+  registrationPaused = false,
+  registrationPausedMessage,
 }: {
   defaultMode?: 'login' | 'register';
+  registrationPaused?: boolean;
+  registrationPausedMessage?: string;
 }) {
   const [mode, setMode] = useState<'login' | 'register'>(defaultMode);
 
@@ -174,7 +178,11 @@ export default function AuthPageClient({
           {mode === 'login' ? (
             <LoginForm onSwitchToRegister={() => setMode('register')} />
           ) : (
-            <RegisterForm onSwitchToLogin={() => setMode('login')} />
+            <RegisterForm
+              onSwitchToLogin={() => setMode('login')}
+              registrationPaused={registrationPaused}
+              registrationPausedMessage={registrationPausedMessage}
+            />
           )}
         </div>
       </div>

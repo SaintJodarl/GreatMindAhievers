@@ -27,6 +27,8 @@ interface RegisterFormData {
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
+  registrationPaused?: boolean;
+  registrationPausedMessage?: string;
 }
 
 const NIGERIAN_BANKS = [
@@ -66,7 +68,11 @@ const NIGERIAN_BANKS = [
   'Kuda Bank',
 ];
 
-export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
+export default function RegisterForm({
+  onSwitchToLogin,
+  registrationPaused = false,
+  registrationPausedMessage = 'New registrations are briefly unavailable. Please sign in if you already have an account.',
+}: RegisterFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -103,6 +109,11 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
 
   const onSubmit = async (data: RegisterFormData) => {
     if (isLoading) return;
+    if (registrationPaused) {
+      setAuthError(registrationPausedMessage);
+      return;
+    }
+
     setIsLoading(true);
     setAuthError('');
     try {
@@ -185,6 +196,13 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-xl flex items-start gap-2 text-xs font-semibold">
           <AlertTriangle className="text-rose-600 mt-0.5 flex-shrink-0" size={16} />
           <div className="flex-1">{authError}</div>
+        </div>
+      )}
+
+      {registrationPaused && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3.5 rounded-xl flex items-start gap-2 text-xs font-semibold">
+          <AlertTriangle className="text-amber-600 mt-0.5 flex-shrink-0" size={16} />
+          <div className="flex-1">{registrationPausedMessage}</div>
         </div>
       )}
 
@@ -531,13 +549,15 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || registrationPaused}
             className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-indigo-600/10 text-sm"
           >
             {isLoading ? (
               <>
                 <Loader2 size={18} className="animate-spin" /> Creating Account...
               </>
+            ) : registrationPaused ? (
+              'Registration Paused'
             ) : (
               'Create Account'
             )}

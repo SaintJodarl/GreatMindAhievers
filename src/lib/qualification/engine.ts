@@ -128,29 +128,6 @@ async function recordStageProgress(
   });
 }
 
-function getDescendantLeg(
-  rootTree: { path: string; leftChildId: string | null; rightChildId: string | null },
-  descendant: { path: string; userId: string }
-): 'left' | 'right' | null {
-  if (
-    rootTree.leftChildId &&
-    (descendant.userId === rootTree.leftChildId ||
-      descendant.path.startsWith(`${rootTree.path}/${rootTree.leftChildId}/`))
-  ) {
-    return 'left';
-  }
-
-  if (
-    rootTree.rightChildId &&
-    (descendant.userId === rootTree.rightChildId ||
-      descendant.path.startsWith(`${rootTree.path}/${rootTree.rightChildId}/`))
-  ) {
-    return 'right';
-  }
-
-  return null;
-}
-
 async function calculateStarterProgress(
   tx: TxClient,
   userId: string
@@ -256,59 +233,89 @@ async function calculateEmeraldProgress(
     };
   }
 
-  const maxEmeraldDepth = rootTree.depth + 3;
   const requiredPerLeg = config.requiredCount / 2;
-  const descendants = await tx.binaryTree.findMany({
-    where: {
-      path: { startsWith: `${rootTree.path}/` },
-      depth: { lte: maxEmeraldDepth },
-      user: {
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        currentStage: { in: getQueryableStageIdsAtOrAbove(requiredStage) },
-      },
-    },
-    select: {
-      userId: true,
-      path: true,
-      depth: true,
-      user: {
-        select: {
-          id: true,
-          currentStage: true,
-          createdAt: true,
-          stageUpdatedAt: true,
-          stageHistory: {
-            where: { toStage: requiredStage },
-            select: { qualifiedAt: true },
-            orderBy: { qualifiedAt: 'asc' },
-            take: 1,
-          },
-        },
-      },
-    },
-  });
-
   const candidatesByLeg: Record<'left' | 'right', ContributorCandidate[]> = {
     left: [],
     right: [],
   };
+  let frontier: Array<{ userId: string; leg: 'left' | 'right'; depth: number }> = [
+    ...(rootTree.leftChildId
+      ? [{ userId: rootTree.leftChildId, leg: 'left' as const, depth: 1 }]
+      : []),
+    ...(rootTree.rightChildId
+      ? [{ userId: rootTree.rightChildId, leg: 'right' as const, depth: 1 }]
+      : []),
+  ];
 
-  for (const node of descendants) {
-    if (!isStageAtLeast(node.user.currentStage, requiredStage)) continue;
-
-    const leg = getDescendantLeg(rootTree, node);
-    if (!leg) continue;
-
-    candidatesByLeg[leg].push({
-      memberId: node.userId,
-      contributorStage: normalizeStageId(node.user.currentStage),
-      genealogyDepth: node.depth - rootTree.depth,
-      contributorQualifiedAt:
-        node.user.stageHistory[0]?.qualifiedAt ??
-        inferContributorQualifiedAt(node.user, requiredStage),
-      registeredAt: node.user.createdAt,
+  for (let level = 1; level <= 3 && frontier.length > 0; level++) {
+    const positionByUserId = new Map(frontier.map((position) => [position.userId, position]));
+    const nodes = await tx.binaryTree.findMany({
+      where: {
+        userId: { in: [...positionByUserId.keys()] },
+        user: {
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          currentStage: { in: getQueryableStageIdsAtOrAbove(requiredStage) },
+        },
+      },
+      select: {
+        userId: true,
+        leftChildId: true,
+        rightChildId: true,
+        user: {
+          select: {
+            id: true,
+            currentStage: true,
+            createdAt: true,
+            stageUpdatedAt: true,
+            stageHistory: {
+              where: { toStage: requiredStage },
+              select: { qualifiedAt: true },
+              orderBy: { qualifiedAt: 'asc' },
+              take: 1,
+            },
+          },
+        },
+      },
     });
+
+    const nextFrontier: typeof frontier = [];
+
+    for (const node of nodes) {
+      const position = positionByUserId.get(node.userId);
+      if (!position) continue;
+
+      if (isStageAtLeast(node.user.currentStage, requiredStage)) {
+        candidatesByLeg[position.leg].push({
+          memberId: node.userId,
+          contributorStage: normalizeStageId(node.user.currentStage),
+          genealogyDepth: position.depth,
+          contributorQualifiedAt:
+            node.user.stageHistory[0]?.qualifiedAt ??
+            inferContributorQualifiedAt(node.user, requiredStage),
+          registeredAt: node.user.createdAt,
+        });
+      }
+
+      if (level < 3) {
+        if (node.leftChildId) {
+          nextFrontier.push({
+            userId: node.leftChildId,
+            leg: position.leg,
+            depth: position.depth + 1,
+          });
+        }
+        if (node.rightChildId) {
+          nextFrontier.push({
+            userId: node.rightChildId,
+            leg: position.leg,
+            depth: position.depth + 1,
+          });
+        }
+      }
+    }
+
+    frontier = nextFrontier;
   }
 
   const leftQualifiedCount = Math.min(candidatesByLeg.left.length, requiredPerLeg);
