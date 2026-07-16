@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
+import { STAGE_IDS, getHighestStage, getStageRank } from '@/lib/qualification/constants';
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -64,11 +65,33 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
+    const now = new Date();
+    const shouldEnterStarter =
+      status === 'ACTIVE' &&
+      user.role === 'MEMBER' &&
+      getStageRank(user.currentStage) < getStageRank(STAGE_IDS.STARTER_ENTRY_STAGE);
+    const shouldRaiseHighestStage =
+      status === 'ACTIVE' &&
+      user.role === 'MEMBER' &&
+      getStageRank(user.highestStage) < getStageRank(STAGE_IDS.STARTER_ENTRY_STAGE);
+    const highestStage = getHighestStage(user.highestStage, STAGE_IDS.STARTER_ENTRY_STAGE);
+
     const updated = await prisma.user.update({
       where: { id },
       data: {
         status,
         sessionVersion: { increment: 1 },
+        ...(shouldEnterStarter
+          ? {
+              currentStage: STAGE_IDS.STARTER_ENTRY_STAGE,
+              highestStage,
+              stageUpdatedAt: now,
+            }
+          : shouldRaiseHighestStage
+            ? {
+                highestStage,
+              }
+            : {}),
       },
     });
 

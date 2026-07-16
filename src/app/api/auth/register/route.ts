@@ -1,6 +1,7 @@
 import { MLM_EVENT_MODE, LEGACY_WRITE_DISABLED } from '@/lib/env';
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { NextRequest } from 'next/server';
 import { generateUniqueReferralCode } from '@/lib/referral-code';
@@ -10,6 +11,7 @@ import { BinaryPosition } from '@/lib/binary-placement/constants';
 import { emitOutboxEvent } from '@/lib/events/outbox';
 import { signAccessToken } from '@/lib/auth/jwt';
 import { getRegistrationPauseDecision } from '@/lib/registration-pause';
+import { STAGE_IDS } from '@/lib/qualification/constants';
 
 export const maxDuration = 60; // Allow enough time for Neon cold starts and MLM placement
 
@@ -136,6 +138,10 @@ export async function POST(req: NextRequest) {
 
     const normalizedSponsorCode =
       typeof sponsorCode === 'string' && sponsorCode.trim() ? sponsorCode.trim().toUpperCase() : '';
+    const normalMemberBootstrapWhere = {
+      role: 'MEMBER',
+      NOT: { email: { in: [...PROTECTED_ADMIN_EMAIL_LIST] } },
+    };
 
     // Sponsor validation - the one-time root bootstrap code is allowed only before
     // any normal member exists.
@@ -268,6 +274,34 @@ export async function POST(req: NextRequest) {
           const now = new Date();
 
           // 1. Create User
+          if (isFirstParentBootstrap) {
+            await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('gma:first-parent-bootstrap'))`;
+
+            const [transactionNormalMemberCount, existingRootNode, bootstrapReferralOwner] =
+              await Promise.all([
+                tx.user.count({ where: normalMemberBootstrapWhere }),
+                tx.binaryTree.findFirst({
+                  where: {
+                    parentId: null,
+                    user: {
+                      role: 'MEMBER',
+                    },
+                  },
+                  select: { userId: true },
+                }),
+                tx.user.findUnique({
+                  where: { referralCode: FIRST_PARENT_BOOTSTRAP_REFERRAL_CODE },
+                  select: { id: true },
+                }),
+              ]);
+
+            if (transactionNormalMemberCount > 0 || existingRootNode || bootstrapReferralOwner) {
+              throw new Error(
+                'The first-parent bootstrap referral code is no longer available. Please use a member referral code.'
+              );
+            }
+          }
+
           const createdUser = await tx.user.create({
             data: {
               name: `${firstName} ${lastName}`,
@@ -279,6 +313,9 @@ export async function POST(req: NextRequest) {
               onboardingStatus: 'COMPLETE',
               onboardingStep: 4,
               kycStatus: 'COMPLETE',
+              currentStage: STAGE_IDS.STARTER_ENTRY_STAGE,
+              highestStage: STAGE_IDS.STARTER_ENTRY_STAGE,
+              stageUpdatedAt: now,
               autoPlacement: true,
               referralCode,
               referralLink,
@@ -445,6 +482,7 @@ export async function POST(req: NextRequest) {
         },
         {
           timeout: 20000,
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
         }
       );
     } catch (createError: any) {

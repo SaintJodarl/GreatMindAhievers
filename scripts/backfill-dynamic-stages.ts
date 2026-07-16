@@ -69,6 +69,8 @@ async function main() {
         select: {
           leftChildId: true,
           rightChildId: true,
+          path: true,
+          depth: true,
         },
       },
       stageProgress: {
@@ -76,8 +78,7 @@ async function main() {
         select: { stage: true, qualifiedAt: true },
       },
       stageHistory: {
-        where: { toStage: STAGE_IDS.STARTER_ENTRY_STAGE },
-        select: { id: true },
+        select: { id: true, toStage: true },
       },
     },
     orderBy: { createdAt: 'asc' },
@@ -87,25 +88,31 @@ async function main() {
   const isEligibleActiveSponsoredMember = (member: (typeof members)[number]) =>
     member.status === 'ACTIVE' && member.activationCode?.status === 'USED';
 
-  const sponsoredEligibleCounts = new Map<string, number>();
-  for (const member of members) {
-    if (!member.sponsorId || !isEligibleActiveSponsoredMember(member)) continue;
-    sponsoredEligibleCounts.set(
-      member.sponsorId,
-      (sponsoredEligibleCounts.get(member.sponsorId) ?? 0) + 1
-    );
+  function resolveRelativeBinaryLeg(
+    sponsor: (typeof members)[number] | undefined,
+    member: (typeof members)[number]
+  ): 'left' | 'right' | null {
+    const sponsorTree = sponsor?.binaryTree;
+    const memberTree = member.binaryTree;
+    if (!sponsorTree?.path || !memberTree?.path) return null;
+    if (!memberTree.path.startsWith(`${sponsorTree.path}/`)) return null;
+
+    const [firstDescendantId] = memberTree.path.slice(sponsorTree.path.length + 1).split('/');
+    if (firstDescendantId === sponsorTree.leftChildId) return 'left';
+    if (firstDescendantId === sponsorTree.rightChildId) return 'right';
+    return null;
   }
 
-  const placementEligibleChildCounts = new Map<string, number>();
+  const sponsoredEligibleLegCounts = new Map<string, { left: number; right: number }>();
   for (const member of members) {
-    const childIds = [member.binaryTree?.leftChildId, member.binaryTree?.rightChildId].filter(
-      Boolean
-    ) as string[];
-    const eligibleChildren = childIds.filter((childId) => {
-      const child = membersById.get(childId);
-      return child ? isEligibleActiveSponsoredMember(child) : false;
-    });
-    placementEligibleChildCounts.set(member.id, eligibleChildren.length);
+    if (!member.sponsorId || !isEligibleActiveSponsoredMember(member)) continue;
+    const sponsor = membersById.get(member.sponsorId);
+    const leg = resolveRelativeBinaryLeg(sponsor, member);
+    if (!leg) continue;
+
+    const counts = sponsoredEligibleLegCounts.get(member.sponsorId) ?? { left: 0, right: 0 };
+    counts[leg] += 1;
+    sponsoredEligibleLegCounts.set(member.sponsorId, counts);
   }
 
   let usersNeedingStageUpdate = 0;
@@ -115,15 +122,16 @@ async function main() {
     id: string;
     email: string | null;
     name: string | null;
-    sponsoredEligibleCount: number;
+    leftSponsoredEligibleCount: number;
+    rightSponsoredEligibleCount: number;
     currentStage: string;
   }> = [];
-  const starterPlacementOnlyPreviouslyQualified: Array<{
+  const starterMissingSplitButPreviouslyQualified: Array<{
     id: string;
     email: string | null;
     name: string | null;
-    sponsoredEligibleCount: number;
-    immediatePlacementEligibleChildCount: number;
+    leftSponsoredEligibleCount: number;
+    rightSponsoredEligibleCount: number;
     currentStage: string;
   }> = [];
 
@@ -131,48 +139,51 @@ async function main() {
     const completed = pickLatestStageFromCompletedProgress(member.stageProgress);
     const currentFromLegacy = normalizeStageId(member.currentStage);
     const targetStage = getHighestStage(
-      getHighestStage(completed.stage, currentFromLegacy),
+      getHighestStage(
+        member.status === 'ACTIVE' ? STAGE_IDS.STARTER_ENTRY_STAGE : STAGE_IDS.REGISTERED_ACTIVE,
+        completed.stage
+      ),
       member.highestStage
     );
-    const finalCompleted = targetStage === STAGE_IDS.DIAMOND_STAGE_6_FINAL;
-    const sponsoredEligibleCount = sponsoredEligibleCounts.get(member.id) ?? 0;
-    const immediatePlacementEligibleChildCount = placementEligibleChildCounts.get(member.id) ?? 0;
-    const hasStarterCredit =
-      STAGE_RANK[targetStage] >= STAGE_RANK[STAGE_IDS.STARTER_ENTRY_STAGE] ||
-      member.stageHistory.length > 0 ||
+    const currentTargetStage = getHighestStage(targetStage, currentFromLegacy);
+    const finalCompleted = currentTargetStage === STAGE_IDS.DIAMOND_STAGE_6_FINAL;
+    const legCounts = sponsoredEligibleLegCounts.get(member.id) ?? { left: 0, right: 0 };
+    const hasStarterCompletionCredit =
+      STAGE_RANK[currentTargetStage] >= STAGE_RANK[STAGE_IDS.EMERALD_STAGE_1] ||
+      member.stageHistory.some(
+        (history) => normalizeStageId(history.toStage) === STAGE_IDS.EMERALD_STAGE_1
+      ) ||
       member.stageProgress.some(
         (progress) =>
-          progress.stage === 'STARTER' || progress.stage === STAGE_IDS.STARTER_ENTRY_STAGE
+          normalizeStageId(progress.stage) === STAGE_IDS.EMERALD_STAGE_1 ||
+          progress.stage === 'EMERALD'
       );
 
-    if (sponsoredEligibleCount >= 2 && !hasStarterCredit) {
+    if (legCounts.left >= 1 && legCounts.right >= 1 && !hasStarterCompletionCredit) {
       starterNewlyQualified.push({
         id: member.id,
         email: member.email,
         name: member.name,
-        sponsoredEligibleCount,
+        leftSponsoredEligibleCount: legCounts.left,
+        rightSponsoredEligibleCount: legCounts.right,
         currentStage: member.currentStage,
       });
     }
 
-    if (
-      hasStarterCredit &&
-      sponsoredEligibleCount < 2 &&
-      immediatePlacementEligibleChildCount >= 2
-    ) {
-      starterPlacementOnlyPreviouslyQualified.push({
+    if (hasStarterCompletionCredit && (legCounts.left < 1 || legCounts.right < 1)) {
+      starterMissingSplitButPreviouslyQualified.push({
         id: member.id,
         email: member.email,
         name: member.name,
-        sponsoredEligibleCount,
-        immediatePlacementEligibleChildCount,
+        leftSponsoredEligibleCount: legCounts.left,
+        rightSponsoredEligibleCount: legCounts.right,
         currentStage: member.currentStage,
       });
     }
 
     if (
-      member.currentStage !== targetStage ||
-      member.highestStage !== targetStage ||
+      normalizeStageId(member.currentStage) !== currentTargetStage ||
+      normalizeStageId(member.highestStage) !== currentTargetStage ||
       (finalCompleted && member.compensationPlanStatus !== 'COMPLETED')
     ) {
       usersNeedingStageUpdate++;
@@ -180,12 +191,12 @@ async function main() {
         await prisma.user.update({
           where: { id: member.id },
           data: {
-            currentStage: targetStage,
-            highestStage: targetStage,
+            currentStage: currentTargetStage,
+            highestStage: currentTargetStage,
             stageUpdatedAt:
               completed.qualifiedAt ??
               member.stageUpdatedAt ??
-              (targetStage === STAGE_IDS.REGISTERED_ACTIVE ? null : new Date()),
+              (currentTargetStage === STAGE_IDS.REGISTERED_ACTIVE ? null : new Date()),
             compensationPlanStatus: finalCompleted
               ? 'COMPLETED'
               : member.compensationPlanStatus || 'ACTIVE',
@@ -201,7 +212,12 @@ async function main() {
       const attainedStage =
         LEGACY_COMPLETED_STAGE_TO_ATTAINED_STAGE[progress.stage] ??
         normalizeStageId(progress.stage);
-      if (attainedStage === STAGE_IDS.REGISTERED_ACTIVE) continue;
+      if (
+        attainedStage === STAGE_IDS.REGISTERED_ACTIVE ||
+        attainedStage === STAGE_IDS.STARTER_ENTRY_STAGE
+      ) {
+        continue;
+      }
 
       const exists = await prisma.stageHistory.findUnique({
         where: { memberId_toStage: { memberId: member.id, toStage: attainedStage } },
@@ -266,11 +282,12 @@ async function main() {
         rewardsNeedingStageUpdate,
         starterRule: {
           relationship: 'User.sponsorId',
-          requiredEligibleSponsoredMembers: 2,
-          newlyQualifiedBySponsorshipCount: starterNewlyQualified.length,
-          placementOnlyPreviouslyQualifiedCount: starterPlacementOnlyPreviouslyQualified.length,
-          newlyQualifiedBySponsorship: starterNewlyQualified,
-          placementOnlyPreviouslyQualified: starterPlacementOnlyPreviouslyQualified,
+          requiredEligibleSponsoredMembers:
+            'at least 1 in left binary leg and 1 in right binary leg',
+          newlyQualifiedBySplitDirectSponsorshipCount: starterNewlyQualified.length,
+          missingSplitButPreviouslyQualifiedCount: starterMissingSplitButPreviouslyQualified.length,
+          newlyQualifiedBySplitDirectSponsorship: starterNewlyQualified,
+          missingSplitButPreviouslyQualified: starterMissingSplitButPreviouslyQualified,
           demotionApplied: false,
         },
         legacyStageKeysRecognized: LEGACY_STAGE_IDS,

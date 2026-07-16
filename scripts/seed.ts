@@ -36,6 +36,8 @@ async function main() {
       sponsorId: null,
       placementId: null,
       binaryPosition: null,
+      currentStage: 'REGISTERED_ACTIVE',
+      highestStage: 'REGISTERED_ACTIVE',
     },
     create: {
       email: 'makatablessing2026@gmail.com',
@@ -45,6 +47,8 @@ async function main() {
       status: 'ACTIVE',
       username: 'blessing_makata',
       adminRole: 'SUPER_ADMIN',
+      currentStage: 'REGISTERED_ACTIVE',
+      highestStage: 'REGISTERED_ACTIVE',
     },
   });
 
@@ -65,6 +69,8 @@ async function main() {
       sponsorId: null,
       placementId: null,
       binaryPosition: null,
+      currentStage: 'REGISTERED_ACTIVE',
+      highestStage: 'REGISTERED_ACTIVE',
     },
     create: {
       email: 'gmanetworkng@gmail.com',
@@ -74,6 +80,8 @@ async function main() {
       status: 'ACTIVE',
       username: 'gma_network',
       adminRole: 'SUPER_ADMIN',
+      currentStage: 'REGISTERED_ACTIVE',
+      highestStage: 'REGISTERED_ACTIVE',
     },
   });
 
@@ -94,6 +102,8 @@ async function main() {
       sponsorId: null,
       placementId: null,
       binaryPosition: null,
+      currentStage: 'REGISTERED_ACTIVE',
+      highestStage: 'REGISTERED_ACTIVE',
     },
     create: {
       email: 'stellarmediang@gmail.com',
@@ -103,6 +113,8 @@ async function main() {
       status: 'ACTIVE',
       username: 'stellar_media',
       adminRole: 'SUPER_ADMIN',
+      currentStage: 'REGISTERED_ACTIVE',
+      highestStage: 'REGISTERED_ACTIVE',
     },
   });
 

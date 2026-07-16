@@ -17,8 +17,8 @@ model User {
   password                   String?
   role                       String                     @default("MEMBER")
   status                     String                     @default("PENDING")
-  currentStage               String                     @default("REGISTERED_ACTIVE")
-  highestStage               String                     @default("REGISTERED_ACTIVE")
+  currentStage               String                     @default("STARTER_ENTRY_STAGE")
+  highestStage               String                     @default("STARTER_ENTRY_STAGE")
   stageUpdatedAt             DateTime?
   finalStageCompletedAt      DateTime?
   compensationPlanStatus     String                     @default("ACTIVE")

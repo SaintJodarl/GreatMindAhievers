@@ -9,7 +9,6 @@ import {
   ATTAINED_STAGE_TO_LEGACY_COMPLETED_STAGE,
   getHighestStage,
   getNextStage,
-  getQueryableStageIdsAtOrAbove,
   getStageDisplayName,
   isStageAtLeast,
   normalizeStageId,
@@ -128,17 +127,64 @@ async function recordStageProgress(
   });
 }
 
-async function calculateStarterProgress(
-  tx: TxClient,
-  userId: string
-): Promise<QualificationProgressResult> {
+async function calculateStarterEntryProgress(): Promise<QualificationProgressResult> {
   const targetStage = STAGE_IDS.STARTER_ENTRY_STAGE;
   const config = STAGE_CONFIG[targetStage];
 
+  return {
+    targetStage,
+    requirementStage: config.requiredContributorStage,
+    qualifiedContributorCount: 0,
+    requiredContributorCount: config.requiredCount,
+    remainingContributorCount: 0,
+    selectedContributors: [],
+  };
+}
+
+function resolveRelativeBinaryLeg(
+  rootTree: {
+    path: string;
+    depth: number;
+    leftChildId: string | null;
+    rightChildId: string | null;
+  },
+  memberTree: { path: string | null; depth: number } | null
+): 'left' | 'right' | null {
+  if (!memberTree?.path || !memberTree.path.startsWith(`${rootTree.path}/`)) {
+    return null;
+  }
+
+  const [firstDescendantId] = memberTree.path.slice(rootTree.path.length + 1).split('/');
+  if (firstDescendantId === rootTree.leftChildId) return 'left';
+  if (firstDescendantId === rootTree.rightChildId) return 'right';
+  return null;
+}
+
+async function calculateStarterCompletionProgress(
+  tx: TxClient,
+  userId: string
+): Promise<QualificationProgressResult> {
+  const targetStage = STAGE_IDS.EMERALD_STAGE_1;
+  const config = STAGE_CONFIG[targetStage];
+  const requiredStage = STAGE_IDS.STARTER_ENTRY_STAGE;
+
   const rootTree = await tx.binaryTree.findUnique({
     where: { userId },
-    select: { path: true, depth: true },
+    select: { path: true, depth: true, leftChildId: true, rightChildId: true },
   });
+
+  if (!rootTree) {
+    return {
+      targetStage,
+      requirementStage: requiredStage,
+      qualifiedContributorCount: 0,
+      requiredContributorCount: config.requiredCount,
+      remainingContributorCount: config.requiredCount,
+      leftQualifiedCount: 0,
+      rightQualifiedCount: 0,
+      selectedContributors: [],
+    };
+  }
 
   const sponsoredMembers = await tx.user.findMany({
     where: {
@@ -163,44 +209,51 @@ async function calculateStarterProgress(
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   });
 
-  const candidates: ContributorCandidate[] = sponsoredMembers.map((member) => {
-    const genealogyDepth =
-      rootTree &&
-      member.binaryTree &&
-      member.binaryTree.path.startsWith(`${rootTree.path}/`) &&
-      member.binaryTree.depth > rootTree.depth
-        ? member.binaryTree.depth - rootTree.depth
-        : 0;
+  const candidatesByLeg: Record<'left' | 'right', ContributorCandidate[]> = {
+    left: [],
+    right: [],
+  };
 
-    return {
+  for (const member of sponsoredMembers) {
+    if (!isStageAtLeast(member.currentStage, requiredStage)) continue;
+
+    const leg = resolveRelativeBinaryLeg(rootTree, member.binaryTree);
+    if (!leg || !member.binaryTree) continue;
+
+    candidatesByLeg[leg].push({
       memberId: member.id,
       contributorStage: normalizeStageId(member.currentStage),
-      genealogyDepth,
-      contributorQualifiedAt: inferContributorQualifiedAt(member, STAGE_IDS.REGISTERED_ACTIVE),
+      genealogyDepth: member.binaryTree.depth - rootTree.depth,
+      contributorQualifiedAt: inferContributorQualifiedAt(member, requiredStage),
       registeredAt: member.createdAt,
-    };
-  });
+    });
+  }
 
-  const selectedContributors =
-    candidates.length >= config.requiredCount
-      ? selectDeterministicContributors(candidates, config.requiredCount)
-      : candidates;
+  const leftQualifiedCount = Math.min(candidatesByLeg.left.length, 1);
+  const rightQualifiedCount = Math.min(candidatesByLeg.right.length, 1);
+  const qualifiedContributorCount = leftQualifiedCount + rightQualifiedCount;
+  const selectedContributors = [
+    ...selectDeterministicContributors(candidatesByLeg.left, 1),
+    ...selectDeterministicContributors(candidatesByLeg.right, 1),
+  ];
 
   return {
     targetStage,
-    requirementStage: config.requiredContributorStage,
-    qualifiedContributorCount: candidates.length,
+    requirementStage: requiredStage,
+    qualifiedContributorCount,
     requiredContributorCount: config.requiredCount,
-    remainingContributorCount: Math.max(config.requiredCount - candidates.length, 0),
+    remainingContributorCount: Math.max(config.requiredCount - qualifiedContributorCount, 0),
+    leftQualifiedCount,
+    rightQualifiedCount,
     selectedContributors,
   };
 }
 
-async function calculateEmeraldProgress(
+async function calculateFirstThreeLevelProgress(
   tx: TxClient,
-  userId: string
+  userId: string,
+  targetStage: StageId
 ): Promise<QualificationProgressResult> {
-  const targetStage = STAGE_IDS.EMERALD_STAGE_1;
   const config = STAGE_CONFIG[targetStage];
   const requiredStage = config.requiredContributorStage;
 
@@ -238,6 +291,7 @@ async function calculateEmeraldProgress(
     left: [],
     right: [],
   };
+  const countedMemberIds = new Set<string>();
   let frontier: Array<{ userId: string; leg: 'left' | 'right'; depth: number }> = [
     ...(rootTree.leftChildId
       ? [{ userId: rootTree.leftChildId, leg: 'left' as const, depth: 1 }]
@@ -248,15 +302,15 @@ async function calculateEmeraldProgress(
   ];
 
   for (let level = 1; level <= 3 && frontier.length > 0; level++) {
-    const positionByUserId = new Map(frontier.map((position) => [position.userId, position]));
+    const positionByUserId = new Map<string, (typeof frontier)[number]>();
+    for (const position of frontier) {
+      if (!positionByUserId.has(position.userId)) {
+        positionByUserId.set(position.userId, position);
+      }
+    }
     const nodes = await tx.binaryTree.findMany({
       where: {
         userId: { in: [...positionByUserId.keys()] },
-        user: {
-          role: 'MEMBER',
-          status: 'ACTIVE',
-          currentStage: { in: getQueryableStageIdsAtOrAbove(requiredStage) },
-        },
       },
       select: {
         userId: true,
@@ -265,6 +319,8 @@ async function calculateEmeraldProgress(
         user: {
           select: {
             id: true,
+            role: true,
+            status: true,
             currentStage: true,
             createdAt: true,
             stageUpdatedAt: true,
@@ -285,7 +341,13 @@ async function calculateEmeraldProgress(
       const position = positionByUserId.get(node.userId);
       if (!position) continue;
 
-      if (isStageAtLeast(node.user.currentStage, requiredStage)) {
+      if (
+        node.user.role === 'MEMBER' &&
+        node.user.status === 'ACTIVE' &&
+        isStageAtLeast(node.user.currentStage, requiredStage) &&
+        !countedMemberIds.has(node.userId)
+      ) {
+        countedMemberIds.add(node.userId);
         candidatesByLeg[position.leg].push({
           memberId: node.userId,
           contributorStage: normalizeStageId(node.user.currentStage),
@@ -338,94 +400,6 @@ async function calculateEmeraldProgress(
   };
 }
 
-async function calculateDescendantProgress(
-  tx: TxClient,
-  userId: string,
-  targetStage: StageId
-): Promise<QualificationProgressResult> {
-  const config = STAGE_CONFIG[targetStage];
-  const requiredStage = config.requiredContributorStage;
-
-  if (!requiredStage) {
-    return {
-      targetStage,
-      requirementStage: null,
-      qualifiedContributorCount: 0,
-      requiredContributorCount: 0,
-      remainingContributorCount: 0,
-      selectedContributors: [],
-    };
-  }
-
-  const rootTree = await tx.binaryTree.findUnique({
-    where: { userId },
-    select: { path: true, depth: true },
-  });
-
-  if (!rootTree) {
-    return {
-      targetStage,
-      requirementStage: requiredStage,
-      qualifiedContributorCount: 0,
-      requiredContributorCount: config.requiredCount,
-      remainingContributorCount: config.requiredCount,
-      selectedContributors: [],
-    };
-  }
-
-  const descendants = await tx.binaryTree.findMany({
-    where: {
-      path: { startsWith: `${rootTree.path}/` },
-      user: {
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        currentStage: { in: getQueryableStageIdsAtOrAbove(requiredStage) },
-      },
-    },
-    select: {
-      userId: true,
-      depth: true,
-      user: {
-        select: {
-          id: true,
-          currentStage: true,
-          createdAt: true,
-          stageUpdatedAt: true,
-          stageHistory: {
-            where: { toStage: requiredStage },
-            select: { qualifiedAt: true },
-            orderBy: { qualifiedAt: 'asc' },
-            take: 1,
-          },
-        },
-      },
-    },
-  });
-
-  const candidates = descendants
-    .filter((node) => isStageAtLeast(node.user.currentStage, requiredStage))
-    .map((node) => ({
-      memberId: node.userId,
-      contributorStage: normalizeStageId(node.user.currentStage),
-      genealogyDepth: node.depth - rootTree.depth,
-      contributorQualifiedAt:
-        node.user.stageHistory[0]?.qualifiedAt ??
-        inferContributorQualifiedAt(node.user, requiredStage),
-      registeredAt: node.user.createdAt,
-    }));
-
-  const selectedContributors = selectDeterministicContributors(candidates, config.requiredCount);
-
-  return {
-    targetStage,
-    requirementStage: requiredStage,
-    qualifiedContributorCount: candidates.length,
-    requiredContributorCount: config.requiredCount,
-    remainingContributorCount: Math.max(config.requiredCount - candidates.length, 0),
-    selectedContributors,
-  };
-}
-
 export async function calculateQualificationProgress(
   tx: TxClient,
   userId: string,
@@ -443,14 +417,14 @@ export async function calculateQualificationProgress(
   }
 
   if (targetStage === STAGE_IDS.STARTER_ENTRY_STAGE) {
-    return calculateStarterProgress(tx, userId);
+    return calculateStarterEntryProgress();
   }
 
   if (targetStage === STAGE_IDS.EMERALD_STAGE_1) {
-    return calculateEmeraldProgress(tx, userId);
+    return calculateStarterCompletionProgress(tx, userId);
   }
 
-  return calculateDescendantProgress(tx, userId, targetStage);
+  return calculateFirstThreeLevelProgress(tx, userId, targetStage);
 }
 
 async function createStageReward(tx: TxClient, userId: string, stage: StageId) {

@@ -84,6 +84,8 @@ export async function POST(req: NextRequest) {
         role: 'ADMIN',
         adminRole,
         status: 'ACTIVE',
+        currentStage: 'REGISTERED_ACTIVE',
+        highestStage: 'REGISTERED_ACTIVE',
       },
       select: {
         id: true,

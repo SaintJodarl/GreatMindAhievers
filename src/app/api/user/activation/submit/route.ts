@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { STAGE_IDS, getHighestStage, getStageRank } from '@/lib/qualification/constants';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     const userRecord = await prisma.user.findUnique({
       where: { id: userId },
-      select: { status: true },
+      select: { status: true, currentStage: true, highestStage: true },
     });
 
     if (userRecord && userRecord.status === 'ACTIVE') {
@@ -98,6 +99,13 @@ export async function POST(req: NextRequest) {
 
     // 4. Perform redemption in transaction
     const result = await prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const shouldEnterStarter =
+        getStageRank(userRecord?.currentStage) < getStageRank(STAGE_IDS.STARTER_ENTRY_STAGE);
+      const shouldRaiseHighestStage =
+        getStageRank(userRecord?.highestStage) < getStageRank(STAGE_IDS.STARTER_ENTRY_STAGE);
+      const highestStage = getHighestStage(userRecord?.highestStage, STAGE_IDS.STARTER_ENTRY_STAGE);
+
       // Mark code as used only if it is unused to prevent race conditions / double redemption
       const updateResult = await tx.activationCode.updateMany({
         where: {
@@ -107,7 +115,7 @@ export async function POST(req: NextRequest) {
         data: {
           status: 'USED',
           redeemedBy: userId,
-          redeemedDate: new Date(),
+          redeemedDate: now,
         },
       });
 
@@ -129,6 +137,17 @@ export async function POST(req: NextRequest) {
         where: { id: userId },
         data: {
           status: 'ACTIVE',
+          ...(shouldEnterStarter
+            ? {
+                currentStage: STAGE_IDS.STARTER_ENTRY_STAGE,
+                highestStage,
+                stageUpdatedAt: now,
+              }
+            : shouldRaiseHighestStage
+              ? {
+                  highestStage,
+                }
+              : {}),
         },
       });
 

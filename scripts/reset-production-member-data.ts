@@ -278,6 +278,7 @@ async function resetData() {
           placementId: null,
           binaryPosition: null,
           currentStage: 'REGISTERED_ACTIVE',
+          highestStage: 'REGISTERED_ACTIVE',
           kycStatus: 'PENDING',
           kycSubmittedAt: null,
           kycApprovedAt: null,

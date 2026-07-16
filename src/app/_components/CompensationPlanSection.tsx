@@ -227,9 +227,9 @@ export function CompensationPlanSection() {
             <p className="text-base leading-relaxed text-secondary-foreground">
               After the one-time registration fee of{' '}
               <strong className="text-foreground">\u20a67,000</strong>, a registered active member
-              completes Starter by personally sponsoring and successfully registering two eligible
-              active members through their referral link or referral code. No separate Starter
-              reward has been specified.
+              is placed at Starter. Starter is completed by personally sponsoring at least one
+              active direct member in the left binary leg and at least one active direct member in
+              the right binary leg. No separate Starter reward has been specified.
             </p>
           </div>
         </div>

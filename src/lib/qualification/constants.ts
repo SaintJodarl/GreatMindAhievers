@@ -11,9 +11,10 @@ export const STAGE_IDS = {
 
 export type StageId = (typeof STAGE_IDS)[keyof typeof STAGE_IDS];
 
-export const QUALIFICATION_RULE_VERSION = 'gma-dynamic-stage-v1';
+export const QUALIFICATION_RULE_VERSION = 'gma-dynamic-stage-v2-starter-split-legs';
 export const REQUIRED_DESCENDANT_COUNT = 14;
-export const STARTER_QUALIFICATION_MODE = 'PERSONAL_SPONSORSHIP_BY_SPONSOR_ID';
+export const STARTER_QUALIFICATION_MODE =
+  'DIRECT_SPONSORSHIP_SPLIT_ACROSS_BINARY_LEFT_AND_RIGHT_LEGS';
 
 export const STAGE_ORDER: StageId[] = [
   STAGE_IDS.REGISTERED_ACTIVE,
@@ -77,8 +78,8 @@ export const STAGE_CONFIG: Record<StageId, StageConfig> = {
     shortName: 'Starter',
     stageNumber: null,
     previousStage: STAGE_IDS.REGISTERED_ACTIVE,
-    requiredContributorStage: STAGE_IDS.REGISTERED_ACTIVE,
-    requiredCount: 2,
+    requiredContributorStage: null,
+    requiredCount: 0,
     rewardValue: 0,
     rewardPackage: 'No separate Starter reward has been specified.',
     hasReward: false,
@@ -91,7 +92,7 @@ export const STAGE_CONFIG: Record<StageId, StageConfig> = {
     stageNumber: 1,
     previousStage: STAGE_IDS.STARTER_ENTRY_STAGE,
     requiredContributorStage: STAGE_IDS.STARTER_ENTRY_STAGE,
-    requiredCount: REQUIRED_DESCENDANT_COUNT,
+    requiredCount: 2,
     rewardValue: 25000,
     rewardPackage:
       'Food package or approved cash option worth \u20a625,000: 1 carton of noodles; 1 roll of milk; 1 roll of Milo; 1 pack of sugar; \u20a610,000 cash; 5 kg garri; 5 kg beans; 10 kg rice; 2 litres palm oil.',
@@ -181,13 +182,13 @@ export const STAGE_CONFIG: Record<StageId, StageConfig> = {
 const NEW_STAGE_IDS = new Set<string>(STAGE_ORDER);
 
 const LEGACY_STAGE_TO_ATTAINED_STAGE: Record<string, StageId> = {
-  STARTER: STAGE_IDS.REGISTERED_ACTIVE,
-  EMERALD: STAGE_IDS.STARTER_ENTRY_STAGE,
-  SILVER: STAGE_IDS.EMERALD_STAGE_1,
-  GOLD: STAGE_IDS.SILVER_STAGE_2,
-  JASPER: STAGE_IDS.GOLD_STAGE_3,
-  SAPPHIRE: STAGE_IDS.JASPER_STAGE_4,
-  DIAMOND: STAGE_IDS.SAPPHIRE_STAGE_5,
+  STARTER: STAGE_IDS.STARTER_ENTRY_STAGE,
+  EMERALD: STAGE_IDS.EMERALD_STAGE_1,
+  SILVER: STAGE_IDS.SILVER_STAGE_2,
+  GOLD: STAGE_IDS.GOLD_STAGE_3,
+  JASPER: STAGE_IDS.JASPER_STAGE_4,
+  SAPPHIRE: STAGE_IDS.SAPPHIRE_STAGE_5,
+  DIAMOND: STAGE_IDS.DIAMOND_STAGE_6_FINAL,
 };
 
 export const LEGACY_STAGE_IDS = Object.keys(LEGACY_STAGE_TO_ATTAINED_STAGE);
@@ -256,11 +257,11 @@ export function getRequirementText(targetStage: StageId | null): string {
   if (!targetStage) return 'No further compensation stage exists.';
 
   if (targetStage === STAGE_IDS.STARTER_ENTRY_STAGE) {
-    return 'Personally sponsor and successfully register 2 eligible active members through your referral link or referral code.';
+    return 'A registered and activated member starts at Starter Stage - Entry Stage.';
   }
 
   if (targetStage === STAGE_IDS.EMERALD_STAGE_1) {
-    return 'Qualify with the first 14 binary-tree positions at Starter Stage — Entry Stage or higher: 7 on the left and 7 on the right.';
+    return 'Complete Starter by personally sponsoring at least 1 active member in the left binary leg and at least 1 active member in the right binary leg.';
   }
 
   const config = STAGE_CONFIG[targetStage];
@@ -268,7 +269,7 @@ export function getRequirementText(targetStage: StageId | null): string {
     ? STAGE_CONFIG[config.requiredContributorStage].displayName
     : 'eligible';
 
-  return `${config.requiredCount} descendants at ${contributorStage} or higher.`;
+  return `The fixed first ${REQUIRED_DESCENDANT_COUNT} binary-tree positions in the member's first three levels must each be at ${contributorStage} or higher.`;
 }
 
 export function getHighestStage(
