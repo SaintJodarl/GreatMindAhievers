@@ -12,6 +12,7 @@ import { emitOutboxEvent } from '@/lib/events/outbox';
 import { signAccessToken } from '@/lib/auth/jwt';
 import { getRegistrationPauseDecision } from '@/lib/registration-pause';
 import { STAGE_IDS } from '@/lib/qualification/constants';
+import { acquireFirstParentBootstrapLock } from '@/lib/root-bootstrap-lock';
 
 export const maxDuration = 60; // Allow enough time for Neon cold starts and MLM placement
 
@@ -275,7 +276,7 @@ export async function POST(req: NextRequest) {
 
           // 1. Create User
           if (isFirstParentBootstrap) {
-            await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('gma:first-parent-bootstrap'))`;
+            await acquireFirstParentBootstrapLock(tx);
 
             const [transactionNormalMemberCount, existingRootNode, bootstrapReferralOwner] =
               await Promise.all([
