@@ -1,6 +1,5 @@
 # Node modules
 node_modules/
-package-lock.json
 
 # Next.js build output
 .next/
@@ -45,3 +44,6 @@ turbo/
 *.db
 *.db-journal
 .env*
+
+# Separate NestJS backend lockfile
+/gma-nestjs-backend/package-lock.json

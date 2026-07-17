@@ -1,79 +1,107 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { AlertCircle, Award, Banknote, Clock3, LockKeyhole, Wallet } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
-  STAGE_CONFIG,
-  STAGE_ORDER,
-  STAGE_RANK,
-  getStageDisplayName,
-  normalizeStageId,
-} from '@/lib/qualification/constants';
+  AlertCircle,
+  Award,
+  Banknote,
+  CheckCircle2,
+  Clock3,
+  LockKeyhole,
+  RefreshCw,
+} from 'lucide-react';
 
-interface WithdrawalFormData {
-  amount: string;
-  method: string;
-  accountName: string;
-  accountNumber: string;
-  bankName: string;
-  note: string;
+interface Eligibility {
+  eligible: boolean;
+  currentStageName: string;
+  nextStageName: string | null;
+  nextRewardStageName: string | null;
+  qualificationComplete: boolean;
+  completedRequirement: number;
+  totalRequirement: number;
+  remainingRequirement: number;
+  leftCompleted?: number;
+  leftRequired?: number;
+  rightCompleted?: number;
+  rightRequired?: number;
+  rewardId?: string;
+  rewardClaimId?: string;
+  rewardStageName?: string;
+  rewardType?: string;
+  rewardAmount?: number;
+  rewardStatus?: string;
+  rewardClaimStatus?: string;
+  selectedOption?: string | null;
+  requiresCashSelection: boolean;
+  cashOptionSelected: boolean;
+  kycComplete: boolean;
+  bankDetailsComplete: boolean;
+  bankDetails: {
+    bankName: string | null;
+    accountNumber: string | null;
+    accountName: string | null;
+  };
+  existingWithdrawalId?: string;
+  existingWithdrawalStatus?: string;
+  existingWithdrawal?: {
+    id: string;
+    status: string;
+    amount: string | number;
+    createdAt: string;
+    approvedAt?: string | null;
+    paidAt?: string | null;
+    paymentReference?: string | null;
+    adminNote?: string | null;
+    rejectionType?: string | null;
+  } | null;
+  blockingReasons: string[];
+  guidance: {
+    state: string;
+    title: string;
+    description: string;
+    emphasis: string;
+  };
 }
 
-interface RewardSummary {
+interface WithdrawalHistory {
   id: string;
-  stage: string;
-  stageName: string;
-  rewardValue: number;
-  rewardPackage?: string | null;
+  amount: number;
   status: string;
-  latestClaim?: {
-    selectedOption: string;
+  createdAt: string;
+  approvedAt?: string | null;
+  paidAt?: string | null;
+  paymentReference?: string | null;
+  adminNote?: string | null;
+  rejectionType?: string | null;
+  reward?: {
+    stageName: string;
     status: string;
   } | null;
 }
 
 interface WithdrawalSectionProps {
   summary?: {
-    balance?: number | string;
-    pendingWithdrawals?: number | string;
-    currentStage?: string;
     currentStageName?: string;
-    nextStage?: string | null;
-    nextStageName?: string | null;
-    kycStatus?: string;
-    bankName?: string;
-    accountNumber?: string;
-    accountName?: string;
-    rewards?: RewardSummary[];
   };
 }
 
-const formatMoney = (value: number) =>
+const formatMoney = (value: number | string | undefined | null) =>
   new Intl.NumberFormat('en-NG', {
     style: 'currency',
     currency: 'NGN',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
 
-function getNextRewardStage(currentStage: string | null | undefined) {
-  const normalized = normalizeStageId(currentStage);
-  return STAGE_ORDER.slice(STAGE_RANK[normalized] + 1).find(
-    (stage) => STAGE_CONFIG[stage].hasReward
-  );
-}
-
-function getRewardForStage(rewards: RewardSummary[] | undefined, stage: string) {
-  return rewards?.find((reward) => normalizeStageId(reward.stage) === normalizeStageId(stage));
-}
+const formatDate = (value: string | null | undefined) =>
+  value ? new Date(value).toLocaleDateString() : 'Not recorded';
 
 function StatusPill({
   children,
   tone,
 }: {
   children: React.ReactNode;
-  tone: 'green' | 'amber' | 'slate' | 'red';
+  tone: 'green' | 'amber' | 'slate' | 'red' | 'blue';
 }) {
   const className =
     tone === 'green'
@@ -82,7 +110,9 @@ function StatusPill({
         ? 'border-amber-200 bg-amber-50 text-amber-700'
         : tone === 'red'
           ? 'border-rose-200 bg-rose-50 text-rose-700'
-          : 'border-slate-200 bg-slate-50 text-slate-600';
+          : tone === 'blue'
+            ? 'border-blue-200 bg-blue-50 text-blue-700'
+            : 'border-slate-200 bg-slate-50 text-slate-600';
 
   return (
     <span
@@ -93,58 +123,85 @@ function StatusPill({
   );
 }
 
+function progressPercent(completed: number, total: number) {
+  if (!total) return 0;
+  return Math.min(100, Math.round((completed / total) * 100));
+}
+
+function withdrawalStatusLabel(withdrawal: WithdrawalHistory) {
+  if (withdrawal.status === 'APPROVED') return 'Approved - awaiting payment';
+  if (withdrawal.status === 'REJECTED' && withdrawal.rejectionType === 'CORRECTABLE') {
+    return 'Rejected - correctable';
+  }
+  if (withdrawal.status === 'REJECTED' && withdrawal.rejectionType === 'FINAL') {
+    return 'Rejected - final';
+  }
+  return withdrawal.status;
+}
+
 export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [eligibility, setEligibility] = useState<Eligibility | null>(null);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalHistory[]>([]);
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm<WithdrawalFormData>({
-    defaultValues: {
-      bankName: summary?.bankName || '',
-      accountNumber: summary?.accountNumber || '',
-      accountName: summary?.accountName || '',
-    },
-  });
-
-  const walletBalance = Number(summary?.balance || 0);
-  const pendingAmount = Number(summary?.pendingWithdrawals || 0);
-  const availableBalance = Math.max(0, walletBalance - pendingAmount);
-  const currentStage = normalizeStageId(summary?.currentStage);
-  const currentStageConfig = STAGE_CONFIG[currentStage];
-  const currentStageReward = getRewardForStage(summary?.rewards, currentStage);
-  const nextRewardStage = getNextRewardStage(currentStage);
-  const nextRewardConfig = nextRewardStage ? STAGE_CONFIG[nextRewardStage] : null;
-  const kycApproved = ['APPROVED', 'COMPLETE'].includes((summary?.kycStatus || '').toUpperCase());
-  const earnedRewards = summary?.rewards?.filter((reward) => reward.status === 'EARNED') || [];
-  const claimedRewards = summary?.rewards?.filter((reward) => reward.status === 'CLAIMED') || [];
-
-  // No member withdrawal creation route exists in the current app. Keep this display-only flow honest.
-  const onSubmit = async () => {
-    setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setIsSubmitting(false);
-    setSubmitSuccess(true);
-    reset({
-      amount: '',
-      method: '',
-      bankName: summary?.bankName || '',
-      accountNumber: summary?.accountNumber || '',
-      accountName: summary?.accountName || '',
-      note: '',
-    });
-    setTimeout(() => setSubmitSuccess(false), 5000);
+  const loadEligibility = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch('/api/user/withdrawals', { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to load withdrawal eligibility');
+      setEligibility(data.eligibility);
+      setWithdrawals(data.withdrawals || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load withdrawal eligibility');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const payoutBlockedReason = !kycApproved
-    ? 'KYC approval is required before admin can approve wallet payouts.'
-    : availableBalance <= 0
-      ? 'You have not yet unlocked a withdrawable wallet balance.'
-      : null;
+  useEffect(() => {
+    loadEligibility();
+  }, []);
+
+  const submitWithdrawal = async () => {
+    if (!eligibility?.rewardId) return;
+
+    try {
+      setSubmitting(true);
+      setError(null);
+      setMessage(null);
+      const res = await fetch('/api/user/withdrawals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rewardId: eligibility.rewardId, note }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Unable to submit withdrawal request');
+      setMessage(data.message || 'Withdrawal request submitted.');
+      setNote('');
+      await loadEligibility();
+    } catch (err: any) {
+      setError(err.message || 'Unable to submit withdrawal request');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const stateTone: 'green' | 'amber' | 'slate' | 'red' | 'blue' =
+    eligibility?.guidance.state === 'ELIGIBLE'
+      ? 'green'
+      : eligibility?.guidance.state === 'PAID'
+        ? 'green'
+        : eligibility?.guidance.state === 'APPROVED_AWAITING_PAYMENT'
+          ? 'blue'
+          : eligibility?.guidance.state === 'REJECTED'
+            ? 'red'
+            : 'amber';
 
   return (
     <div className="space-y-5">
@@ -152,298 +209,288 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-              Wallet & Rewards
+              Reward Withdrawal
             </p>
             <h2 className="text-lg font-bold text-slate-900">Withdrawal Readiness</h2>
           </div>
-          <StatusPill tone={kycApproved ? 'green' : 'amber'}>
-            KYC {summary?.kycStatus || 'PENDING'}
-          </StatusPill>
+          <button
+            type="button"
+            onClick={loadEligibility}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-50"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
-              <Wallet size={15} />
-              Available balance
-            </div>
-            <p className="mt-2 font-mono-nums text-xl font-bold text-emerald-950">
-              {formatMoney(availableBalance)}
-            </p>
-            <p className="mt-1 text-xs text-emerald-700/80">
-              Current wallet balance less pending requests.
-            </p>
+        {loading && !eligibility ? (
+          <div className="flex min-h-[220px] items-center justify-center">
+            <p className="text-sm text-slate-500">Checking reward eligibility...</p>
           </div>
-
-          <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-amber-700">
-              <Clock3 size={15} />
-              Pending requests
-            </div>
-            <p className="mt-2 font-mono-nums text-xl font-bold text-amber-950">
-              {formatMoney(pendingAmount)}
-            </p>
-            <p className="mt-1 text-xs text-amber-700/80">Awaiting admin decision.</p>
-          </div>
-
-          <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-indigo-700">
-              <Award size={15} />
-              Current stage
-            </div>
-            <p className="mt-2 text-sm font-bold text-indigo-950">
-              {summary?.currentStageName || getStageDisplayName(currentStage)}
-            </p>
-            <p className="mt-1 text-xs text-indigo-700/80">
-              {currentStageConfig.hasReward
-                ? `Reward value: ${formatMoney(currentStageConfig.rewardValue)}`
-                : 'No separate reward is configured for this stage.'}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-              <LockKeyhole size={15} />
-              Next reward
-            </div>
-            <p className="mt-2 text-sm font-bold text-slate-950">
-              {nextRewardConfig ? nextRewardConfig.displayName : 'Plan complete'}
-            </p>
-            <p className="mt-1 text-xs text-slate-600">
-              {nextRewardConfig
-                ? `${formatMoney(nextRewardConfig.rewardValue)} after qualification is confirmed.`
-                : 'No further configured stage reward.'}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          <div className="rounded-lg border border-slate-200 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-bold text-slate-900">Current Stage Reward</h3>
-              <StatusPill
-                tone={
-                  currentStageReward?.status === 'EARNED'
-                    ? 'green'
-                    : currentStageReward?.status === 'CLAIMED'
-                      ? 'slate'
-                      : 'amber'
-                }
-              >
-                {currentStageReward?.status || 'Not unlocked'}
-              </StatusPill>
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-slate-600">
-              {currentStageConfig.hasReward
-                ? currentStageReward
-                  ? currentStageReward.rewardPackage || currentStageConfig.rewardPackage
-                  : 'Your reward becomes available after qualification is confirmed and recorded.'
-                : 'Complete your current stage requirements to unlock the next configured reward.'}
-            </p>
-            {currentStageReward?.latestClaim && (
-              <p className="mt-2 text-xs font-semibold text-slate-600">
-                Latest claim: {currentStageReward.latestClaim.selectedOption} -{' '}
-                {currentStageReward.latestClaim.status.replace(/_/g, ' ')}
-              </p>
+        ) : eligibility ? (
+          <div className="space-y-5">
+            {message && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
+                {message}
+              </div>
             )}
-          </div>
+            {error && (
+              <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">
+                {error}
+              </div>
+            )}
 
-          <div className="rounded-lg border border-slate-200 p-3">
-            <h3 className="text-sm font-bold text-slate-900">Eligibility</h3>
-            <p className="mt-2 text-xs leading-relaxed text-slate-600">
-              {payoutBlockedReason ||
-                'Your available wallet balance may be requested for admin review. Stage rewards are unlocked separately after qualification and can be claimed from the Rewards page.'}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <StatusPill tone={availableBalance > 0 ? 'green' : 'slate'}>
-                Withdrawable cash: {formatMoney(availableBalance)}
-              </StatusPill>
-              <StatusPill tone={earnedRewards.length ? 'green' : 'slate'}>
-                Earned rewards: {earnedRewards.length}
-              </StatusPill>
-              <StatusPill tone={claimedRewards.length ? 'amber' : 'slate'}>
-                Claimed rewards: {claimedRewards.length}
-              </StatusPill>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-indigo-700">
+                  <Award size={15} />
+                  Current stage
+                </div>
+                <p className="mt-2 text-sm font-bold text-indigo-950">
+                  {eligibility.currentStageName || summary?.currentStageName}
+                </p>
+                <p className="mt-1 text-xs text-indigo-700/80">
+                  Next: {eligibility.nextStageName || 'Plan complete'}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
+                  <Banknote size={15} />
+                  Eligible reward
+                </div>
+                <p className="mt-2 font-mono-nums text-xl font-bold text-emerald-950">
+                  {eligibility.rewardAmount ? formatMoney(eligibility.rewardAmount) : 'Locked'}
+                </p>
+                <p className="mt-1 text-xs text-emerald-700/80">
+                  {eligibility.rewardStageName ||
+                    eligibility.nextRewardStageName ||
+                    'No reward yet'}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-amber-700">
+                  <Clock3 size={15} />
+                  Requirement
+                </div>
+                <p className="mt-2 text-sm font-bold text-amber-950">
+                  {eligibility.completedRequirement} of {eligibility.totalRequirement || 0}
+                </p>
+                <p className="mt-1 text-xs text-amber-700/80">
+                  {eligibility.remainingRequirement} remaining
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                  <LockKeyhole size={15} />
+                  Controls
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <StatusPill tone={eligibility.kycComplete ? 'green' : 'amber'}>
+                    KYC {eligibility.kycComplete ? 'complete' : 'required'}
+                  </StatusPill>
+                  <StatusPill tone={eligibility.bankDetailsComplete ? 'green' : 'amber'}>
+                    Bank {eligibility.bankDetailsComplete ? 'ready' : 'required'}
+                  </StatusPill>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.8fr)]">
+              <div className="rounded-xl border border-slate-200 p-4">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">
+                      {eligibility.guidance.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {eligibility.guidance.description}
+                    </p>
+                  </div>
+                  <StatusPill tone={stateTone}>
+                    {eligibility.guidance.state.replace(/_/g, ' ')}
+                  </StatusPill>
+                </div>
+
+                {eligibility.totalRequirement > 0 && (
+                  <div className="space-y-3">
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-indigo-600"
+                        style={{
+                          width: `${progressPercent(
+                            eligibility.completedRequirement,
+                            eligibility.totalRequirement
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    {eligibility.leftRequired != null && eligibility.rightRequired != null && (
+                      <div className="grid gap-2 text-xs font-semibold text-slate-600 sm:grid-cols-2">
+                        <div className="rounded-lg bg-indigo-50 p-2 text-indigo-700">
+                          Left branch: {eligibility.leftCompleted || 0} of{' '}
+                          {eligibility.leftRequired}
+                        </div>
+                        <div className="rounded-lg bg-sky-50 p-2 text-sky-700">
+                          Right branch: {eligibility.rightCompleted || 0} of{' '}
+                          {eligibility.rightRequired}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex gap-3">
+                    {eligibility.eligible ? (
+                      <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-600" size={18} />
+                    ) : (
+                      <AlertCircle className="mt-0.5 shrink-0 text-amber-600" size={18} />
+                    )}
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        {eligibility.guidance.emphasis}
+                      </p>
+                      {eligibility.blockingReasons.length > 0 && (
+                        <ul className="mt-2 space-y-1 text-xs text-slate-600">
+                          {eligibility.blockingReasons.slice(0, 4).map((reason) => (
+                            <li key={reason}>- {reason}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {!eligibility.cashOptionSelected && eligibility.rewardId && (
+                  <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+                    Select the cash option on the rewards page before requesting withdrawal.{' '}
+                    <Link href="/user-dashboard/rewards" className="font-bold underline">
+                      Open rewards
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-4">
+                <h3 className="text-base font-bold text-slate-900">Request Summary</h3>
+                <div className="mt-3 space-y-2 text-sm text-slate-600">
+                  <p>
+                    Reward:{' '}
+                    <span className="font-semibold text-slate-900">
+                      {eligibility.rewardStageName || 'Not unlocked'}
+                    </span>
+                  </p>
+                  <p>
+                    Amount:{' '}
+                    <span className="font-semibold text-slate-900">
+                      {eligibility.rewardAmount ? formatMoney(eligibility.rewardAmount) : 'N/A'}
+                    </span>
+                  </p>
+                  <p>
+                    Bank:{' '}
+                    <span className="font-semibold text-slate-900">
+                      {eligibility.bankDetails.bankName || 'Missing'}
+                    </span>
+                  </p>
+                  <p>
+                    Account:{' '}
+                    <span className="font-semibold text-slate-900">
+                      {eligibility.bankDetails.accountName || 'Missing'}
+                    </span>
+                  </p>
+                </div>
+
+                <label className="mt-4 block text-xs font-bold text-slate-700">Optional note</label>
+                <textarea
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                  rows={3}
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  placeholder="Optional note for admin review"
+                />
+
+                <button
+                  type="button"
+                  onClick={submitWithdrawal}
+                  disabled={!eligibility.eligible || submitting}
+                  className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  {submitting ? 'Submitting...' : 'Request Reward Withdrawal'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            {error || 'Unable to load withdrawal eligibility.'}
+          </div>
+        )}
       </section>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-4">
-            <h3 className="text-base font-bold text-slate-900">Request Wallet Payout</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Enter an amount up to your available wallet balance. No authoritative stage-based
-              minimum withdrawal rule is defined in the current codebase.
-            </p>
-          </div>
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-base font-bold text-slate-900">Reward Withdrawal History</h3>
+          <Banknote className="text-indigo-600" size={18} />
+        </div>
 
-          {submitSuccess && (
-            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <div className="flex gap-3">
-                <AlertCircle className="mt-0.5 shrink-0 text-amber-600" size={18} />
-                <div>
-                  <h4 className="text-sm font-bold text-amber-800">Request details prepared</h4>
-                  <p className="mt-1 text-xs text-amber-700">
-                    This member dashboard does not currently expose a withdrawal-submission API.
-                    Please contact support/admin processing for the payout workflow.
-                  </p>
+        {withdrawals.length ? (
+          <div className="space-y-3">
+            {withdrawals.map((withdrawal) => (
+              <article key={withdrawal.id} className="rounded-lg border border-slate-200 p-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="font-bold text-slate-900">
+                      {withdrawal.reward?.stageName || 'Reward withdrawal'}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Requested on {formatDate(withdrawal.createdAt)}
+                    </p>
+                    {withdrawal.adminNote && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        Admin note: {withdrawal.adminNote}
+                      </p>
+                    )}
+                    {withdrawal.status === 'REJECTED' && withdrawal.rejectionType && (
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                        Rejection outcome:{' '}
+                        {withdrawal.rejectionType === 'CORRECTABLE' ? 'Correctable' : 'Final'}
+                      </p>
+                    )}
+                    {withdrawal.paymentReference && (
+                      <p className="mt-1 break-all font-mono text-xs text-slate-500">
+                        Payment reference: {withdrawal.paymentReference}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusPill
+                      tone={
+                        withdrawal.status === 'PAID'
+                          ? 'green'
+                          : withdrawal.status === 'APPROVED'
+                            ? 'blue'
+                            : withdrawal.status === 'REJECTED'
+                              ? 'red'
+                              : 'amber'
+                      }
+                    >
+                      {withdrawalStatusLabel(withdrawal)}
+                    </StatusPill>
+                    <span className="font-mono-nums text-sm font-bold text-slate-900">
+                      {formatMoney(withdrawal.amount)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-xs font-bold text-slate-700">
-                  Withdrawal Method
-                </label>
-                <select
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                  {...register('method', { required: 'Please select a method' })}
-                >
-                  <option value="">Select bank...</option>
-                  <option value="GTBank">GTBank</option>
-                  <option value="Zenith">Zenith Bank</option>
-                  <option value="Access">Access Bank</option>
-                  <option value="UBA">UBA</option>
-                  <option value="ALAT by Wema">ALAT by Wema</option>
-                  <option value="Kuda Bank">Kuda Bank</option>
-                  <option value="Moniepoint Microfinance Bank">Moniepoint Microfinance Bank</option>
-                  <option value="Opay">OPay</option>
-                  <option value="Paga">Paga</option>
-                  <option value="Palmpay">PalmPay</option>
-                  <option value="Sparkle">Sparkle</option>
-                  <option value="VBank">VBank</option>
-                </select>
-                {errors.method && (
-                  <p className="mt-1 text-xs font-medium text-rose-500">{errors.method.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-bold text-slate-700">
-                  Amount (NGN)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                    NGN
-                  </span>
-                  <input
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    className="w-full rounded-lg border border-slate-200 bg-white py-3 pl-12 pr-16 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    placeholder="0.00"
-                    {...register('amount', {
-                      required: 'Amount is required',
-                      min: { value: 1, message: 'Enter an amount greater than zero' },
-                      max: {
-                        value: availableBalance,
-                        message: 'Insufficient available balance',
-                      },
-                    })}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setValue('amount', availableBalance.toString())}
-                    className="absolute right-2 top-1/2 min-h-8 -translate-y-1/2 rounded-md bg-slate-100 px-2 text-[10px] font-bold text-slate-600 transition-colors hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    MAX
-                  </button>
-                </div>
-                {errors.amount && (
-                  <p className="mt-1 text-xs font-medium text-rose-500">{errors.amount.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-bold text-slate-700">
-                  Account Number
-                </label>
-                <input
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                  placeholder="0123456789"
-                  {...register('accountNumber', {
-                    required: 'Account number is required',
-                    pattern: { value: /^[0-9]{10}$/, message: 'Must be 10 digits' },
-                  })}
-                />
-                {errors.accountNumber && (
-                  <p className="mt-1 text-xs font-medium text-rose-500">
-                    {errors.accountNumber.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-bold text-slate-700">
-                  Account Name
-                </label>
-                <input
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                  placeholder="e.g. John Doe"
-                  {...register('accountName', { required: 'Account name is required' })}
-                />
-                {errors.accountName && (
-                  <p className="mt-1 text-xs font-medium text-rose-500">
-                    {errors.accountName.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="mb-1.5 block text-xs font-bold text-slate-700">
-                  Optional Note
-                </label>
-                <input
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                  placeholder="e.g. Monthly withdrawal"
-                  {...register('note')}
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting || Boolean(payoutBlockedReason)}
-              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              {isSubmitting ? 'Preparing...' : 'Prepare Payout Request'}
-            </button>
-            {payoutBlockedReason && (
-              <p className="text-center text-xs font-medium text-rose-600">{payoutBlockedReason}</p>
-            )}
-          </form>
-        </section>
-
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h3 className="text-base font-bold text-slate-900">Reward Claim Path</h3>
-            <Banknote className="text-indigo-600" size={18} />
+              </article>
+            ))}
           </div>
-          <div className="space-y-3 text-sm text-slate-600">
-            <p>
-              Stage rewards are created after qualification is confirmed. Earned rewards can be
-              requested as cash/package where the configured package supports those options.
-            </p>
-            {nextRewardConfig && (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                  Next reward details
-                </p>
-                <p className="mt-1 font-bold text-slate-900">{nextRewardConfig.displayName}</p>
-                <p className="mt-1 font-mono-nums font-semibold text-indigo-700">
-                  {formatMoney(nextRewardConfig.rewardValue)}
-                </p>
-                <p className="mt-2 text-xs leading-relaxed">{nextRewardConfig.rewardPackage}</p>
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
+        ) : (
+          <p className="text-sm text-slate-500">No reward withdrawal requests yet.</p>
+        )}
+      </section>
     </div>
   );
 }
