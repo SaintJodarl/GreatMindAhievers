@@ -131,7 +131,11 @@ export default function StageProgression({
                 <div className="flex items-center justify-between gap-2">
                   <span>Reward</span>
                   <strong className="text-right font-mono-nums text-slate-900">
-                    {config.hasReward ? formatMoney(config.rewardValue) : 'None specified'}
+                    {config.id === STAGE_IDS.STARTER_ENTRY_STAGE
+                      ? config.rewardPackage
+                      : config.hasReward
+                        ? formatMoney(config.rewardValue)
+                        : 'Not applicable'}
                   </strong>
                 </div>
                 <div className="flex items-center justify-between gap-2">

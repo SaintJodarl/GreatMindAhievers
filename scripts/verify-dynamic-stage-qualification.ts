@@ -353,6 +353,9 @@ test('Stage labels: Starter is entry stage and Emerald is Stage 1', () => {
   assert.equal(STAGE_RANK[STAGE_IDS.REGISTERED_ACTIVE], 0);
   assert.equal(STAGE_CONFIG[STAGE_IDS.STARTER_ENTRY_STAGE].stageNumber, null);
   assert.equal(STAGE_CONFIG[STAGE_IDS.STARTER_ENTRY_STAGE].requiredCount, 0);
+  assert.equal(STAGE_CONFIG[STAGE_IDS.STARTER_ENTRY_STAGE].rewardValue, 2000);
+  assert.equal(STAGE_CONFIG[STAGE_IDS.STARTER_ENTRY_STAGE].rewardPackage, '\u20a62,000 Cash');
+  assert.equal(STAGE_CONFIG[STAGE_IDS.STARTER_ENTRY_STAGE].hasReward, true);
   assert.match(STAGE_CONFIG[STAGE_IDS.STARTER_ENTRY_STAGE].displayName, /Entry Stage/);
   assert.equal(STAGE_CONFIG[STAGE_IDS.EMERALD_STAGE_1].stageNumber, 1);
   assert.equal(STAGE_CONFIG[STAGE_IDS.EMERALD_STAGE_1].requiredCount, 2);
@@ -573,7 +576,15 @@ for (const [name, targetStage, contributorStage] of fixedStageRequirements) {
   });
 }
 
-test('Multi-stage promotion records Emerald through Diamond without treating Starter as a reward stage', () => {
+test('Starter entry from Registered earns the configured Starter reward', () => {
+  const { members, root } = makeRoot(STAGE_IDS.REGISTERED_ACTIVE);
+
+  assert.equal(promoteOne(members, root), true);
+  assert.equal(root.stage, STAGE_IDS.STARTER_ENTRY_STAGE);
+  assert.deepEqual(root.rewards, [STAGE_IDS.STARTER_ENTRY_STAGE]);
+});
+
+test('Multi-stage promotion records Emerald through Diamond for members already at Starter', () => {
   const { members, root } = makeRoot();
   addQualifiedFirstThreeLevelTree(members, root, STAGE_IDS.SAPPHIRE_STAGE_5);
   evaluate(members, root);
@@ -585,7 +596,14 @@ test('Multi-stage promotion records Emerald through Diamond without treating Sta
     STAGE_IDS.SAPPHIRE_STAGE_5,
     STAGE_IDS.DIAMOND_STAGE_6_FINAL,
   ]);
-  assert.equal(root.rewards.includes(STAGE_IDS.STARTER_ENTRY_STAGE), false);
+  assert.deepEqual(root.rewards, [
+    STAGE_IDS.EMERALD_STAGE_1,
+    STAGE_IDS.SILVER_STAGE_2,
+    STAGE_IDS.GOLD_STAGE_3,
+    STAGE_IDS.JASPER_STAGE_4,
+    STAGE_IDS.SAPPHIRE_STAGE_5,
+    STAGE_IDS.DIAMOND_STAGE_6_FINAL,
+  ]);
 });
 
 test('Independent qualification: a downline can reach Emerald while their sponsor remains Starter', () => {

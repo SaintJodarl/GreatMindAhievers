@@ -80,9 +80,9 @@ export const STAGE_CONFIG: Record<StageId, StageConfig> = {
     previousStage: STAGE_IDS.REGISTERED_ACTIVE,
     requiredContributorStage: null,
     requiredCount: 0,
-    rewardValue: 0,
-    rewardPackage: 'No separate Starter reward has been specified.',
-    hasReward: false,
+    rewardValue: 2000,
+    rewardPackage: '\u20a62,000 Cash',
+    hasReward: true,
     isFinal: false,
   },
   [STAGE_IDS.EMERALD_STAGE_1]: {

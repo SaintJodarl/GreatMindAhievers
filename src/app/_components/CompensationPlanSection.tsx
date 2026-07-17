@@ -229,7 +229,7 @@ export function CompensationPlanSection() {
               <strong className="text-foreground">\u20a67,000</strong>, a registered active member
               is placed at Starter. Starter is completed by personally sponsoring at least one
               active direct member in the left binary leg and at least one active direct member in
-              the right binary leg. No separate Starter reward has been specified.
+              the right binary leg. Starter reward: \u20a62,000 Cash.
             </p>
           </div>
         </div>

@@ -26,6 +26,8 @@ import WithdrawalSection from './WithdrawalSection';
 import ReferralLinkCard from './ReferralLinkCard';
 import StageProgression from './StageProgression';
 import { useAuth } from '@/context/AuthContext';
+import { STAGE_CONFIG, STAGE_IDS, normalizeStageId } from '@/lib/qualification/constants';
+import type { StageConfig } from '@/lib/qualification/constants';
 
 export default function UserDashboardContent() {
   const { checkSession } = useAuth();
@@ -162,6 +164,14 @@ export default function UserDashboardContent() {
       maximumFractionDigits: 2,
     }).format(value);
 
+  const currentStageConfig = STAGE_CONFIG[normalizeStageId(summary.currentStage)];
+  const formatStageReward = (config: StageConfig) => {
+    if (!config.hasReward) return null;
+    if (config.id === STAGE_IDS.STARTER_ENTRY_STAGE) return config.rewardPackage;
+    return formatMoney(config.rewardValue);
+  };
+  const currentStageReward = formatStageReward(currentStageConfig);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -286,6 +296,12 @@ export default function UserDashboardContent() {
                     {summary.nextRequirement ||
                       'Your next qualification requirement appears here after stage calculation.'}
                   </p>
+                  {currentStageReward && (
+                    <p className="mt-3 text-sm font-bold text-indigo-950">
+                      Reward:{' '}
+                      <span className="font-mono-nums text-indigo-800">{currentStageReward}</span>
+                    </p>
+                  )}
                 </div>
                 <div className="grid min-w-[180px] grid-cols-2 gap-2 text-xs">
                   <div className="rounded-lg border border-white/70 bg-white/80 p-3">
@@ -357,6 +373,8 @@ export default function UserDashboardContent() {
             </section>
           </div>
 
+          <BinaryTreeSection summary={summary} />
+
           <StageProgression
             currentStage={summary.currentStage}
             nextStage={summary.nextStage}
@@ -366,8 +384,6 @@ export default function UserDashboardContent() {
           <ReferralLinkCard referralCode={summary?.referralCode} />
 
           <UserKPIGrid summary={summary} />
-
-          <BinaryTreeSection summary={summary} />
 
           {/* Two-Column Section */}
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
