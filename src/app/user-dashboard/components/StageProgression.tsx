@@ -7,7 +7,6 @@ import {
   STAGE_ORDER,
   STAGE_RANK,
   StageId,
-  getRequirementText,
   normalizeStageId,
 } from '@/lib/qualification/constants';
 
@@ -56,6 +55,37 @@ function progressPercent(progress?: StageProgressSnapshot | null) {
   );
 }
 
+const requirementLabels: Partial<Record<StageId, string>> = {
+  [STAGE_IDS.EMERALD_STAGE_1]: 'Starter-level members',
+  [STAGE_IDS.SILVER_STAGE_2]: 'Emerald members',
+  [STAGE_IDS.GOLD_STAGE_3]: 'Silver members',
+  [STAGE_IDS.JASPER_STAGE_4]: 'Gold members',
+  [STAGE_IDS.SAPPHIRE_STAGE_5]: 'Jasper members',
+  [STAGE_IDS.DIAMOND_STAGE_6_FINAL]: 'Sapphire members',
+};
+
+function getRequirementLabel(stage: StageId) {
+  return requirementLabels[stage] ?? 'members';
+}
+
+function getRequirementSummary(stage: StageId) {
+  if (stage === STAGE_IDS.STARTER_ENTRY_STAGE) return 'Activation';
+  const label = getRequirementLabel(stage);
+  const count =
+    stage === STAGE_IDS.EMERALD_STAGE_1 ? 14 : STAGE_CONFIG[stage].requiredCount;
+  return `${count} ${label}`;
+}
+
+function getNextFocusText(stage: StageId) {
+  if (stage === STAGE_IDS.STARTER_ENTRY_STAGE) return 'Activation required';
+  return `${getRequirementSummary(stage)} required`;
+}
+
+function getRequirementDetail(stage: StageId) {
+  if (stage === STAGE_IDS.STARTER_ENTRY_STAGE) return 'Requirement: Activation.';
+  return `Requirement: ${getRequirementSummary(stage)}.`;
+}
+
 export default function StageProgression({
   currentStage,
   nextStage,
@@ -80,7 +110,8 @@ export default function StageProgression({
           <p className="text-xs font-semibold text-slate-500">
             Next focus:{' '}
             <span className="text-indigo-700">
-              {STAGE_CONFIG[normalizeStageId(nextStage)].shortName}
+              {STAGE_CONFIG[normalizeStageId(nextStage)].shortName} —{' '}
+              {getNextFocusText(normalizeStageId(nextStage))}
             </span>
           </p>
         )}
@@ -141,18 +172,21 @@ export default function StageProgression({
                 <div className="flex items-center justify-between gap-2">
                   <span>Requirement</span>
                   <strong className="text-right text-slate-900">
-                    {config.requiredCount ? `${config.requiredCount} members` : 'Activation'}
+                    {getRequirementSummary(stage)}
                   </strong>
                 </div>
               </div>
 
               {progress && (
                 <div className="mt-3">
-                  <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                  <div className="mb-1 flex flex-col gap-0.5 text-[11px] font-semibold text-slate-500 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                     <span>
-                      {progress.qualifiedContributorCount} of {progress.requiredContributorCount}
+                      {progress.qualifiedContributorCount} of {progress.requiredContributorCount}{' '}
+                      {getRequirementLabel(stage)}
                     </span>
-                    <span>{progress.remainingContributorCount} left</span>
+                    <span>
+                      {progress.remainingContributorCount} {getRequirementLabel(stage)} left
+                    </span>
                   </div>
                   <div
                     className="h-2 overflow-hidden rounded-full bg-white"
@@ -170,8 +204,8 @@ export default function StageProgression({
                   {(typeof progress.leftQualifiedCount === 'number' ||
                     typeof progress.rightQualifiedCount === 'number') && (
                     <p className="mt-1 text-[11px] font-medium text-slate-500">
-                      Left {progress.leftQualifiedCount ?? 0} / Right{' '}
-                      {progress.rightQualifiedCount ?? 0}
+                      Left: {progress.leftQualifiedCount ?? 0} {getRequirementLabel(stage)} | Right:{' '}
+                      {progress.rightQualifiedCount ?? 0} {getRequirementLabel(stage)}
                     </p>
                   )}
                 </div>
@@ -182,7 +216,7 @@ export default function StageProgression({
                   Details
                 </summary>
                 <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                  {getRequirementText(stage)}
+                  {getRequirementDetail(stage)}
                 </p>
                 {config.rewardPackage && (
                   <p className="mt-2 text-xs leading-relaxed text-slate-600">
