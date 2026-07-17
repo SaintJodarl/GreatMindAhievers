@@ -71,8 +71,7 @@ function getRequirementLabel(stage: StageId) {
 function getRequirementSummary(stage: StageId) {
   if (stage === STAGE_IDS.STARTER_ENTRY_STAGE) return 'Activation';
   const label = getRequirementLabel(stage);
-  const count =
-    stage === STAGE_IDS.EMERALD_STAGE_1 ? 14 : STAGE_CONFIG[stage].requiredCount;
+  const count = stage === STAGE_IDS.EMERALD_STAGE_1 ? 14 : STAGE_CONFIG[stage].requiredCount;
   return `${count} ${label}`;
 }
 
