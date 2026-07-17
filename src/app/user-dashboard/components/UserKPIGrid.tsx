@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MoreVertical, Wallet, TrendingUp, Users, UserPlus } from 'lucide-react';
+import { Wallet, TrendingUp, Users, UserPlus } from 'lucide-react';
 
 interface UserKPIGridProps {
   summary: {
@@ -92,40 +92,35 @@ export default function UserKPIGrid({ summary }: UserKPIGridProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {kpis.map((kpi) => {
         const IconComponent = kpi.icon;
         return (
           <div
             key={kpi.id}
-            className={`${kpi.cardBg} rounded-xl border ${kpi.cardBorder} p-6 shadow-sm flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md`}
+            className={`${kpi.cardBg} flex min-w-0 flex-col justify-between rounded-xl border ${kpi.cardBorder} p-4 shadow-sm transition-all duration-200 hover:shadow-md`}
           >
             <div>
               {/* Card Header */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-3 flex items-center justify-between">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${kpi.iconBg} ${kpi.iconColor}`}
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg ${kpi.iconBg} ${kpi.iconColor}`}
                 >
-                  <IconComponent size={20} strokeWidth={2.5} />
+                  <IconComponent size={18} strokeWidth={2.5} />
                 </div>
-                <button
-                  className={`${kpi.labelColor} hover:${kpi.valueColor} transition-colors p-1 rounded-full hover:bg-white/50`}
-                >
-                  <MoreVertical size={18} />
-                </button>
               </div>
 
               {/* Value */}
               <div className="space-y-1">
                 <h3 className={`text-[13px] font-semibold ${kpi.labelColor}`}>{kpi.label}</h3>
-                <div className={`text-2xl font-bold tracking-tight ${kpi.valueColor}`}>
+                <div className={`break-words text-xl font-bold tracking-tight ${kpi.valueColor}`}>
                   {kpi.value}
                 </div>
               </div>
             </div>
 
             {/* Trend */}
-            <div className={`mt-4 text-xs font-medium flex items-center gap-1.5 ${kpi.trendColor}`}>
+            <div className={`mt-3 flex items-center gap-1.5 text-xs font-medium ${kpi.trendColor}`}>
               {kpi.trend}
             </div>
           </div>

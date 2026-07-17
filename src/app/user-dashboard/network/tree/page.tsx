@@ -177,20 +177,22 @@ export default function BinaryTreePage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Binary Network Tree</h1>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+            Binary Network Tree
+          </h1>
           <p className="text-gray-500 mt-1">
             Visualize and traverse your downline network placement up to 3 levels deep.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           {rootId && rootId !== loggedInUserId && (
             <button
               onClick={handleReset}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl font-medium text-sm hover:bg-indigo-100 transition-colors shadow-sm"
+              className="flex min-h-11 items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100"
             >
               <ArrowLeft size={16} />
               Back to My Tree
@@ -199,7 +201,7 @@ export default function BinaryTreePage() {
 
           <button
             onClick={fetchTree}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium text-sm hover:bg-gray-50 transition-colors shadow-sm"
+            className="flex min-h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Refresh
@@ -233,9 +235,9 @@ export default function BinaryTreePage() {
       )}
 
       {!loading && !error && treeData && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 overflow-x-auto">
+        <div className="max-w-full overflow-hidden rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
           {/* Header Info */}
-          <div className="flex flex-wrap items-center justify-between border-b border-gray-100 pb-6 mb-8 gap-4">
+          <div className="mb-5 flex flex-col gap-4 border-b border-gray-100 pb-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1">
               <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
                 Current Tree Focus
@@ -245,21 +247,21 @@ export default function BinaryTreePage() {
               </h2>
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="grid grid-cols-3 gap-2 text-right sm:flex sm:items-center sm:gap-4">
               <div className="text-right">
                 <span className="text-xs text-gray-500">Left Vol (PV)</span>
                 <p className="text-base font-bold text-indigo-600">
                   {(treeData.leftVolume || 0).toLocaleString()}
                 </p>
               </div>
-              <div className="h-8 w-px bg-gray-100" />
+              <div className="hidden h-8 w-px bg-gray-100 sm:block" />
               <div className="text-right">
                 <span className="text-xs text-gray-500">Right Vol (PV)</span>
                 <p className="text-base font-bold text-indigo-600">
                   {(treeData.rightVolume || 0).toLocaleString()}
                 </p>
               </div>
-              <div className="h-8 w-px bg-gray-100" />
+              <div className="hidden h-8 w-px bg-gray-100 sm:block" />
               <div className="text-right">
                 <span className="text-xs text-gray-500">Total Volume</span>
                 <p className="text-base font-bold text-gray-900">
@@ -270,100 +272,102 @@ export default function BinaryTreePage() {
           </div>
 
           {/* Tree Diagram Area */}
-          <div className="min-w-[760px] py-4 flex flex-col items-center">
-            {/* Level 1: Root */}
-            <div className="relative z-10">
-              <TreeNodeCard node={treeData} isRoot />
-            </div>
-
-            {/* Level 1 to 2 Connectors */}
-            {(treeData.leftChild !== undefined || treeData.rightChild !== undefined) && (
-              <div className="w-full max-w-[480px] h-8 relative mt-1">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-gray-200" />
-                <div className="absolute top-4 left-1/4 right-1/4 h-0.5 bg-gray-200" />
-                <div className="absolute top-4 left-1/4 w-0.5 h-4 bg-gray-200" />
-                <div className="absolute top-4 right-1/4 w-0.5 h-4 bg-gray-200" />
-              </div>
-            )}
-
-            {/* Level 2: Children */}
-            <div className="flex w-full max-w-[960px] justify-between relative mt-1 px-4">
-              {/* Left Wing */}
-              <div className="w-1/2 flex flex-col items-center">
-                <div className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded px-1.5 mb-2">
-                  LEFT LEG
-                </div>
-                {treeData.leftChild ? (
-                  <>
-                    <TreeNodeCard node={treeData.leftChild} />
-
-                    {/* Level 2 to 3 Connectors (Left Child to Grandchildren) */}
-                    <div className="w-full max-w-[240px] h-8 relative mt-1">
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-gray-200" />
-                      <div className="absolute top-4 left-1/4 right-1/4 h-0.5 bg-gray-200" />
-                      <div className="absolute top-4 left-1/4 w-0.5 h-4 bg-gray-200" />
-                      <div className="absolute top-4 right-1/4 w-0.5 h-4 bg-gray-200" />
-                    </div>
-
-                    {/* Level 3: Left Grandchildren */}
-                    <div className="flex w-full justify-around mt-1">
-                      {treeData.leftChild.leftChild ? (
-                        <TreeNodeCard node={treeData.leftChild.leftChild} />
-                      ) : (
-                        <EmptySlotCard parentId={treeData.leftChild.id} position="LEFT" />
-                      )}
-                      {treeData.leftChild.rightChild ? (
-                        <TreeNodeCard node={treeData.leftChild.rightChild} />
-                      ) : (
-                        <EmptySlotCard parentId={treeData.leftChild.id} position="RIGHT" />
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <EmptySlotCard parentId={treeData.id} position="LEFT" />
-                )}
+          <div className="overflow-x-auto overscroll-x-contain pb-2">
+            <div className="flex min-w-[720px] flex-col items-center py-4">
+              {/* Level 1: Root */}
+              <div className="relative z-10">
+                <TreeNodeCard node={treeData} isRoot />
               </div>
 
-              {/* Right Wing */}
-              <div className="w-1/2 flex flex-col items-center">
-                <div className="text-[10px] font-bold text-sky-600 bg-sky-50 border border-sky-200 rounded px-1.5 mb-2">
-                  RIGHT LEG
+              {/* Level 1 to 2 Connectors */}
+              {(treeData.leftChild !== undefined || treeData.rightChild !== undefined) && (
+                <div className="w-full max-w-[480px] h-8 relative mt-1">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-gray-200" />
+                  <div className="absolute top-4 left-1/4 right-1/4 h-0.5 bg-gray-200" />
+                  <div className="absolute top-4 left-1/4 w-0.5 h-4 bg-gray-200" />
+                  <div className="absolute top-4 right-1/4 w-0.5 h-4 bg-gray-200" />
                 </div>
-                {treeData.rightChild ? (
-                  <>
-                    <TreeNodeCard node={treeData.rightChild} />
+              )}
 
-                    {/* Level 2 to 3 Connectors (Right Child to Grandchildren) */}
-                    <div className="w-full max-w-[240px] h-8 relative mt-1">
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-gray-200" />
-                      <div className="absolute top-4 left-1/4 right-1/4 h-0.5 bg-gray-200" />
-                      <div className="absolute top-4 left-1/4 w-0.5 h-4 bg-gray-200" />
-                      <div className="absolute top-4 right-1/4 w-0.5 h-4 bg-gray-200" />
-                    </div>
+              {/* Level 2: Children */}
+              <div className="relative mt-1 flex w-full max-w-[960px] justify-between px-4">
+                {/* Left Wing */}
+                <div className="w-1/2 flex flex-col items-center">
+                  <div className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded px-1.5 mb-2">
+                    LEFT LEG
+                  </div>
+                  {treeData.leftChild ? (
+                    <>
+                      <TreeNodeCard node={treeData.leftChild} />
 
-                    {/* Level 3: Right Grandchildren */}
-                    <div className="flex w-full justify-around mt-1">
-                      {treeData.rightChild.leftChild ? (
-                        <TreeNodeCard node={treeData.rightChild.leftChild} />
-                      ) : (
-                        <EmptySlotCard parentId={treeData.rightChild.id} position="LEFT" />
-                      )}
-                      {treeData.rightChild.rightChild ? (
-                        <TreeNodeCard node={treeData.rightChild.rightChild} />
-                      ) : (
-                        <EmptySlotCard parentId={treeData.rightChild.id} position="RIGHT" />
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <EmptySlotCard parentId={treeData.id} position="RIGHT" />
-                )}
+                      {/* Level 2 to 3 Connectors (Left Child to Grandchildren) */}
+                      <div className="w-full max-w-[240px] h-8 relative mt-1">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-gray-200" />
+                        <div className="absolute top-4 left-1/4 right-1/4 h-0.5 bg-gray-200" />
+                        <div className="absolute top-4 left-1/4 w-0.5 h-4 bg-gray-200" />
+                        <div className="absolute top-4 right-1/4 w-0.5 h-4 bg-gray-200" />
+                      </div>
+
+                      {/* Level 3: Left Grandchildren */}
+                      <div className="flex w-full justify-around mt-1">
+                        {treeData.leftChild.leftChild ? (
+                          <TreeNodeCard node={treeData.leftChild.leftChild} />
+                        ) : (
+                          <EmptySlotCard parentId={treeData.leftChild.id} position="LEFT" />
+                        )}
+                        {treeData.leftChild.rightChild ? (
+                          <TreeNodeCard node={treeData.leftChild.rightChild} />
+                        ) : (
+                          <EmptySlotCard parentId={treeData.leftChild.id} position="RIGHT" />
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <EmptySlotCard parentId={treeData.id} position="LEFT" />
+                  )}
+                </div>
+
+                {/* Right Wing */}
+                <div className="w-1/2 flex flex-col items-center">
+                  <div className="text-[10px] font-bold text-sky-600 bg-sky-50 border border-sky-200 rounded px-1.5 mb-2">
+                    RIGHT LEG
+                  </div>
+                  {treeData.rightChild ? (
+                    <>
+                      <TreeNodeCard node={treeData.rightChild} />
+
+                      {/* Level 2 to 3 Connectors (Right Child to Grandchildren) */}
+                      <div className="w-full max-w-[240px] h-8 relative mt-1">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-gray-200" />
+                        <div className="absolute top-4 left-1/4 right-1/4 h-0.5 bg-gray-200" />
+                        <div className="absolute top-4 left-1/4 w-0.5 h-4 bg-gray-200" />
+                        <div className="absolute top-4 right-1/4 w-0.5 h-4 bg-gray-200" />
+                      </div>
+
+                      {/* Level 3: Right Grandchildren */}
+                      <div className="flex w-full justify-around mt-1">
+                        {treeData.rightChild.leftChild ? (
+                          <TreeNodeCard node={treeData.rightChild.leftChild} />
+                        ) : (
+                          <EmptySlotCard parentId={treeData.rightChild.id} position="LEFT" />
+                        )}
+                        {treeData.rightChild.rightChild ? (
+                          <TreeNodeCard node={treeData.rightChild.rightChild} />
+                        ) : (
+                          <EmptySlotCard parentId={treeData.rightChild.id} position="RIGHT" />
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <EmptySlotCard parentId={treeData.id} position="RIGHT" />
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Ranks and Information Legend */}
-          <div className="mt-12 pt-6 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="mt-6 flex flex-col justify-between gap-4 border-t border-gray-100 pt-5 sm:flex-row sm:items-center">
             <div className="flex flex-wrap items-center gap-4">
               <span className="text-xs font-semibold text-gray-500">Ranks & Colors:</span>
               {Object.entries(rankColors).map(([rank, color]) => (
@@ -380,8 +384,12 @@ export default function BinaryTreePage() {
               ))}
             </div>
 
-            <div className="text-xs text-gray-400 bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <div className="hidden">
               💡 <span className="font-medium text-gray-600">Tip:</span> Click on any member node to
+              load that member as the root of the tree view.
+            </div>
+            <div className="text-xs text-gray-400 bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <span className="font-medium text-gray-600">Tip:</span> Click on any member node to
               load that member as the root of the tree view.
             </div>
           </div>

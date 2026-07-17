@@ -89,7 +89,7 @@ export default function AppLayout({ children, role = 'user' }: AppLayoutProps) {
           role === 'user'
             ? sidebarCollapsed
               ? 'lg:pl-20'
-              : 'lg:pl-72'
+              : 'lg:pl-64'
             : sidebarCollapsed
               ? 'lg:pl-16'
               : 'lg:pl-60'
@@ -97,12 +97,13 @@ export default function AppLayout({ children, role = 'user' }: AppLayoutProps) {
       >
         {/* Mobile topbar */}
         <div
-          className="lg:hidden flex items-center justify-between px-4 py-3 border-b"
+          className="lg:hidden flex min-h-14 items-center justify-between border-b px-3 py-2.5 sm:px-4"
           style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
         >
           <button
             onClick={() => setMobileSidebarOpen(true)}
-            className="p-2 rounded-lg transition-colors hover:bg-muted"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            aria-label="Open member navigation"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path
@@ -129,7 +130,7 @@ export default function AppLayout({ children, role = 'user' }: AppLayoutProps) {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-screen-2xl mx-auto px-4 lg:px-6 xl:px-8 2xl:px-10 py-6">
+          <div className="mx-auto max-w-screen-2xl px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6">
             {isLocked ? (
               <div className="max-w-xl mx-auto mt-12 p-8 bg-white border border-gray-150 rounded-3xl shadow-sm text-center space-y-6">
                 <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mx-auto text-indigo-600 shadow-sm">

@@ -2,6 +2,8 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { getBinaryTreeScope, resolveRelativeBinaryLeg } from '@/lib/network/genealogy';
+import { getStageDisplayName } from '@/lib/qualification/constants';
 
 export async function GET(req: NextRequest) {
   try {
@@ -25,43 +27,71 @@ export async function GET(req: NextRequest) {
       where.OR = [{ name: { contains: search } }, { email: { contains: search } }];
     }
 
-    if (filter === 'left') {
-      where.binaryPosition = 'LEFT';
-    } else if (filter === 'right') {
-      where.binaryPosition = 'RIGHT';
-    } else if (filter === 'active') {
+    if (filter === 'active') {
       where.status = 'ACTIVE';
     } else if (filter === 'inactive') {
       where.status = { not: 'ACTIVE' };
     }
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          binaryPosition: true,
-          status: true,
-          createdAt: true,
-          _count: {
-            select: { sponsored: true },
+    const sponsorTree = await getBinaryTreeScope(prisma, userId);
+
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        referralCode: true,
+        binaryPosition: true,
+        status: true,
+        currentStage: true,
+        createdAt: true,
+        placement: {
+          select: {
+            id: true,
+            name: true,
           },
         },
-        orderBy: { createdAt: 'desc' },
-        skip: offset,
-        take: limit,
-      }),
-      prisma.user.count({ where }),
-    ]);
+        binaryTree: {
+          select: {
+            path: true,
+            parentId: true,
+          },
+        },
+        _count: {
+          select: { sponsored: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    const referrals = users.map((user) => ({
+    const filteredUsers = users.filter((user) => {
+      const leg = resolveRelativeBinaryLeg(sponsorTree, user.binaryTree);
+      if (filter === 'left') return leg === 'LEFT';
+      if (filter === 'right') return leg === 'RIGHT';
+      return true;
+    });
+
+    const total = filteredUsers.length;
+    const pagedUsers = filteredUsers.slice(offset, offset + limit);
+
+    const referrals = pagedUsers.map((user) => ({
       id: user.id,
       name: user.name || 'Unknown',
       email: user.email || '',
+      referralCode: user.referralCode,
       position: user.binaryPosition || 'N/A',
+      binaryLegRelativeToSponsor: resolveRelativeBinaryLeg(sponsorTree, user.binaryTree),
       status: user.status || 'PENDING',
+      currentStage: user.currentStage,
+      currentStageName: getStageDisplayName(user.currentStage),
+      placementParent: user.placement
+        ? {
+            id: user.placement.id,
+            name: user.placement.name || 'Unknown',
+          }
+        : null,
+      binaryParentId: user.binaryTree?.parentId ?? null,
       downlineCount: user._count.sponsored,
       joinedAt: user.createdAt.toISOString(),
     }));

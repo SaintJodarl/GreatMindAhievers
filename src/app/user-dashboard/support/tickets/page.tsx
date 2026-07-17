@@ -1,17 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  LifeBuoy,
-  Plus,
-  ArrowLeft,
-  Send,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  CheckCircle,
-  Loader2,
-} from 'lucide-react';
+import { LifeBuoy, Plus, ArrowLeft, Send, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
 interface Ticket {
   id: string;
@@ -199,17 +189,19 @@ export default function SupportTicketsPage() {
   const totalPages = Math.ceil(totalCount / limit);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Page Header */}
       {view === 'list' && (
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Support Tickets</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+              Support Tickets
+            </h1>
             <p className="text-gray-500 mt-1">Get help from the GMA support team.</p>
           </div>
           <button
             onClick={() => setView('create')}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium transition-colors hover:bg-indigo-700 shadow-sm"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
           >
             <Plus size={20} />
             New Ticket
@@ -267,6 +259,12 @@ export default function SupportTicketsPage() {
         </div>
       )}
 
+      {error && (
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">
+          {error}
+        </div>
+      )}
+
       {/* Main Body Switcher */}
       {view === 'list' && (
         <>
@@ -293,9 +291,56 @@ export default function SupportTicketsPage() {
               </button>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+            <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+              <div className="space-y-3 p-4 md:hidden">
+                {tickets.map((ticket) => {
+                  const status = getStatusStyle(ticket.status);
+                  return (
+                    <article
+                      key={ticket.id}
+                      className="rounded-lg border border-gray-100 bg-white p-3 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-sm font-bold text-gray-900">
+                            {ticket.subject}
+                          </h3>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {ticket._count?.messages || 1} msg(s)
+                          </p>
+                        </div>
+                        <span
+                          className="shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase"
+                          style={{
+                            background: status.bg,
+                            color: status.color,
+                            borderColor: status.color + '20',
+                          }}
+                        >
+                          {status.text}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 rounded-md bg-gray-50 p-2 text-xs">
+                        <p className="font-semibold text-gray-400">Last Activity</p>
+                        <p className="mt-0.5 font-medium text-gray-700">
+                          {new Date(ticket.updatedAt).toLocaleString()}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => handleViewTicket(ticket.id)}
+                        className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
+                      >
+                        View Thread
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full min-w-[760px] border-collapse text-left">
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50/50">
                       <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -358,7 +403,7 @@ export default function SupportTicketsPage() {
 
               {/* Pagination controls */}
               {totalPages > 1 && (
-                <div className="flex justify-between items-center p-6 border-t border-gray-100">
+                <div className="flex flex-col gap-3 border-t border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
                   <span className="text-xs text-gray-500">
                     Page {currentPage} of {totalPages} ({totalCount} total tickets)
                   </span>
@@ -366,14 +411,14 @@ export default function SupportTicketsPage() {
                     <button
                       disabled={currentPage <= 1}
                       onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                      className="px-3.5 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      className="min-h-10 rounded-lg border border-gray-200 px-3.5 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Previous
                     </button>
                     <button
                       disabled={currentPage >= totalPages}
                       onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                      className="px-3.5 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      className="min-h-10 rounded-lg border border-gray-200 px-3.5 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Next
                     </button>

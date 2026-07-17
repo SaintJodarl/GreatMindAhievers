@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/options';
 import { prisma } from '@/lib/prisma';
+import { getBinaryTreeScope, isWithinBinaryScope } from '@/lib/network/genealogy';
 import { getStageDisplayName } from '@/lib/qualification/constants';
 
 // We want to return exactly 3 levels.
@@ -30,7 +31,11 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const targetUserId = searchParams.get('userId') || session.user.id;
 
-    // Fetch the root tree node
+    const viewerTree = await getBinaryTreeScope(prisma, session.user.id);
+    if (!viewerTree) {
+      return NextResponse.json({ message: 'User not placed in binary tree yet.' }, { status: 404 });
+    }
+
     const rootNode = await prisma.binaryTree.findUnique({
       where: { userId: targetUserId },
       include: {
@@ -40,6 +45,13 @@ export async function GET(req: Request) {
 
     if (!rootNode) {
       return NextResponse.json({ message: 'User not placed in binary tree yet.' }, { status: 404 });
+    }
+
+    if (!isWithinBinaryScope(viewerTree, rootNode)) {
+      return NextResponse.json(
+        { message: 'Forbidden: User is not in your downline.' },
+        { status: 403 }
+      );
     }
 
     // Fetch up to depth 3

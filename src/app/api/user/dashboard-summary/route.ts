@@ -9,6 +9,7 @@ import {
   getStageNumberLabel,
   normalizeStageId,
 } from '@/lib/qualification/constants';
+import { getMemberBinaryLegCounts } from '@/lib/network/genealogy';
 
 const getSimplifiedOnboardingStep = (
   step: number | null | undefined,
@@ -26,7 +27,7 @@ const getSimplifiedOnboardingStep = (
   return step;
 };
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -69,6 +70,8 @@ export async function GET(req: NextRequest) {
       openTicketsCount,
       announcementsCount,
       currentStageProgress,
+      rewards,
+      binaryLegCounts,
     ] = await Promise.all([
       prisma.user.count({
         where: { sponsorId: userId },
@@ -107,6 +110,17 @@ export async function GET(req: NextRequest) {
             where: { userId_stage: { userId, stage: nextStage } },
           })
         : Promise.resolve(null),
+      prisma.reward.findMany({
+        where: { userId },
+        include: {
+          claims: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      getMemberBinaryLegCounts(prisma, userId),
     ]);
 
     const lifetimeEarnings = Number(earnings._sum.amount || 0);
@@ -142,11 +156,35 @@ export async function GET(req: NextRequest) {
         ? {
             stage: currentStageProgress.stage,
             stageName: getStageDisplayName(currentStageProgress.stage),
+            requirementStage: currentStageProgress.requirementStage,
+            requirementStageName: currentStageProgress.requirementStage
+              ? getStageDisplayName(currentStageProgress.requirementStage)
+              : null,
+            status: currentStageProgress.status,
+            leftQualifiedCount: currentStageProgress.leftQualifiedCount,
+            rightQualifiedCount: currentStageProgress.rightQualifiedCount,
             qualifiedContributorCount: currentStageProgress.qualifiedContributorCount,
             requiredContributorCount: currentStageProgress.requiredContributorCount,
             remainingContributorCount: currentStageProgress.remainingContributorCount,
           }
         : null,
+      rewards: rewards.map((reward) => ({
+        id: reward.id,
+        stage: reward.stage,
+        stageName: getStageDisplayName(reward.stage),
+        rewardValue: Number(reward.rewardValue || 0),
+        rewardPackage: reward.rewardPackage,
+        status: reward.status,
+        createdAt: reward.createdAt,
+        latestClaim: reward.claims[0]
+          ? {
+              id: reward.claims[0].id,
+              selectedOption: reward.claims[0].selectedOption,
+              status: reward.claims[0].status,
+              createdAt: reward.claims[0].createdAt,
+            }
+          : null,
+      })),
       onboardingStatus: user.onboardingStatus,
       kycStatus: user.kycStatus,
       kycSubmittedAt: user.kycSubmittedAt,
@@ -154,9 +192,10 @@ export async function GET(req: NextRequest) {
       kycRejectedAt: user.kycRejectedAt,
       kycRejectionReason: user.kycRejectionReason,
       referralCode: user.referralCode,
-      leftLegCount: user.leftLegCount,
-      rightLegCount: user.rightLegCount,
-      totalDownlines: user.totalDownlines,
+      leftLegCount: binaryLegCounts.leftLegCount,
+      rightLegCount: binaryLegCounts.rightLegCount,
+      totalDownlines: binaryLegCounts.totalDescendantCount,
+      activeDownlineCount: binaryLegCounts.activeDescendantCount,
       directReferrals,
       balance: user.wallet?.balance || 0,
       leftVolume: leftVol,

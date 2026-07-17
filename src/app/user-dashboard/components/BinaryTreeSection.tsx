@@ -1,12 +1,12 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface TreeNode {
   id: string;
   name: string;
   rank: string;
   volume: number;
-  status: 'Active' | 'Pending' | 'Suspended';
+  status: string;
   leftChild?: TreeNode | null;
   rightChild?: TreeNode | null;
   joinDate: string;
@@ -205,11 +205,52 @@ interface BinaryTreeSectionProps {
 }
 
 export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
+  const [treeData, setTreeData] = useState<TreeNode | null>(null);
+  const [treeLoading, setTreeLoading] = useState(false);
+  const [treeError, setTreeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!summary) return;
+
+    let active = true;
+    setTreeLoading(true);
+    setTreeError(null);
+
+    fetch('/api/user/network/tree')
+      .then(async (res) => {
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          throw new Error(data?.error || 'Unable to load binary tree');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (active) {
+          setTreeData(data.tree ?? null);
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setTreeError(error.message || 'Unable to load binary tree');
+          setTreeData(null);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setTreeLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [summary]);
+
   // If no summary is loaded yet, show skeleton or empty
   if (!summary) {
     return (
       <div
-        className="p-5 rounded-xl flex items-center justify-center h-[300px]"
+        className="flex h-[260px] items-center justify-center rounded-xl p-4"
         style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
       >
         <p className="text-sm text-slate-400 animate-pulse">Loading tree...</p>
@@ -221,7 +262,7 @@ export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
   // Assuming API gives us leftLegCount, rightLegCount, etc.
   // We'll leave children empty for now since we're removing mock data.
   // Real tree data should be fetched from /api/user/network/tree
-  const rootNode: TreeNode = {
+  const fallbackRootNode: TreeNode = {
     id: summary.id || 'User',
     name: summary.name || 'You',
     rank: summary.currentStageName || summary.rank || 'Entry',
@@ -232,21 +273,28 @@ export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
     rightChild: null,
   };
 
+  const rootNode = treeData ?? fallbackRootNode;
+
   return (
     <div
-      className="p-5 rounded-xl"
+      className="rounded-xl p-4 sm:p-5"
       style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
     >
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold" style={{ color: 'var(--foreground)' }}>
             Binary Network Tree
           </h3>
           <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
-            Your downline structure
+            Your member-relative downline structure
           </p>
+          {treeError && (
+            <p className="mt-1 text-xs text-amber-600">
+              Showing summary-only tree while live tree reloads.
+            </p>
+          )}
         </div>
-        <div className="flex gap-3">
+        <div className="hidden flex-wrap gap-3 md:flex">
           {['Emerald — Stage 1', 'Silver — Stage 2', 'Diamond — Stage 6 — Final Stage'].map((r) => (
             <div key={r} className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: rankColors[r] }} />
@@ -258,9 +306,13 @@ export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
         </div>
       </div>
 
-      <div className="overflow-x-hidden md:overflow-visible pb-4">
-        <div className="w-full flex justify-center py-6 px-2 md:px-0">
-          <TreeNodeCard node={rootNode} isRoot />
+      <div className="overflow-x-auto pb-2">
+        <div className="flex min-w-full justify-center px-2 py-4 md:px-0">
+          {treeLoading && !treeData ? (
+            <p className="py-12 text-sm text-slate-400 animate-pulse">Loading live tree...</p>
+          ) : (
+            <TreeNodeCard node={rootNode} isRoot />
+          )}
         </div>
       </div>
     </div>

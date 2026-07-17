@@ -1,6 +1,15 @@
 'use client';
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { AlertCircle, Award, Banknote, Clock3, LockKeyhole, Wallet } from 'lucide-react';
+import {
+  STAGE_CONFIG,
+  STAGE_ORDER,
+  STAGE_RANK,
+  getStageDisplayName,
+  normalizeStageId,
+} from '@/lib/qualification/constants';
 
 interface WithdrawalFormData {
   amount: string;
@@ -11,8 +20,77 @@ interface WithdrawalFormData {
   note: string;
 }
 
+interface RewardSummary {
+  id: string;
+  stage: string;
+  stageName: string;
+  rewardValue: number;
+  rewardPackage?: string | null;
+  status: string;
+  latestClaim?: {
+    selectedOption: string;
+    status: string;
+  } | null;
+}
+
 interface WithdrawalSectionProps {
-  summary?: any;
+  summary?: {
+    balance?: number | string;
+    pendingWithdrawals?: number | string;
+    currentStage?: string;
+    currentStageName?: string;
+    nextStage?: string | null;
+    nextStageName?: string | null;
+    kycStatus?: string;
+    bankName?: string;
+    accountNumber?: string;
+    accountName?: string;
+    rewards?: RewardSummary[];
+  };
+}
+
+const formatMoney = (value: number) =>
+  new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+
+function getNextRewardStage(currentStage: string | null | undefined) {
+  const normalized = normalizeStageId(currentStage);
+  return STAGE_ORDER.slice(STAGE_RANK[normalized] + 1).find(
+    (stage) => STAGE_CONFIG[stage].hasReward
+  );
+}
+
+function getRewardForStage(rewards: RewardSummary[] | undefined, stage: string) {
+  return rewards?.find((reward) => normalizeStageId(reward.stage) === normalizeStageId(stage));
+}
+
+function StatusPill({
+  children,
+  tone,
+}: {
+  children: React.ReactNode;
+  tone: 'green' | 'amber' | 'slate' | 'red';
+}) {
+  const className =
+    tone === 'green'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+      : tone === 'amber'
+        ? 'border-amber-200 bg-amber-50 text-amber-700'
+        : tone === 'red'
+          ? 'border-rose-200 bg-rose-50 text-rose-700'
+          : 'border-slate-200 bg-slate-50 text-slate-600';
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-bold ${className}`}
+    >
+      {children}
+    </span>
+  );
 }
 
 export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
@@ -23,120 +101,207 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
-  } = useForm<WithdrawalFormData>();
+  } = useForm<WithdrawalFormData>({
+    defaultValues: {
+      bankName: summary?.bankName || '',
+      accountNumber: summary?.accountNumber || '',
+      accountName: summary?.accountName || '',
+    },
+  });
 
-  const walletBalance = summary?.balance || 0;
-  const minWithdrawal = 5000;
-  const pendingAmount = summary?.pendingWithdrawals || 0;
+  const walletBalance = Number(summary?.balance || 0);
+  const pendingAmount = Number(summary?.pendingWithdrawals || 0);
+  const availableBalance = Math.max(0, walletBalance - pendingAmount);
+  const currentStage = normalizeStageId(summary?.currentStage);
+  const currentStageConfig = STAGE_CONFIG[currentStage];
+  const currentStageReward = getRewardForStage(summary?.rewards, currentStage);
+  const nextRewardStage = getNextRewardStage(currentStage);
+  const nextRewardConfig = nextRewardStage ? STAGE_CONFIG[nextRewardStage] : null;
+  const kycApproved = ['APPROVED', 'COMPLETE'].includes((summary?.kycStatus || '').toUpperCase());
+  const earnedRewards = summary?.rewards?.filter((reward) => reward.status === 'EARNED') || [];
+  const claimedRewards = summary?.rewards?.filter((reward) => reward.status === 'CLAIMED') || [];
 
-  // No withdrawal history yet for new accounts.
-  // Real implementation should fetch from `/api/wallet/withdrawals`
-  const withdrawalHistory: any[] = [];
-
-  // Backend integration point: POST /api/withdrawals/request
-  const onSubmit = async (data: WithdrawalFormData) => {
+  // No member withdrawal creation route exists in the current app. Keep this display-only flow honest.
+  const onSubmit = async () => {
     setIsSubmitting(true);
-    // Dummy delay for UI purposes
-    await new Promise((r) => setTimeout(r, 1400));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     setIsSubmitting(false);
     setSubmitSuccess(true);
-    reset();
-    setTimeout(() => setSubmitSuccess(false), 4000);
+    reset({
+      amount: '',
+      method: '',
+      bankName: summary?.bankName || '',
+      accountNumber: summary?.accountNumber || '',
+      accountName: summary?.accountName || '',
+      note: '',
+    });
+    setTimeout(() => setSubmitSuccess(false), 5000);
   };
 
+  const payoutBlockedReason = !kycApproved
+    ? 'KYC approval is required before admin can approve wallet payouts.'
+    : availableBalance <= 0
+      ? 'You have not yet unlocked a withdrawable wallet balance.'
+      : null;
+
   return (
-    <div className="space-y-6">
-      {/* Balance overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          {
-            label: 'Available Balance',
-            value: `₦${Math.max(0, walletBalance - pendingAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-            color: 'var(--accent)',
-            sub: 'Ready to withdraw',
-          },
-          {
-            label: 'Pending Withdrawal',
-            value: `₦${pendingAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-            color: 'var(--warning)',
-            sub: 'Awaiting approval',
-          },
-          {
-            label: 'Total Withdrawn',
-            value: '₦0.00', // Need an API field for total withdrawn. Default to 0.00 for empty state
-            color: 'var(--info)',
-            sub: 'All-time payouts',
-          },
-        ].map((item) => (
-          <div
-            key={`wbal-${item.label}`}
-            className="p-4 rounded-xl"
-            style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
-          >
-            <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
-              {item.label}
+    <div className="space-y-5">
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              Wallet & Rewards
             </p>
-            <p className="text-2xl font-bold font-mono-nums" style={{ color: item.color }}>
-              {item.value}
+            <h2 className="text-lg font-bold text-slate-900">Withdrawal Readiness</h2>
+          </div>
+          <StatusPill tone={kycApproved ? 'green' : 'amber'}>
+            KYC {summary?.kycStatus || 'PENDING'}
+          </StatusPill>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
+              <Wallet size={15} />
+              Available balance
+            </div>
+            <p className="mt-2 font-mono-nums text-xl font-bold text-emerald-950">
+              {formatMoney(availableBalance)}
             </p>
-            <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
-              {item.sub}
+            <p className="mt-1 text-xs text-emerald-700/80">
+              Current wallet balance less pending requests.
             </p>
           </div>
-        ))}
-      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Withdrawal request form */}
-        <div
-          className="p-6 rounded-xl"
-          style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
-        >
-          <div className="mb-6">
-            <h3 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>
-              Request Withdrawal
-            </h3>
-            <p className="text-sm mt-1" style={{ color: 'var(--muted-foreground)' }}>
-              Transfer your earnings to your local bank account. Minimum withdrawal is ₦
-              {minWithdrawal.toLocaleString()}.
+          <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-amber-700">
+              <Clock3 size={15} />
+              Pending requests
+            </div>
+            <p className="mt-2 font-mono-nums text-xl font-bold text-amber-950">
+              {formatMoney(pendingAmount)}
+            </p>
+            <p className="mt-1 text-xs text-amber-700/80">Awaiting admin decision.</p>
+          </div>
+
+          <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 p-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-indigo-700">
+              <Award size={15} />
+              Current stage
+            </div>
+            <p className="mt-2 text-sm font-bold text-indigo-950">
+              {summary?.currentStageName || getStageDisplayName(currentStage)}
+            </p>
+            <p className="mt-1 text-xs text-indigo-700/80">
+              {currentStageConfig.hasReward
+                ? `Reward value: ${formatMoney(currentStageConfig.rewardValue)}`
+                : 'No separate reward is configured for this stage.'}
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+              <LockKeyhole size={15} />
+              Next reward
+            </div>
+            <p className="mt-2 text-sm font-bold text-slate-950">
+              {nextRewardConfig ? nextRewardConfig.displayName : 'Plan complete'}
+            </p>
+            <p className="mt-1 text-xs text-slate-600">
+              {nextRewardConfig
+                ? `${formatMoney(nextRewardConfig.rewardValue)} after qualification is confirmed.`
+                : 'No further configured stage reward.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <div className="rounded-lg border border-slate-200 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-bold text-slate-900">Current Stage Reward</h3>
+              <StatusPill
+                tone={
+                  currentStageReward?.status === 'EARNED'
+                    ? 'green'
+                    : currentStageReward?.status === 'CLAIMED'
+                      ? 'slate'
+                      : 'amber'
+                }
+              >
+                {currentStageReward?.status || 'Not unlocked'}
+              </StatusPill>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-slate-600">
+              {currentStageConfig.hasReward
+                ? currentStageReward
+                  ? currentStageReward.rewardPackage || currentStageConfig.rewardPackage
+                  : 'Your reward becomes available after qualification is confirmed and recorded.'
+                : 'Complete your current stage requirements to unlock the next configured reward.'}
+            </p>
+            {currentStageReward?.latestClaim && (
+              <p className="mt-2 text-xs font-semibold text-slate-600">
+                Latest claim: {currentStageReward.latestClaim.selectedOption} -{' '}
+                {currentStageReward.latestClaim.status.replace(/_/g, ' ')}
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-slate-200 p-3">
+            <h3 className="text-sm font-bold text-slate-900">Eligibility</h3>
+            <p className="mt-2 text-xs leading-relaxed text-slate-600">
+              {payoutBlockedReason ||
+                'Your available wallet balance may be requested for admin review. Stage rewards are unlocked separately after qualification and can be claimed from the Rewards page.'}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <StatusPill tone={availableBalance > 0 ? 'green' : 'slate'}>
+                Withdrawable cash: {formatMoney(availableBalance)}
+              </StatusPill>
+              <StatusPill tone={earnedRewards.length ? 'green' : 'slate'}>
+                Earned rewards: {earnedRewards.length}
+              </StatusPill>
+              <StatusPill tone={claimedRewards.length ? 'amber' : 'slate'}>
+                Claimed rewards: {claimedRewards.length}
+              </StatusPill>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="mb-4">
+            <h3 className="text-base font-bold text-slate-900">Request Wallet Payout</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Enter an amount up to your available wallet balance. No authoritative stage-based
+              minimum withdrawal rule is defined in the current codebase.
             </p>
           </div>
 
           {submitSuccess && (
-            <div className="mb-6 p-4 rounded-lg bg-emerald-50 border border-emerald-200">
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <div className="flex gap-3">
-                <div className="mt-0.5 text-emerald-600">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1.5-4.5l-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                </div>
+                <AlertCircle className="mt-0.5 shrink-0 text-amber-600" size={18} />
                 <div>
-                  <h4 className="text-sm font-bold text-emerald-800">Request Submitted</h4>
-                  <p className="text-xs text-emerald-600 mt-1">
-                    Your withdrawal request has been received and is pending admin approval. You
-                    will be notified once processed.
+                  <h4 className="text-sm font-bold text-amber-800">Request details prepared</h4>
+                  <p className="mt-1 text-xs text-amber-700">
+                    This member dashboard does not currently expose a withdrawal-submission API.
+                    Please contact support/admin processing for the payout workflow.
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div className="space-y-4">
-              {/* Method */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label
-                  className="block text-xs font-bold mb-1.5"
-                  style={{ color: 'var(--foreground)' }}
-                >
+                <label className="mb-1.5 block text-xs font-bold text-slate-700">
                   Withdrawal Method
                 </label>
                 <select
-                  className="input-field"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   {...register('method', { required: 'Please select a method' })}
                 >
                   <option value="">Select bank...</option>
@@ -154,244 +319,130 @@ export default function WithdrawalSection({ summary }: WithdrawalSectionProps) {
                   <option value="VBank">VBank</option>
                 </select>
                 {errors.method && (
-                  <p className="text-xs text-rose-500 mt-1 font-medium">{errors.method.message}</p>
+                  <p className="mt-1 text-xs font-medium text-rose-500">{errors.method.message}</p>
                 )}
               </div>
 
-              {/* Amount */}
               <div>
-                <label
-                  className="block text-xs font-bold mb-1.5"
-                  style={{ color: 'var(--foreground)' }}
-                >
-                  Amount (₦)
+                <label className="mb-1.5 block text-xs font-bold text-slate-700">
+                  Amount (NGN)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
-                    ₦
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    NGN
                   </span>
                   <input
                     type="number"
-                    className="input-field pl-8"
-                    placeholder="5000"
+                    min="1"
+                    step="0.01"
+                    className="w-full rounded-lg border border-slate-200 bg-white py-3 pl-12 pr-16 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    placeholder="0.00"
                     {...register('amount', {
                       required: 'Amount is required',
-                      min: {
-                        value: minWithdrawal,
-                        message: `Minimum withdrawal is ₦${minWithdrawal}`,
-                      },
+                      min: { value: 1, message: 'Enter an amount greater than zero' },
                       max: {
-                        value: Math.max(0, walletBalance - pendingAmount),
+                        value: availableBalance,
                         message: 'Insufficient available balance',
                       },
                     })}
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      const max = Math.max(0, walletBalance - pendingAmount);
-                      reset({ ...register, amount: max.toString() } as any);
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-colors"
+                    onClick={() => setValue('amount', availableBalance.toString())}
+                    className="absolute right-2 top-1/2 min-h-8 -translate-y-1/2 rounded-md bg-slate-100 px-2 text-[10px] font-bold text-slate-600 transition-colors hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     MAX
                   </button>
                 </div>
                 {errors.amount && (
-                  <p className="text-xs text-rose-500 mt-1 font-medium">{errors.amount.message}</p>
+                  <p className="mt-1 text-xs font-medium text-rose-500">{errors.amount.message}</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {/* Account Number */}
-                <div>
-                  <label
-                    className="block text-xs font-bold mb-1.5"
-                    style={{ color: 'var(--foreground)' }}
-                  >
-                    Account Number
-                  </label>
-                  <input
-                    className="input-field"
-                    placeholder="0123456789"
-                    {...register('accountNumber', {
-                      required: 'Account number is required',
-                      pattern: { value: /^[0-9]{10}$/, message: 'Must be 10 digits' },
-                    })}
-                  />
-                  {errors.accountNumber && (
-                    <p className="text-xs text-rose-500 mt-1 font-medium">
-                      {errors.accountNumber.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Account Name */}
-                <div>
-                  <label
-                    className="block text-xs font-bold mb-1.5"
-                    style={{ color: 'var(--foreground)' }}
-                  >
-                    Account Name
-                  </label>
-                  <input
-                    className="input-field"
-                    placeholder="e.g. John Doe"
-                    {...register('accountName', { required: 'Account name is required' })}
-                  />
-                  {errors.accountName && (
-                    <p className="text-xs text-rose-500 mt-1 font-medium">
-                      {errors.accountName.message}
-                    </p>
-                  )}
-                </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-slate-700">
+                  Account Number
+                </label>
+                <input
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  placeholder="0123456789"
+                  {...register('accountNumber', {
+                    required: 'Account number is required',
+                    pattern: { value: /^[0-9]{10}$/, message: 'Must be 10 digits' },
+                  })}
+                />
+                {errors.accountNumber && (
+                  <p className="mt-1 text-xs font-medium text-rose-500">
+                    {errors.accountNumber.message}
+                  </p>
+                )}
               </div>
 
-              {/* Note */}
               <div>
-                <label
-                  className="block text-xs font-bold mb-1.5"
-                  style={{ color: 'var(--foreground)' }}
-                >
+                <label className="mb-1.5 block text-xs font-bold text-slate-700">
+                  Account Name
+                </label>
+                <input
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  placeholder="e.g. John Doe"
+                  {...register('accountName', { required: 'Account name is required' })}
+                />
+                {errors.accountName && (
+                  <p className="mt-1 text-xs font-medium text-rose-500">
+                    {errors.accountName.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="mb-1.5 block text-xs font-bold text-slate-700">
                   Optional Note
                 </label>
                 <input
-                  className="input-field"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   placeholder="e.g. Monthly withdrawal"
                   {...register('note')}
                 />
               </div>
             </div>
 
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={isSubmitting || walletBalance - pendingAmount < minWithdrawal}
-                className="w-full btn-primary py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                    Processing...
-                  </>
-                ) : (
-                  'Submit Request'
-                )}
-              </button>
-              {walletBalance - pendingAmount < minWithdrawal && (
-                <p className="text-center text-[11px] text-rose-500 font-medium mt-2">
-                  You need at least ₦{minWithdrawal.toLocaleString()} available balance to withdraw.
-                </p>
-              )}
-            </div>
-          </form>
-        </div>
-
-        {/* Withdrawal History */}
-        <div
-          className="rounded-xl overflow-hidden flex flex-col"
-          style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
-        >
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>
-              Recent Withdrawals
-            </h3>
-            <button className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
-              View All
+            <button
+              type="submit"
+              disabled={isSubmitting || Boolean(payoutBlockedReason)}
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            >
+              {isSubmitting ? 'Preparing...' : 'Prepare Payout Request'}
             </button>
-          </div>
+            {payoutBlockedReason && (
+              <p className="text-center text-xs font-medium text-rose-600">{payoutBlockedReason}</p>
+            )}
+          </form>
+        </section>
 
-          <div className="flex-1 overflow-y-auto min-h-[300px]">
-            {withdrawalHistory.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-                <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 mb-3">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-bold text-slate-700">No withdrawals yet</h3>
-                <p className="text-xs text-slate-500 mt-1 max-w-[250px]">
-                  When you request a payout, your withdrawal history will appear here.
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="text-base font-bold text-slate-900">Reward Claim Path</h3>
+            <Banknote className="text-indigo-600" size={18} />
+          </div>
+          <div className="space-y-3 text-sm text-slate-600">
+            <p>
+              Stage rewards are created after qualification is confirmed. Earned rewards can be
+              requested as cash/package where the configured package supports those options.
+            </p>
+            {nextRewardConfig && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                  Next reward details
                 </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {withdrawalHistory.map((item) => (
-                  <div key={item.id} className="p-5 hover:bg-slate-50/50 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${
-                            item.status === 'Approved'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : item.status === 'Pending'
-                                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : 'bg-rose-50 text-rose-700 border-rose-200'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                        <span
-                          className="text-xs font-medium"
-                          style={{ color: 'var(--muted-foreground)' }}
-                        >
-                          {item.date}
-                        </span>
-                      </div>
-                      <span
-                        className="text-sm font-bold font-mono-nums"
-                        style={{ color: 'var(--foreground)' }}
-                      >
-                        ₦{item.amount.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <div
-                        className="flex items-center gap-1.5"
-                        style={{ color: 'var(--muted-foreground)' }}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                          <rect
-                            x="1.5"
-                            y="2.5"
-                            width="9"
-                            height="7"
-                            rx="1.5"
-                            stroke="currentColor"
-                            strokeWidth="1.2"
-                          />
-                          <path d="M1.5 5.5h9" stroke="currentColor" strokeWidth="1.2" />
-                        </svg>
-                        {item.method} ({item.account})
-                      </div>
-                      <span
-                        className="font-mono text-[10px] uppercase"
-                        style={{ color: 'var(--muted-foreground)' }}
-                      >
-                        {item.id}
-                      </span>
-                    </div>
-                    {item.note && item.status === 'Rejected' && (
-                      <div className="mt-3 p-2.5 rounded bg-rose-50 border border-rose-100 text-[11px] text-rose-600 font-medium leading-relaxed">
-                        Reason: {item.note}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                <p className="mt-1 font-bold text-slate-900">{nextRewardConfig.displayName}</p>
+                <p className="mt-1 font-mono-nums font-semibold text-indigo-700">
+                  {formatMoney(nextRewardConfig.rewardValue)}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed">{nextRewardConfig.rewardPackage}</p>
               </div>
             )}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

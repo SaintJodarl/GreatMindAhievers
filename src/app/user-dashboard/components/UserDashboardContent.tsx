@@ -12,6 +12,10 @@ import {
   ChevronRight,
   Info,
   Users,
+  BarChart3,
+  Network,
+  Wallet,
+  RefreshCw,
 } from 'lucide-react';
 import UserKPIGrid from './UserKPIGrid';
 import BinaryTreeSection from './BinaryTreeSection';
@@ -20,6 +24,7 @@ import CommissionHistoryTable from './CommissionHistoryTable';
 import ReferralSection from './ReferralSection';
 import WithdrawalSection from './WithdrawalSection';
 import ReferralLinkCard from './ReferralLinkCard';
+import StageProgression from './StageProgression';
 import { useAuth } from '@/context/AuthContext';
 
 export default function UserDashboardContent() {
@@ -97,12 +102,20 @@ export default function UserDashboardContent() {
     window.dispatchEvent(new Event('dashboard-refresh'));
   };
 
-  const tabs = [
+  const legacyTabs = [
     { id: 'overview' as const, label: 'Overview', icon: '📊' },
     { id: 'network' as const, label: 'My Network', icon: '🌐' },
     { id: 'earnings' as const, label: 'Earnings', icon: '💰' },
     { id: 'withdrawals' as const, label: 'Withdrawals', icon: '🏦' },
   ];
+
+  const tabs = [
+    { id: 'overview' as const, label: 'Overview', icon: BarChart3 },
+    { id: 'network' as const, label: 'Network', icon: Network },
+    { id: 'earnings' as const, label: 'Earnings', icon: Wallet },
+    { id: 'withdrawals' as const, label: 'Payouts', icon: RefreshCw },
+  ];
+  void legacyTabs;
 
   if (loading) {
     return (
@@ -126,6 +139,28 @@ export default function UserDashboardContent() {
 
   const userName = summary.name || 'Member';
   const announcementsCount = summary.announcementsCount || 0;
+  const availableBalance = Math.max(
+    0,
+    Number(summary.balance || 0) - Number(summary.pendingWithdrawals || 0)
+  );
+  const stageProgress = summary.stageProgress;
+  const stageProgressPercent =
+    stageProgress && stageProgress.requiredContributorCount > 0
+      ? Math.min(
+          100,
+          Math.round(
+            (stageProgress.qualifiedContributorCount / stageProgress.requiredContributorCount) * 100
+          )
+        )
+      : 0;
+
+  const formatMoney = (value: number) =>
+    new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -137,18 +172,20 @@ export default function UserDashboardContent() {
   };
 
   return (
-    <div className="space-y-6 pb-12 animate-fade-in">
+    <div className="animate-fade-in space-y-5 pb-8">
       {/* 1. Header Navigation Bar / Welcome Banner Container */}
-      <div className="relative rounded-xl overflow-hidden bg-white border border-slate-200/60 shadow-sm p-6">
-        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5 z-10">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+      <div className="relative overflow-hidden rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm sm:p-5">
+        <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Dashboard
+            </h1>
             <p className="mt-1 text-sm font-medium text-slate-500">
               Welcome back, <span className="font-semibold text-slate-700">{userName}</span>!
               Here&apos;s what&apos;s happening today.
             </p>
-            <div className="flex items-center gap-3 mt-4 text-[11px] font-semibold">
-              <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-mono border border-slate-200/60">
+            <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2 text-[11px] font-semibold">
+              <span className="rounded-md border border-slate-200/60 bg-slate-100 px-2.5 py-1 font-mono text-slate-600">
                 ID: {summary.referralCode || `GMA-${summary.id.slice(-5).toUpperCase()}`}
               </span>
               <span
@@ -169,12 +206,13 @@ export default function UserDashboardContent() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-shrink-0 self-start md:self-auto">
+          <div className="flex w-full flex-shrink-0 items-center gap-2 self-start min-[420px]:w-auto md:self-auto">
             {/* Notification Bell */}
             <Link
               href="/user-dashboard/announcements/news"
-              className="relative p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-lg transition-all duration-200 border border-slate-200/60"
+              className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-slate-200/60 bg-slate-50 p-2.5 text-slate-500 transition-all duration-200 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               title="View News & Announcements"
+              aria-label="View news and announcements"
             >
               <Bell size={18} />
               {announcementsCount > 0 && (
@@ -187,7 +225,7 @@ export default function UserDashboardContent() {
             {/* Register Member Primary Button */}
             <Link
               href="/user-dashboard/registration/new"
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg transition-all duration-200 shadow-sm text-[13px]"
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 min-[420px]:flex-none"
             >
               <Plus size={16} />
               Register Member
@@ -197,31 +235,34 @@ export default function UserDashboardContent() {
       </div>
 
       {/* 2. Overlapping Tab Navigation Bar */}
-      <div className="flex items-center justify-between flex-wrap gap-4 border-b border-gray-200 pb-2">
-        <div className="flex gap-2 p-1.5 bg-slate-100/80 rounded-xl overflow-x-auto scrollbar-none max-w-full shadow-inner border border-slate-200/50">
-          {tabs.map((tab) => (
-            <button
-              key={`user-tab-${tab.id}`}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold whitespace-nowrap transition-all duration-200 border-2 ${
-                activeTab === tab.id
-                  ? 'bg-white text-indigo-700 border-indigo-600 shadow-sm ring-4 ring-indigo-50'
-                  : 'text-slate-500 border-transparent hover:text-slate-900 hover:bg-white/60 hover:border-slate-300'
-              } focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
-            >
-              <span className={activeTab === tab.id ? 'opacity-100' : 'opacity-70'}>
-                {tab.icon}
-              </span>
-              {tab.label}
-            </button>
-          ))}
+      <div className="flex flex-col gap-3 border-b border-gray-200 pb-2 lg:flex-row lg:items-center lg:justify-between">
+        <div className="max-w-full overflow-x-auto rounded-xl border border-slate-200/50 bg-slate-100/80 p-1 shadow-inner scrollbar-none">
+          <div className="flex min-w-max gap-1.5">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={`user-tab-${tab.id}`}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex min-h-10 items-center gap-2 whitespace-nowrap rounded-lg border px-3.5 py-2 text-sm font-bold transition-all duration-200 ${
+                    activeTab === tab.id
+                      ? 'border-indigo-600 bg-white text-indigo-700 shadow-sm'
+                      : 'border-transparent text-slate-500 hover:border-slate-300 hover:bg-white/60 hover:text-slate-900'
+                  } focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
+                >
+                  <Icon size={16} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-gray-400 font-medium">
-          {lastUpdated && <span>Last updated: {lastUpdated}</span>}
+        <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-gray-400">
+          {lastUpdated && <span className="min-w-0">Updated: {lastUpdated}</span>}
           <button
             onClick={handleRefreshAll}
-            className="flex items-center gap-1 py-1.5 px-3 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition-all text-gray-600 font-bold shadow-sm"
+            className="flex min-h-9 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-bold text-gray-600 shadow-sm transition-all hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             Refresh
           </button>
@@ -230,18 +271,106 @@ export default function UserDashboardContent() {
 
       {/* 3. Content Panel */}
       {activeTab === 'overview' && (
-        <div className="space-y-6 animate-fade-in">
-          {/* Binary Tree View (First Section) */}
-          <BinaryTreeSection summary={summary} />
+        <div className="animate-fade-in space-y-5">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+            <section className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-4 shadow-sm sm:p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wide text-indigo-700/70">
+                    Current Stage
+                  </p>
+                  <h2 className="mt-1 text-xl font-extrabold tracking-tight text-indigo-950 sm:text-2xl">
+                    {summary.currentStageName || 'Registered / Active'}
+                  </h2>
+                  <p className="mt-2 max-w-3xl text-sm leading-relaxed text-indigo-900/75">
+                    {summary.nextRequirement ||
+                      'Your next qualification requirement appears here after stage calculation.'}
+                  </p>
+                </div>
+                <div className="grid min-w-[180px] grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-lg border border-white/70 bg-white/80 p-3">
+                    <p className="font-semibold text-indigo-700">Next</p>
+                    <p className="mt-1 font-bold text-indigo-950">
+                      {summary.nextStageName || 'Completed'}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-white/70 bg-white/80 p-3">
+                    <p className="font-semibold text-indigo-700">Progress</p>
+                    <p className="mt-1 font-bold text-indigo-950">
+                      {stageProgress
+                        ? `${stageProgress.qualifiedContributorCount}/${stageProgress.requiredContributorCount}`
+                        : 'Pending'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {stageProgress && (
+                <div className="mt-4">
+                  <div className="mb-1 flex items-center justify-between text-xs font-semibold text-indigo-800">
+                    <span>{stageProgress.stageName || summary.nextStageName}</span>
+                    <span>{stageProgress.remainingContributorCount} remaining</span>
+                  </div>
+                  <div
+                    className="h-2.5 overflow-hidden rounded-full bg-white"
+                    role="progressbar"
+                    aria-valuenow={stageProgressPercent}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Current stage qualification progress"
+                  >
+                    <div
+                      className="h-full rounded-full bg-indigo-600"
+                      style={{ width: `${stageProgressPercent}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </section>
 
-          {/* Referral Link Card (Second Section) */}
+            <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                Wallet Snapshot
+              </p>
+              <p className="mt-2 font-mono-nums text-2xl font-extrabold text-slate-950">
+                {formatMoney(availableBalance)}
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-lg bg-slate-50 p-2">
+                  <p className="text-slate-500">Lifetime</p>
+                  <p className="font-bold text-slate-900">
+                    {formatMoney(Number(summary.lifetimeEarnings || 0))}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-2">
+                  <p className="text-slate-500">Pending</p>
+                  <p className="font-bold text-slate-900">
+                    {formatMoney(Number(summary.pendingWithdrawals || 0))}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab('withdrawals')}
+                className="mt-4 flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
+              >
+                Review payout readiness <ArrowRight size={14} />
+              </button>
+            </section>
+          </div>
+
+          <StageProgression
+            currentStage={summary.currentStage}
+            nextStage={summary.nextStage}
+            stageProgress={summary.stageProgress}
+          />
+
           <ReferralLinkCard referralCode={summary?.referralCode} />
 
-          {/* KPI metrics grid (Third Section) */}
           <UserKPIGrid summary={summary} />
 
+          <BinaryTreeSection summary={summary} />
+
           {/* Two-Column Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             {/* Left Column (Wide) - Recent Wallet Transactions */}
             <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm flex flex-col justify-between">
               <div>

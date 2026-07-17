@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { getStageDisplayName } from '@/lib/qualification/constants';
 
 function determineRank(leftVolume: number, rightVolume: number): string {
   const totalVolume = leftVolume + rightVolume;
@@ -27,6 +28,11 @@ export async function GET(req: NextRequest) {
     const offset = searchParams.get('offset')
       ? parseInt(searchParams.get('offset') || '0')
       : (parseInt(searchParams.get('page') || '1') - 1) * limit;
+    const leg = searchParams.get('leg')?.toUpperCase();
+    const status = searchParams.get('status')?.toUpperCase();
+    const activation = searchParams.get('activation')?.toUpperCase();
+    const stage = searchParams.get('stage');
+    const relationship = searchParams.get('relationship')?.toLowerCase();
 
     // Fetch user's binary tree path to identify their downline
     const userTree = await prisma.binaryTree.findUnique({
@@ -46,8 +52,58 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    let pathWhere: any = { path: { startsWith: userTree.path + '/' } };
+
+    if (leg === 'LEFT' || leg === 'RIGHT') {
+      const childId = leg === 'LEFT' ? userTree.leftChildId : userTree.rightChildId;
+      if (!childId) {
+        return NextResponse.json({
+          downlines: [],
+          pagination: {
+            total: 0,
+            limit,
+            offset,
+            page: Math.floor(offset / limit) + 1,
+            totalPages: 0,
+          },
+        });
+      }
+
+      const childTree = await prisma.binaryTree.findUnique({
+        where: { userId: childId },
+        select: { path: true },
+      });
+
+      pathWhere = childTree
+        ? {
+            OR: [{ path: childTree.path }, { path: { startsWith: `${childTree.path}/` } }],
+          }
+        : { userId: '__missing_leg__' };
+    }
+
+    const userFilters: any = {};
+    if (status) {
+      userFilters.status = status;
+    }
+    if (stage) {
+      userFilters.currentStage = stage;
+    }
+    if (activation) {
+      userFilters.activationCode = {
+        is: {
+          status: activation,
+        },
+      };
+    }
+    if (relationship === 'direct') {
+      userFilters.sponsorId = loggedInUserId;
+    } else if (relationship === 'indirect') {
+      userFilters.sponsorId = { not: loggedInUserId };
+    }
+
     const where = {
-      path: { startsWith: userTree.path + '/' },
+      ...pathWhere,
+      ...(Object.keys(userFilters).length ? { user: userFilters } : {}),
     };
 
     const [nodes, total] = await Promise.all([
@@ -60,6 +116,11 @@ export async function GET(req: NextRequest) {
                 select: {
                   id: true,
                   name: true,
+                },
+              },
+              activationCode: {
+                select: {
+                  status: true,
                 },
               },
             },
@@ -81,6 +142,10 @@ export async function GET(req: NextRequest) {
         name: node.user.name || 'Unknown',
         email: node.user.email || '',
         status: node.user.status,
+        currentStage: node.user.currentStage,
+        currentStageName: getStageDisplayName(node.user.currentStage),
+        activationStatus: node.user.activationCode?.status ?? null,
+        relationship: node.user.sponsorId === loggedInUserId ? 'DIRECT' : 'INDIRECT',
         rank: determineRank(leftVol, rightVol),
         depth: node.depth - userTree.depth,
         placementParent: node.user.placement

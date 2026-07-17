@@ -2,12 +2,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, ChevronRight, Lock } from 'lucide-react';
+import { ChevronDown, Lock } from 'lucide-react';
 import { NavGroup } from '@/config/member-navigation';
 
 interface MemberNavGroupProps {
   group: NavGroup;
   collapsed: boolean;
+  onNavigate?: () => void;
   userStatus?: string;
   counts?: { openTickets: number; announcements: number };
 }
@@ -19,6 +20,7 @@ const isAllowedRoute = (path: string) => {
 export default function MemberNavGroup({
   group,
   collapsed,
+  onNavigate,
   userStatus,
   counts,
 }: MemberNavGroupProps) {
@@ -39,7 +41,8 @@ export default function MemberNavGroup({
       {!collapsed && group.title !== 'Dashboard' && (
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-widest text-gray-500 hover:text-gray-800 transition-colors"
+          className="flex min-h-9 w-full items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-widest text-gray-500 transition-colors hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          aria-expanded={isOpen}
         >
           <span>{group.title}</span>
           <ChevronDown
@@ -60,7 +63,7 @@ export default function MemberNavGroup({
           isOpen || collapsed ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="space-y-1 px-2 mt-1">
+        <div className="mt-1 space-y-1 px-2">
           {group.items.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -78,7 +81,7 @@ export default function MemberNavGroup({
                   key={item.href}
                   title={collapsed ? `${item.label} (Locked)` : 'Complete onboarding to unlock'}
                   className={`
-                    flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                    flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
                     opacity-50 cursor-not-allowed text-gray-400 relative group select-none
                     ${collapsed ? 'justify-center' : ''}
                   `}
@@ -117,9 +120,10 @@ export default function MemberNavGroup({
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onNavigate}
                 title={collapsed ? item.label : undefined}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                  flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
                   transition-all duration-200 group relative
                   ${
                     isActive
@@ -139,7 +143,7 @@ export default function MemberNavGroup({
                   />
                 )}
 
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                {!collapsed && <span className="min-w-0 truncate">{item.label}</span>}
                 {badgeElement}
 
                 {/* Tooltip for collapsed state */}

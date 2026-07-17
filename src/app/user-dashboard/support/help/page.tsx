@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { HelpCircle, Search, ChevronDown, ChevronUp, BookOpen, AlertCircle } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, BookOpen, AlertCircle } from 'lucide-react';
 
 interface FAQItem {
   question: string;
@@ -50,13 +50,13 @@ const faqs: FAQItem[] = [
     category: 'Earnings & Withdrawals',
     question: 'How do I request a withdrawal of my earnings?',
     answer:
-      'Navigate to the Withdrawals section under your wallet, enter your bank payout details and the amount you wish to withdraw, and submit. Payouts are processed on business days and typically arrive in your account within 24 hours.',
+      'Use the Withdrawals/Payouts section to review your KYC status, available wallet balance, pending requests, and bank payout details. The current member dashboard does not expose a live withdrawal-submission API, so payout processing should be coordinated through support or admin workflow.',
   },
   {
     category: 'Earnings & Withdrawals',
     question: 'Is there a minimum withdrawal limit?',
     answer:
-      'Yes, the minimum withdrawal limit is ₦5,000. All withdrawals must be requested to bank accounts registered in the verified KYC name.',
+      'The member dashboard does not define a universal minimum withdrawal limit. Payout approval depends on verified KYC, available wallet balance, and admin processing. Stage rewards unlock after qualification and can be claimed from the Rewards page.',
   },
 ];
 
