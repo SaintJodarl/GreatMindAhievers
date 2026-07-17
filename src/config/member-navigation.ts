@@ -14,9 +14,7 @@ import {
   HelpCircle,
   User,
   Settings,
-  LogOut,
   UserCheck,
-  Trophy,
   Wallet,
 } from 'lucide-react';
 
@@ -63,8 +61,8 @@ export const memberNavigation: NavGroup[] = [
   },
 
   {
-    title: 'Rewards & Wallet',
-    items: [{ label: 'Rewards', href: '/user-dashboard/rewards', icon: Trophy }],
+    title: 'Rewards & Withdrawal',
+    items: [{ label: 'Rewards & Withdrawal', href: '/user-dashboard/rewards', icon: Wallet }],
   },
   {
     title: 'Referral Center',

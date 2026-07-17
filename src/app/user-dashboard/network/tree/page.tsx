@@ -92,27 +92,27 @@ export default function BinaryTreePage() {
       <div className="flex flex-col items-center">
         <div
           onClick={() => handleNodeClick(node.id)}
-          className={`relative group cursor-pointer transition-all duration-200 hover:scale-105 px-4 py-3 rounded-xl text-center min-w-[150px] shadow-sm ${
+          className={`group relative w-[clamp(6.75rem,24vw,8.5rem)] cursor-pointer rounded-lg px-2.5 py-2 text-center shadow-sm transition-all duration-200 hover:scale-[1.02] ${
             isRoot
               ? 'bg-indigo-50/95 border-2 border-indigo-500/50 shadow-indigo-100/50'
               : 'bg-white border border-gray-200 hover:border-indigo-400'
           }`}
         >
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 text-xs font-bold text-white shadow-inner"
+            className="mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold text-white shadow-inner"
             style={{ background: `linear-gradient(135deg, ${rankColor} 0%, ${rankColor}88 100%)` }}
           >
             {initials}
           </div>
           <p
-            className="text-xs font-bold text-gray-900 leading-tight truncate max-w-[140px]"
+            className="max-w-[7rem] truncate text-xs font-bold leading-tight text-gray-900"
             title={node.name}
           >
             {node.name}
           </p>
           <p className="text-[10px] text-gray-500 font-mono mt-0.5">{node.id}</p>
 
-          <div className="flex flex-col items-center gap-1 mt-2">
+          <div className="mt-1.5 flex flex-col items-center gap-1">
             <span
               className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
               style={{ background: `${rankColor}15`, color: rankColor }}
@@ -124,7 +124,7 @@ export default function BinaryTreePage() {
             </span>
           </div>
 
-          <div className="mt-2 flex items-center justify-center gap-1">
+          <div className="mt-1.5 flex items-center justify-center gap-1">
             <span
               className={`text-[9px] px-1.5 py-0.5 font-medium rounded-full ${
                 node.status === 'ACTIVE' || node.status === 'Active'
@@ -138,7 +138,7 @@ export default function BinaryTreePage() {
             </span>
           </div>
 
-          <p className="text-[9px] text-gray-400 mt-1.5">Joined: {node.joinDate}</p>
+          <p className="mt-1 truncate text-[9px] text-gray-400">Joined: {node.joinDate}</p>
 
           <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-indigo-600 text-white rounded-full px-1.5 py-0.5 text-[8px] font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow">
             Set Root
@@ -159,16 +159,16 @@ export default function BinaryTreePage() {
       <div className="flex flex-col items-center">
         <Link
           href={`/user-dashboard/registration/new?position=${position}&placementId=${parentId}`}
-          className="flex flex-col items-center justify-center px-4 py-6 rounded-xl text-center min-w-[150px] border border-dashed border-gray-300 bg-gray-50/50 hover:bg-indigo-50/30 hover:border-indigo-400 transition-all duration-150 group"
+          className="group flex w-[clamp(6.75rem,24vw,8.5rem)] flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50/50 px-2.5 py-3 text-center transition-all duration-150 hover:border-indigo-400 hover:bg-indigo-50/30"
         >
-          <div className="w-9 h-9 rounded-full bg-gray-100 group-hover:bg-indigo-100 flex items-center justify-center mb-2.5 transition-colors">
+          <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition-colors group-hover:bg-indigo-100">
             <UserPlus size={16} className="text-gray-400 group-hover:text-indigo-600" />
           </div>
           <p className="text-xs font-semibold text-gray-600 group-hover:text-indigo-700">
             Open Slot
           </p>
           <p className="text-[10px] text-gray-400 mt-1">Position: {position}</p>
-          <span className="mt-3 px-2.5 py-1 bg-white border border-gray-200 group-hover:border-indigo-200 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white rounded-lg text-[10px] font-bold shadow-sm transition-all">
+          <span className="mt-2 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[10px] font-bold text-indigo-600 shadow-sm transition-all group-hover:border-indigo-200 group-hover:bg-indigo-600 group-hover:text-white">
             Invite Member
           </span>
         </Link>
@@ -235,7 +235,7 @@ export default function BinaryTreePage() {
       )}
 
       {!loading && !error && treeData && (
-        <div className="max-w-full overflow-hidden rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+        <div className="max-w-full overflow-hidden rounded-xl border border-gray-100 bg-white p-3 shadow-sm sm:p-4">
           {/* Header Info */}
           <div className="mb-5 flex flex-col gap-4 border-b border-gray-100 pb-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1">
@@ -273,7 +273,7 @@ export default function BinaryTreePage() {
 
           {/* Tree Diagram Area */}
           <div className="overflow-x-auto overscroll-x-contain pb-2">
-            <div className="flex min-w-[720px] flex-col items-center py-4">
+            <div className="flex min-w-[560px] flex-col items-center py-3 sm:min-w-[640px] lg:min-w-[700px]">
               {/* Level 1: Root */}
               <div className="relative z-10">
                 <TreeNodeCard node={treeData} isRoot />
@@ -281,7 +281,7 @@ export default function BinaryTreePage() {
 
               {/* Level 1 to 2 Connectors */}
               {(treeData.leftChild !== undefined || treeData.rightChild !== undefined) && (
-                <div className="w-full max-w-[480px] h-8 relative mt-1">
+                <div className="relative mt-1 h-8 w-full max-w-[440px]">
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-gray-200" />
                   <div className="absolute top-4 left-1/4 right-1/4 h-0.5 bg-gray-200" />
                   <div className="absolute top-4 left-1/4 w-0.5 h-4 bg-gray-200" />
@@ -290,7 +290,7 @@ export default function BinaryTreePage() {
               )}
 
               {/* Level 2: Children */}
-              <div className="relative mt-1 flex w-full max-w-[960px] justify-between px-4">
+              <div className="relative mt-1 flex w-full max-w-[880px] justify-between px-2">
                 {/* Left Wing */}
                 <div className="w-1/2 flex flex-col items-center">
                   <div className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded px-1.5 mb-2">
@@ -301,7 +301,7 @@ export default function BinaryTreePage() {
                       <TreeNodeCard node={treeData.leftChild} />
 
                       {/* Level 2 to 3 Connectors (Left Child to Grandchildren) */}
-                      <div className="w-full max-w-[240px] h-8 relative mt-1">
+                      <div className="relative mt-1 h-8 w-full max-w-[220px]">
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-gray-200" />
                         <div className="absolute top-4 left-1/4 right-1/4 h-0.5 bg-gray-200" />
                         <div className="absolute top-4 left-1/4 w-0.5 h-4 bg-gray-200" />
@@ -309,7 +309,7 @@ export default function BinaryTreePage() {
                       </div>
 
                       {/* Level 3: Left Grandchildren */}
-                      <div className="flex w-full justify-around mt-1">
+                      <div className="mt-1 flex w-full justify-around gap-2">
                         {treeData.leftChild.leftChild ? (
                           <TreeNodeCard node={treeData.leftChild.leftChild} />
                         ) : (
@@ -337,7 +337,7 @@ export default function BinaryTreePage() {
                       <TreeNodeCard node={treeData.rightChild} />
 
                       {/* Level 2 to 3 Connectors (Right Child to Grandchildren) */}
-                      <div className="w-full max-w-[240px] h-8 relative mt-1">
+                      <div className="relative mt-1 h-8 w-full max-w-[220px]">
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-gray-200" />
                         <div className="absolute top-4 left-1/4 right-1/4 h-0.5 bg-gray-200" />
                         <div className="absolute top-4 left-1/4 w-0.5 h-4 bg-gray-200" />
@@ -345,7 +345,7 @@ export default function BinaryTreePage() {
                       </div>
 
                       {/* Level 3: Right Grandchildren */}
-                      <div className="flex w-full justify-around mt-1">
+                      <div className="mt-1 flex w-full justify-around gap-2">
                         {treeData.rightChild.leftChild ? (
                           <TreeNodeCard node={treeData.rightChild.leftChild} />
                         ) : (

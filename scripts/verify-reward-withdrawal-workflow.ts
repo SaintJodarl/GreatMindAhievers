@@ -1425,11 +1425,21 @@ test('Migration encodes partial uniqueness for final and active withdrawals only
     'prisma/migrations/20260717084000_reward_withdrawal_workflow/migration.sql',
     'utf8'
   );
+  const reconciliation = readFileSync(
+    'prisma/migrations/20260717120000_reconcile_reward_withdrawal_columns/migration.sql',
+    'utf8'
+  );
   assert.doesNotMatch(schema, /rewardId\s+String\?\s+@unique/);
   assert.doesNotMatch(schema, /rewardClaimId\s+String\?\s+@unique/);
   assert.match(migration, /CREATE UNIQUE INDEX "Withdrawal_non_correctable_rewardId_key"/);
   assert.match(migration, /"status" IN \('PENDING', 'APPROVED', 'PAID'\)/);
   assert.match(migration, /"status" = 'REJECTED' AND "rejectionType" = 'FINAL'/);
+  assert.match(reconciliation, /ADD COLUMN IF NOT EXISTS "rewardId" TEXT/);
+  assert.match(
+    reconciliation,
+    /CREATE UNIQUE INDEX IF NOT EXISTS "Withdrawal_non_correctable_rewardId_key"/
+  );
+  assert.match(reconciliation, /FOREIGN KEY \("rewardId"\) REFERENCES "Reward"\("id"\)/);
 });
 
 test('Dashboard disabled state and rejection controls expose required safeguards', () => {
@@ -1446,6 +1456,37 @@ test('Dashboard disabled state and rejection controls expose required safeguards
   assert.match(adminUi, /CORRECTABLE/);
   assert.match(adminUi, /FINAL/);
   assert.match(adminUi, /minLength=\{5\}/);
+});
+
+test('Rewards and withdrawal page uses shared workflow and flattened sidebar entry', () => {
+  const rewardsRoute = readFileSync('src/app/api/user/rewards/route.ts', 'utf8');
+  const rewardsPage = readFileSync('src/app/user-dashboard/rewards/page.tsx', 'utf8');
+  const navConfig = readFileSync('src/config/member-navigation.ts', 'utf8');
+  const navGroup = readFileSync('src/components/dashboard/member-nav-group.tsx', 'utf8');
+
+  assert.match(rewardsRoute, /getCurrentUser/);
+  assert.doesNotMatch(rewardsRoute, /getServerSession/);
+  assert.match(rewardsRoute, /nextReward/);
+  assert.match(rewardsRoute, /withdrawals/);
+  assert.match(rewardsPage, /WithdrawalSection/);
+  assert.match(rewardsPage, /Rewards & Withdrawal/);
+  assert.match(navConfig, /Rewards & Withdrawal/);
+  assert.doesNotMatch(navConfig, /Rewards & Wallet/);
+  assert.match(navGroup, /isDirectGroup/);
+  assert.match(navGroup, /!isDirectGroup/);
+});
+
+test('Binary tree cards use compact responsive dimensions', () => {
+  const overviewTree = readFileSync(
+    'src/app/user-dashboard/components/BinaryTreeSection.tsx',
+    'utf8'
+  );
+  const treePage = readFileSync('src/app/user-dashboard/network/tree/page.tsx', 'utf8');
+
+  assert.match(overviewTree, /w-\[clamp\(6\.5rem,44vw,8\.75rem\)\]/);
+  assert.match(overviewTree, /overscroll-x-contain/);
+  assert.match(treePage, /min-w-\[560px\]/);
+  assert.match(treePage, /w-\[clamp\(6\.75rem,24vw,8\.5rem\)\]/);
 });
 
 console.log(dbSafetyMessage());

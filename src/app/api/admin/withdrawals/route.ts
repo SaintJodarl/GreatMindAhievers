@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getSafeApiError } from '@/lib/prisma-errors';
 import { verifyWithdrawalPermission } from '@/lib/auth/withdrawal-permissions';
 import { getStageDisplayName } from '@/lib/qualification/constants';
 import { getRewardWithdrawalEligibility } from '@/lib/withdrawals/reward-eligibility';
@@ -140,9 +141,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('List withdrawals error:', error);
-    return NextResponse.json(
-      { message: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    const safeError = getSafeApiError(error, 'Unable to load reward withdrawals.');
+    return NextResponse.json({ message: safeError.message }, { status: safeError.status });
   }
 }

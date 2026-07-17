@@ -34,11 +34,13 @@ export default function MemberNavGroup({
     return false;
   });
 
+  const isDirectGroup = group.items.length === 1 && group.title !== 'Dashboard';
   const [isOpen, setIsOpen] = useState(hasActiveItem || group.title === 'Dashboard');
+  const itemsVisible = isOpen || collapsed || isDirectGroup;
 
   return (
     <div className="mb-2">
-      {!collapsed && group.title !== 'Dashboard' && (
+      {!collapsed && group.title !== 'Dashboard' && !isDirectGroup && (
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex min-h-9 w-full items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-widest text-gray-500 transition-colors hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -60,7 +62,7 @@ export default function MemberNavGroup({
 
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isOpen || collapsed ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          itemsVisible ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
         <div className="mt-1 space-y-1 px-2">

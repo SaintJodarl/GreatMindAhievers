@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { getSafeApiError } from '@/lib/prisma-errors';
 import { getRewardWithdrawalEligibility } from '@/lib/withdrawals/reward-eligibility';
 
 export async function GET(req: NextRequest) {
@@ -17,9 +18,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ eligibility });
   } catch (error: any) {
     console.error('Reward withdrawal eligibility error:', error);
-    return NextResponse.json(
-      { message: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    const safeError = getSafeApiError(error, 'Unable to check reward withdrawal eligibility.');
+    return NextResponse.json({ message: safeError.message }, { status: safeError.status });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getSafeApiError } from '@/lib/prisma-errors';
 import { verifyWithdrawalPermission } from '@/lib/auth/withdrawal-permissions';
 import { getRewardWithdrawalEligibility } from '@/lib/withdrawals/reward-eligibility';
 
@@ -248,7 +249,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
   } catch (error: any) {
     console.error('Process reward withdrawal error:', error);
-    const status = error instanceof ApiError ? error.status : 500;
-    return NextResponse.json({ message: error.message || 'Internal server error' }, { status });
+    const safeError = getSafeApiError(error, 'Unable to process reward withdrawal.');
+    return NextResponse.json({ message: safeError.message }, { status: safeError.status });
   }
 }

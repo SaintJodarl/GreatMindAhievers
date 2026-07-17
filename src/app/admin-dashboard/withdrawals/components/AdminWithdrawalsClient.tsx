@@ -72,6 +72,7 @@ interface Withdrawal {
 
 interface AdminWithdrawalsClientProps {
   initialWithdrawals: Withdrawal[];
+  initialError?: string | null;
 }
 
 const formatMoney = (amount: number) =>
@@ -98,6 +99,7 @@ const rejectionTypeLabel = (type: string | null | undefined) =>
 
 export default function AdminWithdrawalsClient({
   initialWithdrawals,
+  initialError = null,
 }: AdminWithdrawalsClientProps) {
   const router = useRouter();
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>(initialWithdrawals);
@@ -111,7 +113,7 @@ export default function AdminWithdrawalsClient({
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [paymentNote, setPaymentNote] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [success, setSuccess] = useState<string | null>(null);
 
   const showNotification = (msg: string, type: 'success' | 'error') => {
