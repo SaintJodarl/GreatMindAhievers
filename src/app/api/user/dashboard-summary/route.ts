@@ -128,12 +128,7 @@ export async function GET(_req: NextRequest) {
 
     const leftVol = Number(user.binaryTree?.leftVolume || 0);
     const rightVol = Number(user.binaryTree?.rightVolume || 0);
-    const minVolume = Math.min(leftVol, rightVol);
-    let rank = 'Entry';
-    if (minVolume >= 100000) rank = 'Diamond';
-    else if (minVolume >= 50000) rank = 'Gold';
-    else if (minVolume >= 20000) rank = 'Silver';
-    else if (minVolume >= 5000) rank = 'Bronze';
+    const rank = getStageDisplayName(currentStage);
 
     return NextResponse.json({
       id: user.id,

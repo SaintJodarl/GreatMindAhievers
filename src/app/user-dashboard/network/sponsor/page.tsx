@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import React from 'react';
 
 import { prisma } from '@/lib/prisma';
+import { getStageDisplayName } from '@/lib/qualification/constants';
 import { UserCheck, Mail, Calendar, Award, Shield, User as UserIcon } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
@@ -10,15 +11,6 @@ export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'Sponsor Info | My Network',
 };
-
-function determineRank(leftVolume: number, rightVolume: number): string {
-  const totalVolume = leftVolume + rightVolume;
-  if (totalVolume >= 100000) return 'Diamond';
-  if (totalVolume >= 40000) return 'Gold';
-  if (totalVolume >= 15000) return 'Silver';
-  if (totalVolume >= 5000) return 'Bronze';
-  return 'Entry';
-}
 
 export default async function SponsorInfoPage() {
   const currentUser = await getCurrentUser();
@@ -38,28 +30,15 @@ export default async function SponsorInfoPage() {
           name: true,
           email: true,
           status: true,
+          currentStage: true,
           createdAt: true,
-          binaryTree: {
-            select: {
-              leftVolume: true,
-              rightVolume: true,
-            },
-          },
         },
       },
     },
   });
 
   const sponsor = user?.sponsor;
-
-  // Compute rank if sponsor exists
-  let rank = 'Entry';
-  if (sponsor?.binaryTree) {
-    rank = determineRank(
-      sponsor.binaryTree.leftVolume?.toNumber() || 0,
-      sponsor.binaryTree.rightVolume?.toNumber() || 0
-    );
-  }
+  const rank = sponsor ? getStageDisplayName(sponsor.currentStage) : 'Registered / Active';
 
   const getStatusBadge = (statusStr: string) => {
     const s = statusStr.toUpperCase();

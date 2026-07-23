@@ -4,15 +4,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getStageDisplayName } from '@/lib/qualification/constants';
 
-function determineRank(leftVolume: number, rightVolume: number): string {
-  const totalVolume = leftVolume + rightVolume;
-  if (totalVolume >= 100000) return 'Diamond';
-  if (totalVolume >= 40000) return 'Gold';
-  if (totalVolume >= 15000) return 'Silver';
-  if (totalVolume >= 5000) return 'Bronze';
-  return 'Entry';
-}
-
 export async function GET(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
@@ -134,8 +125,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     const downlines = nodes.map((node) => {
-      const leftVol = node.leftVolume?.toNumber() || 0;
-      const rightVol = node.rightVolume?.toNumber() || 0;
+      const currentStageName = getStageDisplayName(node.user.currentStage);
 
       return {
         id: node.user.id,
@@ -143,10 +133,10 @@ export async function GET(req: NextRequest) {
         email: node.user.email || '',
         status: node.user.status,
         currentStage: node.user.currentStage,
-        currentStageName: getStageDisplayName(node.user.currentStage),
+        currentStageName,
         activationStatus: node.user.activationCode?.status ?? null,
         relationship: node.user.sponsorId === loggedInUserId ? 'DIRECT' : 'INDIRECT',
-        rank: determineRank(leftVol, rightVol),
+        rank: currentStageName,
         depth: node.depth - userTree.depth,
         placementParent: node.user.placement
           ? {

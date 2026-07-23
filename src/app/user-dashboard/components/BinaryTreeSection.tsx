@@ -12,6 +12,8 @@ interface TreeNode {
   id: string;
   name: string;
   rank: string;
+  currentStage?: string;
+  currentStageName?: string;
   volume: number;
   status: string;
   leftChild?: TreeNode | null;
@@ -38,59 +40,52 @@ interface TreeSizing {
 
 type DiagramData = { type: 'member'; node: TreeNode } | { type: 'empty'; side: 'Left' | 'Right' };
 
-const rankColors: Record<string, string> = {
-  'Registered / Active': '#6B7280',
-  'Starter Stage - Entry Stage': '#64748B',
-  'Starter Stage â€” Entry Stage': '#64748B',
-  'Emerald - Stage 1': '#10B981',
-  'Emerald â€” Stage 1': '#10B981',
-  Silver: '#C0C0C0',
-  'Silver - Stage 2': '#94A3B8',
-  'Silver â€” Stage 2': '#94A3B8',
-  Bronze: '#CD7F32',
-  Entry: '#6B7280',
-  Gold: '#F59E0B',
-  'Gold - Stage 3': '#F59E0B',
-  'Gold â€” Stage 3': '#F59E0B',
-  'Jasper - Stage 4': '#EF4444',
-  'Jasper â€” Stage 4': '#EF4444',
-  'Sapphire - Stage 5': '#3B82F6',
-  'Sapphire â€” Stage 5': '#3B82F6',
-  Diamond: '#38BDF8',
-  'Diamond - Stage 6 - Final Stage': '#38BDF8',
-  'Diamond â€” Stage 6 â€” Final Stage': '#38BDF8',
+const INITIAL_VISIBLE_DESCENDANT_DEPTH = 3;
+
+const stageColors: Record<string, string> = {
+  REGISTERED_ACTIVE: '#6B7280',
+  STARTER_ENTRY_STAGE: '#64748B',
+  EMERALD_STAGE_1: '#10B981',
+  SILVER_STAGE_2: '#94A3B8',
+  GOLD_STAGE_3: '#F59E0B',
+  JASPER_STAGE_4: '#EF4444',
+  SAPPHIRE_STAGE_5: '#3B82F6',
+  DIAMOND_STAGE_6_FINAL: '#38BDF8',
 };
+
+const stageLegend = [
+  { stage: 'EMERALD_STAGE_1', label: 'Emerald' },
+  { stage: 'SILVER_STAGE_2', label: 'Silver' },
+  { stage: 'DIAMOND_STAGE_6_FINAL', label: 'Diamond' },
+];
 
 const clampNumber = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
-function getRenderedDepth(node: TreeNode | null | undefined): number {
-  if (!node) return 1;
+function getRenderedStats(
+  node: TreeNode | null | undefined,
+  depthIndex = 0
+): { depth: number; leafSlots: number } {
+  if (!node) return { depth: 1, leafSlots: 1 };
 
   const hasChildren = Boolean(node.leftChild || node.rightChild);
-  if (!hasChildren) return 1;
+  const shouldRenderChildren = depthIndex < INITIAL_VISIBLE_DESCENDANT_DEPTH || hasChildren;
 
-  return (
-    1 +
-    Math.max(
-      node.leftChild ? getRenderedDepth(node.leftChild) : 1,
-      node.rightChild ? getRenderedDepth(node.rightChild) : 1
-    )
-  );
-}
+  if (!shouldRenderChildren) {
+    return { depth: 1, leafSlots: 1 };
+  }
 
-function getRenderedLeafSlots(node: TreeNode | null | undefined): number {
-  if (!node) return 1;
+  const leftStats = getRenderedStats(node.leftChild, depthIndex + 1);
+  const rightStats = getRenderedStats(node.rightChild, depthIndex + 1);
 
-  const hasChildren = Boolean(node.leftChild || node.rightChild);
-  if (!hasChildren) return 1;
-
-  return getRenderedLeafSlots(node.leftChild) + getRenderedLeafSlots(node.rightChild);
+  return {
+    depth: 1 + Math.max(leftStats.depth, rightStats.depth),
+    leafSlots: leftStats.leafSlots + rightStats.leafSlots,
+  };
 }
 
 function getTreeSizing(rootNode: TreeNode): TreeSizing {
-  const depth = getRenderedDepth(rootNode);
-  const leafSlots = getRenderedLeafSlots(rootNode);
+  const { depth, leafSlots } = getRenderedStats(rootNode);
   const breadthPressure = Math.max(0, Math.log2(Math.max(1, leafSlots)) - 2) * 0.7;
   const depthPressure = Math.max(0, depth - 3);
   const pressure = depthPressure + breadthPressure;
@@ -116,26 +111,28 @@ function getTreeSizing(rootNode: TreeNode): TreeSizing {
 function buildDiagramNode(
   node: TreeNode,
   path = 'root',
+  depthIndex = 0,
   side?: BinaryTreeSide
 ): PositionedBinaryTreeNode<DiagramData> {
   const hasChildren = Boolean(node.leftChild || node.rightChild);
+  const shouldRenderChildren = depthIndex < INITIAL_VISIBLE_DESCENDANT_DEPTH || hasChildren;
 
   return {
     key: `${path}-${node.id}`,
     side,
     data: { type: 'member', node },
-    left: hasChildren
+    left: shouldRenderChildren
       ? node.leftChild
-        ? buildDiagramNode(node.leftChild, `${path}-left`, 'LEFT')
+        ? buildDiagramNode(node.leftChild, `${path}-left`, depthIndex + 1, 'LEFT')
         : {
             key: `${path}-left-empty`,
             side: 'LEFT',
             data: { type: 'empty', side: 'Left' },
           }
       : undefined,
-    right: hasChildren
+    right: shouldRenderChildren
       ? node.rightChild
-        ? buildDiagramNode(node.rightChild, `${path}-right`, 'RIGHT')
+        ? buildDiagramNode(node.rightChild, `${path}-right`, depthIndex + 1, 'RIGHT')
         : {
             key: `${path}-right-empty`,
             side: 'RIGHT',
@@ -155,6 +152,10 @@ function getInitials(name: string) {
     .toUpperCase();
 
   return initials || '?';
+}
+
+function getNodeStageColor(node: TreeNode) {
+  return stageColors[node.currentStage || ''] || '#6B7280';
 }
 
 function PlacementLabel({ side }: { side?: BinaryTreeSide }) {
@@ -185,7 +186,7 @@ function MemberDiagramNode({
   if (item.data.type !== 'member') return null;
 
   const { node } = item.data;
-  const rankColor = rankColors[node.rank] || '#6B7280';
+  const rankColor = getNodeStageColor(node);
   const isRoot = item.depth === 0;
 
   return (
@@ -365,6 +366,8 @@ export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
       id: summary.id || 'User',
       name: summary.name || 'You',
       rank: summary.currentStageName || summary.rank || 'Entry',
+      currentStage: summary.currentStage,
+      currentStageName: summary.currentStageName,
       volume: Math.min(summary.leftVolume || 0, summary.rightVolume || 0),
       status: summary.status === 'ACTIVE' ? 'Active' : 'Pending',
       joinDate: summary.createdAt || new Date().toISOString(),
@@ -407,19 +410,17 @@ export default function BinaryTreeSection({ summary }: BinaryTreeSectionProps) {
           )}
         </div>
         <div className="hidden flex-wrap gap-3 md:flex">
-          {['Emerald â€” Stage 1', 'Silver â€” Stage 2', 'Diamond â€” Stage 6 â€” Final Stage'].map(
-            (rank) => (
-              <div key={rank} className="flex items-center gap-1.5">
-                <div
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ background: rankColors[rank] }}
-                />
-                <span className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>
-                  {rank}
-                </span>
-              </div>
-            )
-          )}
+          {stageLegend.map(({ stage, label }) => (
+            <div key={stage} className="flex items-center gap-1.5">
+              <div
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ background: stageColors[stage] }}
+              />
+              <span className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>
+                {label}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 

@@ -16,6 +16,8 @@ interface TreeNode {
   id: string;
   name: string;
   rank: string;
+  currentStage?: string;
+  currentStageName?: string;
   volume: number;
   leftVolume?: number;
   rightVolume?: number;
@@ -46,20 +48,36 @@ type DiagramData =
   | { type: 'member'; node: TreeNode }
   | { type: 'empty'; parentId: string; position: 'LEFT' | 'RIGHT' };
 
-const rankColors: Record<string, string> = {
-  Diamond: '#38BDF8',
-  Gold: '#F59E0B',
-  Silver: '#C0C0C0',
-  Bronze: '#CD7F32',
-  Entry: '#6B7280',
+const INITIAL_VISIBLE_DESCENDANT_DEPTH = 3;
+
+const stageColors: Record<string, string> = {
+  REGISTERED_ACTIVE: '#6B7280',
+  STARTER_ENTRY_STAGE: '#64748B',
+  EMERALD_STAGE_1: '#10B981',
+  SILVER_STAGE_2: '#94A3B8',
+  GOLD_STAGE_3: '#F59E0B',
+  JASPER_STAGE_4: '#EF4444',
+  SAPPHIRE_STAGE_5: '#3B82F6',
+  DIAMOND_STAGE_6_FINAL: '#38BDF8',
 };
+
+const stageLegend = [
+  { stage: 'REGISTERED_ACTIVE', label: 'Registered' },
+  { stage: 'STARTER_ENTRY_STAGE', label: 'Starter' },
+  { stage: 'EMERALD_STAGE_1', label: 'Emerald' },
+  { stage: 'SILVER_STAGE_2', label: 'Silver' },
+  { stage: 'GOLD_STAGE_3', label: 'Gold' },
+  { stage: 'JASPER_STAGE_4', label: 'Jasper' },
+  { stage: 'SAPPHIRE_STAGE_5', label: 'Sapphire' },
+  { stage: 'DIAMOND_STAGE_6_FINAL', label: 'Diamond' },
+];
 
 const clampNumber = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 function getRenderedStats(node: TreeNode, depthIndex = 0): { depth: number; leafSlots: number } {
   const hasActualChildren = Boolean(node.leftChild || node.rightChild);
-  const shouldRenderChildren = depthIndex < 2 || hasActualChildren;
+  const shouldRenderChildren = depthIndex < INITIAL_VISIBLE_DESCENDANT_DEPTH || hasActualChildren;
 
   if (!shouldRenderChildren) {
     return { depth: 1, leafSlots: 1 };
@@ -109,7 +127,7 @@ function buildDiagramNode(
   side?: BinaryTreeSide
 ): PositionedBinaryTreeNode<DiagramData> {
   const hasActualChildren = Boolean(node.leftChild || node.rightChild);
-  const shouldRenderChildren = depthIndex < 2 || hasActualChildren;
+  const shouldRenderChildren = depthIndex < INITIAL_VISIBLE_DESCENDANT_DEPTH || hasActualChildren;
 
   return {
     key: `${path}-${node.id}`,
@@ -148,6 +166,10 @@ function getInitials(name: string) {
   return initials || '??';
 }
 
+function getNodeStageColor(node: TreeNode) {
+  return stageColors[node.currentStage || ''] || '#6B7280';
+}
+
 function PlacementLabel({ side }: { side?: BinaryTreeSide }) {
   if (!side) return <div className="h-0" />;
 
@@ -178,7 +200,7 @@ function TreeMemberNode({
   if (item.data.type !== 'member') return null;
 
   const { node } = item.data;
-  const rankColor = rankColors[node.rank] || '#6B7280';
+  const rankColor = getNodeStageColor(node);
   const isRoot = item.depth === 0;
 
   return (
@@ -477,17 +499,17 @@ export default function BinaryTreePage() {
           </ZoomableTreeViewport>
 
           <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-5">
-            <span className="text-xs font-semibold text-gray-500">Ranks & Colors:</span>
-            {Object.entries(rankColors).map(([rank, color]) => (
+            <span className="text-xs font-semibold text-gray-500">Stages & Colors:</span>
+            {stageLegend.map(({ stage, label }) => (
               <div
-                key={rank}
+                key={stage}
                 className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100"
               >
                 <span
                   className="w-2.5 h-2.5 rounded-full shadow-sm"
-                  style={{ background: color }}
+                  style={{ background: stageColors[stage] }}
                 />
-                <span className="text-xs font-medium text-gray-600">{rank}</span>
+                <span className="text-xs font-medium text-gray-600">{label}</span>
               </div>
             ))}
           </div>

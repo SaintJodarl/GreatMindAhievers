@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import React from 'react';
-import { Users, Wallet, CreditCard, Activity } from 'lucide-react';
+import { Users, Wallet, CreditCard, Activity, Receipt } from 'lucide-react';
 import AdminOverviewClient from './components/AdminOverviewClient';
+import { calculateRegistrationRevenue } from '@/lib/financials/registration-revenue';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,15 +11,19 @@ export const metadata = {
 };
 
 async function getStats() {
-  const [totalMembers, totalWalletBalance, pendingWithdrawals, pendingKyc] = await Promise.all([
-    prisma.user.count({ where: { role: 'MEMBER' } }),
-    prisma.wallet.aggregate({ _sum: { balance: true } }),
-    prisma.withdrawal.count({ where: { status: 'PENDING' } }),
-    prisma.kYCSubmission.count({ where: { status: 'SUBMITTED' } }),
-  ]);
+  const [totalMembers, activeMembers, totalWalletBalance, pendingWithdrawals, pendingKyc] =
+    await Promise.all([
+      prisma.user.count({ where: { role: 'MEMBER' } }),
+      prisma.user.count({ where: { role: 'MEMBER', status: 'ACTIVE' } }),
+      prisma.wallet.aggregate({ _sum: { balance: true } }),
+      prisma.withdrawal.count({ where: { status: 'PENDING' } }),
+      prisma.kYCSubmission.count({ where: { status: 'SUBMITTED' } }),
+    ]);
 
   return {
     totalMembers,
+    activeMembers,
+    registrationRevenue: calculateRegistrationRevenue(activeMembers),
     totalWalletBalance: totalWalletBalance._sum.balance || 0,
     pendingWithdrawals,
     pendingKyc,
@@ -35,7 +40,7 @@ export default async function AdminDashboardOverview() {
         <p className="text-gray-500 mt-1">Welcome back, here&apos;s what&apos;s happening today.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
         {/* Stat Cards */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1">
           <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
@@ -44,6 +49,20 @@ export default async function AdminDashboardOverview() {
           <div>
             <p className="text-sm font-medium text-gray-500">Total Members</p>
             <p className="text-3xl font-bold text-gray-900">{stats.totalMembers}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1">
+          <div className="w-14 h-14 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+            <Receipt size={28} strokeWidth={1.5} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Registration Revenue</p>
+            <p className="text-3xl font-bold text-gray-900">
+              {'\u20a6'}
+              {stats.registrationRevenue.toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-500">{stats.activeMembers} active members</p>
           </div>
         </div>
 

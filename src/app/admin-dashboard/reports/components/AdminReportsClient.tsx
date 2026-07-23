@@ -58,8 +58,15 @@ interface StageSummary {
   diamondCompleted: number;
 }
 
+interface RegistrationSummary {
+  activeMemberCount: number;
+  feePerActiveMember: number;
+  totalRevenue: number;
+}
+
 interface ReportsSummaryData {
   users: UserSummary;
+  registration: RegistrationSummary;
   kyc: KycSummary;
   wallet: WalletSummary;
   withdrawals: WithdrawalSummary;
@@ -86,6 +93,8 @@ export default function AdminReportsClient() {
       setLoading(false);
     }
   };
+
+  const formatNaira = (value: number) => `\u20a6${value.toLocaleString()}`;
 
   useEffect(() => {
     fetchSummary();
@@ -163,7 +172,7 @@ export default function AdminReportsClient() {
       </div>
 
       {/* Stats Summary Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
             <Users size={24} />
@@ -175,6 +184,24 @@ export default function AdminReportsClient() {
             <p className="text-2xl font-bold text-gray-900 mt-0.5">{data.users.total}</p>
             <span className="text-[10px] text-green-600 font-semibold">
               {data.users.active} Active accounts
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+            <BarChart3 size={24} />
+          </div>
+          <div>
+            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+              Registration Revenue
+            </span>
+            <p className="text-2xl font-bold text-gray-900 mt-0.5">
+              {formatNaira(data.registration.totalRevenue)}
+            </p>
+            <span className="text-[10px] text-gray-500 font-medium">
+              {data.registration.activeMemberCount} active x{' '}
+              {formatNaira(data.registration.feePerActiveMember)}
             </span>
           </div>
         </div>

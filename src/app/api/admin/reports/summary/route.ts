@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdminPermission } from '@/lib/auth/admin-guard';
 import { STAGE_ORDER, getStageDisplayName, normalizeStageId } from '@/lib/qualification/constants';
+import {
+  REGISTRATION_FEE_PER_ACTIVE_MEMBER,
+  calculateRegistrationRevenue,
+} from '@/lib/financials/registration-revenue';
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,6 +18,7 @@ export async function GET(req: NextRequest) {
     const [
       totalUsers,
       activeUsers,
+      activeRegisteredMembers,
       kycStatsGrouped,
       walletSum,
       withdrawalsSummary,
@@ -23,6 +28,7 @@ export async function GET(req: NextRequest) {
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { status: 'ACTIVE' } }),
+      prisma.user.count({ where: { role: 'MEMBER', status: 'ACTIVE' } }),
       prisma.user.groupBy({
         by: ['kycStatus'],
         _count: true,
@@ -122,6 +128,11 @@ export async function GET(req: NextRequest) {
         total: totalUsers,
         active: activeUsers,
         inactive: totalUsers - activeUsers,
+      },
+      registration: {
+        activeMemberCount: activeRegisteredMembers,
+        feePerActiveMember: REGISTRATION_FEE_PER_ACTIVE_MEMBER,
+        totalRevenue: calculateRegistrationRevenue(activeRegisteredMembers),
       },
       kyc: kycStats,
       wallet: {
