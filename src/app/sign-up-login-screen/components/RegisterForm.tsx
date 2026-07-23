@@ -5,6 +5,11 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '@/context/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Loader2, UserCheck, AlertTriangle } from 'lucide-react';
+import {
+  ACCOUNT_REGISTRATION_FIELDS,
+  ACCOUNT_REGISTRATION_SECTIONS,
+  NIGERIAN_BANKS,
+} from '@/lib/registration/account-registration-fields';
 
 interface RegisterFormData {
   firstName: string;
@@ -31,42 +36,7 @@ interface RegisterFormProps {
   registrationPausedMessage?: string;
 }
 
-const NIGERIAN_BANKS = [
-  'Access Bank',
-  'Fidelity Bank',
-  'First City Monument Bank',
-  'First Bank of Nigeria',
-  'Guaranty Trust Holding Company',
-  'Union Bank of Nigeria',
-  'United Bank for Africa',
-  'Zenith Bank',
-  'Citibank Nigeria',
-  'Ecobank Nigeria',
-  'Heritage Bank',
-  'Keystone Bank',
-  'Optimus Bank',
-  'Polaris Bank',
-  'PremiumTrust Bank',
-  'Providus Bank',
-  'Signature Bank',
-  'Stanbic IBTC Bank',
-  'Standard Chartered Bank',
-  'Sterling Bank',
-  'SunTrust Bank',
-  'Titan Trust Bank',
-  'Unity Bank',
-  'Wema Bank',
-  'Globus Bank',
-  'Parallex Bank',
-  'Premium Trust Bank',
-  'Jaiz Bank',
-  'Lotus Bank',
-  'TAJBank',
-  'Opay',
-  'Moniepoint',
-  'Palmpay',
-  'Kuda Bank',
-];
+const FIELDS = ACCOUNT_REGISTRATION_FIELDS;
 
 export default function RegisterForm({
   onSwitchToLogin,
@@ -210,12 +180,12 @@ export default function RegisterForm({
         {/* Section 1: Account Information */}
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-indigo-900 border-b pb-1">
-            1. Account Information
+            {ACCOUNT_REGISTRATION_SECTIONS.account}
           </h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                First Name
+                {FIELDS.firstName.label}
               </label>
               <input
                 type="text"
@@ -230,7 +200,7 @@ export default function RegisterForm({
             </div>
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Last Name
+                {FIELDS.lastName.label}
               </label>
               <input
                 type="text"
@@ -248,7 +218,7 @@ export default function RegisterForm({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Username
+                {FIELDS.username.label}
               </label>
               <input
                 type="text"
@@ -263,7 +233,7 @@ export default function RegisterForm({
             </div>
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Phone
+                {FIELDS.phone.label}
               </label>
               <input
                 type="tel"
@@ -280,7 +250,7 @@ export default function RegisterForm({
 
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Email Address
+              {FIELDS.email.label}
             </label>
             <input
               type="email"
@@ -300,7 +270,7 @@ export default function RegisterForm({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Password
+                {FIELDS.password.label}
               </label>
               <div className="relative">
                 <input
@@ -327,7 +297,7 @@ export default function RegisterForm({
             </div>
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Confirm
+                {FIELDS.confirmPassword.label}
               </label>
               <div className="relative">
                 <input
@@ -357,17 +327,19 @@ export default function RegisterForm({
 
         {/* Section 2: KYC Information */}
         <div className="space-y-4 mt-6">
-          <h3 className="text-sm font-bold text-indigo-900 border-b pb-1">2. KYC Information</h3>
+          <h3 className="text-sm font-bold text-indigo-900 border-b pb-1">
+            {ACCOUNT_REGISTRATION_SECTIONS.kyc}
+          </h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Gender
+                {FIELDS.gender.label}
               </label>
               <select
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                 {...register('gender', { required: 'Required' })}
               >
-                <option value="">Select Gender</option>
+                <option value="">{FIELDS.gender.placeholder}</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
               </select>
@@ -379,7 +351,7 @@ export default function RegisterForm({
             </div>
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                State
+                {FIELDS.state.label}
               </label>
               <input
                 type="text"
@@ -396,7 +368,7 @@ export default function RegisterForm({
 
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Full Address
+              {FIELDS.address.label}
             </label>
             <input
               type="text"
@@ -412,18 +384,20 @@ export default function RegisterForm({
 
           <div className="space-y-1 mt-4">
             <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Select Bank
+              {FIELDS.bankName.label}
             </label>
             <select
               className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
               {...register('bankName', { required: 'Required' })}
             >
-              <option value="">Select Bank</option>
-              {NIGERIAN_BANKS.sort().map((bank) => (
-                <option key={bank} value={bank}>
-                  {bank}
-                </option>
-              ))}
+              <option value="">{FIELDS.bankName.placeholder}</option>
+              {NIGERIAN_BANKS.slice()
+                .sort()
+                .map((bank) => (
+                  <option key={bank} value={bank}>
+                    {bank}
+                  </option>
+                ))}
             </select>
             {errors.bankName && (
               <p className="text-[10px] font-semibold text-rose-600 mt-0.5">
@@ -435,7 +409,7 @@ export default function RegisterForm({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Account Number
+                {FIELDS.accountNumber.label}
               </label>
               <input
                 type="text"
@@ -453,7 +427,7 @@ export default function RegisterForm({
             </div>
             <div className="space-y-1">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Account Name
+                {FIELDS.accountName.label}
               </label>
               <input
                 type="text"
@@ -471,15 +445,17 @@ export default function RegisterForm({
 
         {/* Section 3: Codes */}
         <div className="space-y-4 mt-6">
-          <h3 className="text-sm font-bold text-indigo-900 border-b pb-1">3. Codes</h3>
+          <h3 className="text-sm font-bold text-indigo-900 border-b pb-1">
+            {ACCOUNT_REGISTRATION_SECTIONS.codes}
+          </h3>
 
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Sponsor / Referral Code
+              {FIELDS.sponsorCode.label}
             </label>
             <input
               type="text"
-              placeholder="Sponsor code"
+              placeholder={FIELDS.sponsorCode.placeholder}
               readOnly={!!sponsorFromUrl}
               className={`w-full px-3.5 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 uppercase ${sponsorFromUrl ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
               {...register('sponsorCode', { required: 'Sponsor Code is required' })}
@@ -498,11 +474,11 @@ export default function RegisterForm({
 
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Activation Code (Separate)
+              {FIELDS.activationCode.label}
             </label>
             <input
               type="text"
-              placeholder="e.g. GMA-123456"
+              placeholder={FIELDS.activationCode.placeholder}
               className="w-full px-3.5 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 uppercase"
               {...register('activationCode', {
                 required: 'Activation Code is required',

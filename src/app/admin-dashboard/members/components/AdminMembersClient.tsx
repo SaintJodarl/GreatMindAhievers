@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Search,
   UserCheck,
@@ -8,13 +8,13 @@ import {
   ShieldAlert,
   Loader2,
   RefreshCw,
-  Mail,
   User,
   ShieldCheck,
   X,
   KeyRound,
   AlertCircle,
   CheckCircle2,
+  Download,
 } from 'lucide-react';
 
 interface MemberData {
@@ -46,6 +46,10 @@ interface PaginationData {
   totalPages: number;
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 export default function AdminMembersClient() {
   const [members, setMembers] = useState<MemberData[]>([]);
   const [pagination, setPagination] = useState<PaginationData>({
@@ -57,6 +61,7 @@ export default function AdminMembersClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -123,8 +128,8 @@ export default function AdminMembersClient() {
         setResetPasswordMember(null);
         setResetSuccess(null);
       }, 2000);
-    } catch (err: any) {
-      setResetError(err.message || 'An error occurred during password reset.');
+    } catch (err: unknown) {
+      setResetError(getErrorMessage(err, 'An error occurred during password reset.'));
     } finally {
       setResetSubmitting(false);
     }
@@ -139,7 +144,7 @@ export default function AdminMembersClient() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -162,16 +167,88 @@ export default function AdminMembersClient() {
       if (data.pagination) {
         setPagination(data.pagination);
       }
-    } catch (err: any) {
-      setError(err.message || 'Error loading members.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Error loading members.'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.limit, pagination.page, statusFilter, kycFilter, debouncedSearch]);
 
   useEffect(() => {
     fetchMembers();
-  }, [pagination.page, statusFilter, kycFilter, debouncedSearch]);
+  }, [fetchMembers]);
+
+  const getDefaultDownloadFileName = () =>
+    `Official_Member_Register_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+  const getDownloadFileName = (contentDisposition: string | null) => {
+    if (!contentDisposition) {
+      return getDefaultDownloadFileName();
+    }
+
+    const fileNameMatch = contentDisposition.match(
+      /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i
+    );
+    const fileName = fileNameMatch?.[1] || fileNameMatch?.[2];
+
+    if (!fileName) {
+      return getDefaultDownloadFileName();
+    }
+
+    try {
+      return decodeURIComponent(fileName);
+    } catch {
+      return fileName;
+    }
+  };
+
+  const formatExportedMemberCount = (value: string | null) => {
+    if (!value) return null;
+    const count = Number(value);
+    return Number.isFinite(count) ? count.toLocaleString() : null;
+  };
+
+  const handleOfficialRegisterExport = async () => {
+    try {
+      setExportLoading(true);
+      setError(null);
+      setSuccessMsg(null);
+
+      const res = await fetch('/api/admin/members/official-register/export', {
+        method: 'GET',
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(data?.message || 'Failed to export official member register.');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const fileName = getDownloadFileName(res.headers.get('content-disposition'));
+      const exportedCount = formatExportedMemberCount(res.headers.get('x-exported-member-count'));
+
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      setSuccessMsg(
+        `Official Member Register exported successfully${
+          exportedCount ? ` (${exportedCount} members)` : ''
+        }.`
+      );
+    } catch (err: unknown) {
+      setError(
+        getErrorMessage(err, 'An error occurred while exporting the official member register.')
+      );
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   const handleStatusToggle = async (member: MemberData, targetStatus: string) => {
     try {
@@ -193,8 +270,8 @@ export default function AdminMembersClient() {
 
       setSuccessMsg(data.message || 'Member status updated successfully.');
       fetchMembers();
-    } catch (err: any) {
-      setError(err.message || 'Error updating status.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Error updating status.'));
     } finally {
       setActionLoadingId(null);
     }
@@ -247,6 +324,23 @@ export default function AdminMembersClient() {
             members.
           </p>
         </div>
+        <button
+          onClick={handleOfficialRegisterExport}
+          disabled={exportLoading}
+          className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold px-4 py-2.5 rounded-xl shadow-sm shadow-indigo-600/10 text-sm transition-colors"
+        >
+          {exportLoading ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Exporting...
+            </>
+          ) : (
+            <>
+              <Download size={16} />
+              Export Official Member Register
+            </>
+          )}
+        </button>
       </div>
 
       {/* Notifications */}

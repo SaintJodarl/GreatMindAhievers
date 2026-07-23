@@ -27,8 +27,39 @@ const PROTECTED_ADMIN_EMAILS = new Set<string>(PROTECTED_ADMIN_EMAIL_LIST);
 
 const cleanRequiredText = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
+function getErrorRecord(error: unknown): Record<string, unknown> | null {
+  return typeof error === 'object' && error !== null ? (error as Record<string, unknown>) : null;
+}
+
+function getErrorMessage(error: unknown): string | undefined {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  const message = getErrorRecord(error)?.message;
+  return typeof message === 'string' && message ? message : undefined;
+}
+
+function isPrismaUniqueConstraintError(error: unknown, fieldName: string): boolean {
+  const record = getErrorRecord(error);
+  const meta = getErrorRecord(record?.meta);
+  const target = meta?.target;
+
+  return record?.code === 'P2002' && Array.isArray(target) && target.includes(fieldName);
+}
+
+function isTransientDatabaseError(error: unknown): boolean {
+  const record = getErrorRecord(error);
+  const message = getErrorMessage(error) || '';
+
+  return (
+    record?.code === 'P1001' ||
+    message.includes('timeout') ||
+    message.includes("Can't reach database")
+  );
+}
+
 export async function POST(req: NextRequest) {
-  console.log('[AUTH DEBUG] Registration started');
   const pauseDecision = getRegistrationPauseDecision();
   if (pauseDecision) {
     return NextResponse.json(
@@ -241,7 +272,6 @@ export async function POST(req: NextRequest) {
     const ipAddress =
       req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
       req.headers.get('x-real-ip')?.trim() ||
-      (req as any).ip ||
       null;
 
     let recentSignupsCount = 0;
@@ -486,13 +516,9 @@ export async function POST(req: NextRequest) {
           isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
         }
       );
-    } catch (createError: any) {
+    } catch (createError: unknown) {
       console.error('Base user creation failed:', createError);
-      if (
-        createError.code === 'P2002' &&
-        Array.isArray(createError.meta?.target) &&
-        createError.meta.target.includes('email')
-      ) {
+      if (isPrismaUniqueConstraintError(createError, 'email')) {
         return NextResponse.json(
           { message: 'An account with this email already exists' },
           { status: 400 }
@@ -502,7 +528,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           message:
-            createError.message ||
+            getErrorMessage(createError) ||
             'Database is busy. Base user account creation failed. Please try again.',
         },
         { status: 500 }
@@ -551,14 +577,10 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('SIGNUP END (FAILED) - Registration error:', error);
 
-    if (
-      error.code === 'P1001' ||
-      error.message?.includes('timeout') ||
-      error.message?.includes("Can't reach database")
-    ) {
+    if (isTransientDatabaseError(error)) {
       return NextResponse.json(
         { message: 'Service is experiencing high load. Please try again.' },
         { status: 503 }
@@ -566,7 +588,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: error.message || 'An error occurred during registration' },
+      { message: getErrorMessage(error) || 'An error occurred during registration' },
       { status: 500 }
     );
   }
