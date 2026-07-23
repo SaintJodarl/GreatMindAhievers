@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { DM_Sans, IBM_Plex_Mono } from 'next/font/google';
 import '../styles/tailwind.css';
 import { Providers } from '@/components/Providers';
+import { createPageMetadata, siteConfig } from '@/lib/seo';
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -21,20 +22,47 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: '#0d0f1a',
+  colorScheme: 'dark light',
 };
 
 export const metadata: Metadata = {
-  title: 'Great Mind Achievers — Empowering Nigerians Through Teamwork & Shared Prosperity',
-  description:
-    'Great Mind Achievers is a Nigerian empowerment community helping everyday Nigerians build income, access business support, participate in agricultural partnerships, and grow through teamwork and shared prosperity.',
+  ...createPageMetadata({
+    title: siteConfig.title,
+    description: siteConfig.description,
+    path: '/',
+    absoluteTitle: true,
+  }),
+  applicationName: siteConfig.name,
+  authors: [{ name: siteConfig.name, url: siteConfig.url }],
+  creator: siteConfig.name,
+  publisher: siteConfig.name,
+  category: 'community empowerment',
+  manifest: '/manifest.webmanifest',
+  referrer: 'origin-when-cross-origin',
+  title: {
+    default: siteConfig.title,
+    template: `%s | ${siteConfig.name}`,
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
-    icon: [{ url: '/assets/images/app_logo.png', type: 'image/png' }],
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: siteConfig.logo.path, type: 'image/png' },
+    ],
+    apple: [{ url: siteConfig.logo.path, type: 'image/png' }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: siteConfig.shortName,
   },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${ibmPlexMono.variable}`}>
+    <html lang={siteConfig.language} className={`${dmSans.variable} ${ibmPlexMono.variable}`}>
       <body className={dmSans.className}>
         <Providers>{children}</Providers>
       </body>

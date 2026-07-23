@@ -1,11 +1,11 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   Award,
-  BadgeCheck,
   BarChart3,
   Briefcase,
   Check,
@@ -22,9 +22,7 @@ import {
   Network,
   Phone,
   PiggyBank,
-  ShieldCheck,
   Sparkles,
-  Sprout,
   Star,
   TrendingUp,
   Users,
@@ -35,6 +33,7 @@ import LoginForm from '../sign-up-login-screen/components/LoginForm';
 import RegisterForm from '../sign-up-login-screen/components/RegisterForm';
 import { CompensationPlanSection } from './CompensationPlanSection';
 import { CeoMessageSection } from './CeoMessageSection';
+import { landingFaqs } from '@/lib/seo';
 
 type AuthMode = null | 'login' | 'register';
 type IconComponent = typeof Users;
@@ -47,7 +46,9 @@ const navLinks = [
   { href: '#about', label: 'About' },
   { href: '#benefits', label: 'Benefits' },
   { href: '#services', label: 'Programs' },
+  { href: '#compensation-plan', label: 'Plan' },
   { href: '#leadership', label: 'Leadership' },
+  { href: '#faq', label: 'FAQ' },
   { href: '#contact', label: 'Contact' },
 ];
 
@@ -110,8 +111,6 @@ const leadershipTeam = [
   },
 ];
 
-const heroLeaders = [leadershipTeam[1], leadershipTeam[0], leadershipTeam[4]];
-
 const stats = [
   {
     icon: Users,
@@ -141,12 +140,6 @@ const stats = [
     detail: 'Visible, accountable leadership',
     color: '#F59E0B',
   },
-];
-
-const trustSignals = [
-  { icon: ShieldCheck, text: 'Leadership-led accountability' },
-  { icon: BadgeCheck, text: 'Member onboarding and verification' },
-  { icon: Sprout, text: 'Agriculture and food-security focus' },
 ];
 
 const pillars = [
@@ -522,8 +515,8 @@ export default function LandingPageClient() {
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between gap-4">
-              <a
-                href="#"
+              <Link
+                href="/"
                 className={`${buttonFocus} flex items-center gap-3 rounded-md`}
                 aria-label="Great Mind Achievers home"
               >
@@ -532,7 +525,6 @@ export default function LandingPageClient() {
                   alt="Great Mind Achievers logo"
                   width={42}
                   height={40}
-                  priority
                   className="h-10 w-10 object-contain"
                 />
                 <span className="hidden sm:block">
@@ -543,7 +535,7 @@ export default function LandingPageClient() {
                     Empowering Success Together
                   </span>
                 </span>
-              </a>
+              </Link>
 
               <nav className="hidden items-center gap-5 lg:flex" aria-label="Main navigation">
                 {navLinks.map((link) => (
@@ -701,7 +693,7 @@ export default function LandingPageClient() {
                         {stat.value}
                       </p>
                     </div>
-                    <h2 className="mt-4 text-base font-semibold text-foreground">{stat.label}</h2>
+                    <p className="mt-4 text-base font-semibold text-foreground">{stat.label}</p>
                     <p className="mt-1 text-sm leading-relaxed text-secondary-foreground">
                       {stat.detail}
                     </p>
@@ -910,7 +902,7 @@ export default function LandingPageClient() {
               subtitle="Trust grows when leadership is visible. GMA is guided by a team committed to empowerment, accountability, community development, and sustainable growth."
             />
             <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {leadershipTeam.map((leader, index) => (
+              {leadershipTeam.map((leader) => (
                 <article
                   key={leader.name}
                   className="group rounded-md border border-border bg-card p-3 transition duration-200 hover:border-primary motion-safe:hover:-translate-y-1"
@@ -922,7 +914,6 @@ export default function LandingPageClient() {
                       fill
                       sizes="(max-width: 640px) 92vw, (max-width: 1024px) 33vw, 25vw"
                       className="object-cover object-center transition duration-300 group-hover:scale-[1.02] motion-reduce:transition-none"
-                      priority={index < 2}
                     />
                   </div>
                   <div className="px-1 pb-2 pt-4">
@@ -931,6 +922,29 @@ export default function LandingPageClient() {
                     </h3>
                     <p className="mt-1 text-sm font-medium text-accent">{leader.role}</p>
                   </div>
+                </article>
+              ))}
+            </div>
+          </Section>
+
+          <Section id="faq" className="border-y border-border bg-card">
+            <SectionHeader
+              eyebrow="Common questions"
+              title="Helpful answers before joining GMA."
+              subtitle="These answers summarize the core membership path, available programs, and contact details for people evaluating Great Mind Achievers."
+            />
+            <div className="mx-auto grid max-w-4xl gap-4">
+              {landingFaqs.map((faq) => (
+                <article
+                  key={faq.question}
+                  className="rounded-md border border-border bg-background p-5"
+                >
+                  <h3 className="text-base font-semibold leading-snug text-foreground">
+                    {faq.question}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-secondary-foreground">
+                    {faq.answer}
+                  </p>
                 </article>
               ))}
             </div>
@@ -1032,15 +1046,13 @@ export default function LandingPageClient() {
               <p className="text-center text-xs text-muted-foreground">
                 Copyright {new Date().getFullYear()} Great Mind Achievers. All rights reserved.
               </p>
-              <a
-                href="https://greatmindachievers.org"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/"
                 className={`${buttonFocus} inline-flex items-center gap-1 rounded-md text-xs text-accent transition-colors hover:text-foreground hover:underline`}
               >
                 greatmindachievers.org
                 <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </a>
+              </Link>
             </div>
           </div>
         </footer>

@@ -33,11 +33,10 @@ const AppLogo = memo(function AppLogo({
       {src ? (
         <AppImage
           src={src}
-          alt="Logo"
+          alt="Great Mind Achievers logo"
           width={size}
           height={size}
           className="flex-shrink-0"
-          priority={true}
           unoptimized={src.endsWith('.svg')}
         />
       ) : (

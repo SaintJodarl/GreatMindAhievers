@@ -85,12 +85,14 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label
+            htmlFor="login-email"
             className="block text-sm font-medium mb-1.5"
             style={{ color: 'var(--foreground)' }}
           >
             Email Address
           </label>
           <input
+            id="login-email"
             type="email"
             className="input-field"
             placeholder="your@email.com"
@@ -108,6 +110,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
 
         <div>
           <label
+            htmlFor="login-password"
             className="block text-sm font-medium mb-1.5"
             style={{ color: 'var(--foreground)' }}
           >
@@ -115,6 +118,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           </label>
           <div className="relative">
             <input
+              id="login-password"
               type={showPassword ? 'text' : 'password'}
               className="input-field pr-10"
               placeholder="Enter your password"
@@ -125,6 +129,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
               style={{ color: 'var(--muted-foreground)' }}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
@@ -139,6 +144,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
+              id="login-remember-me"
               type="checkbox"
               className="w-4 h-4 rounded"
               style={{ accentColor: 'var(--primary)' }}

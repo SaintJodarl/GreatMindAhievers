@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import React, { useState } from 'react';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
@@ -46,9 +47,11 @@ export default function AuthPageClient({
         {/* Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-8">
-            <img
+            <Image
               src="/assets/images/app_logo.png"
-              alt="GMA Logo"
+              alt="Great Mind Achievers logo"
+              width={40}
+              height={40}
               className="w-10 h-10 object-contain rounded-xl"
             />
             <div>
@@ -141,9 +144,11 @@ export default function AuthPageClient({
       <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-10 xl:p-14 overflow-y-auto">
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-2 mb-8">
-          <img
+          <Image
             src="/assets/images/app_logo.png"
-            alt="GMA Logo"
+            alt="Great Mind Achievers logo"
+            width={32}
+            height={32}
             className="w-8 h-8 object-contain rounded-lg"
           />
           <span className="font-bold text-sm" style={{ color: 'var(--foreground)' }}>

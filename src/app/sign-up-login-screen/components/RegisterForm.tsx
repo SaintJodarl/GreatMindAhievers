@@ -184,10 +184,14 @@ export default function RegisterForm({
           </h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <label
+                htmlFor="register-first-name"
+                className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+              >
                 {FIELDS.firstName.label}
               </label>
               <input
+                id="register-first-name"
                 type="text"
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                 {...register('firstName', { required: 'Required' })}
@@ -199,10 +203,14 @@ export default function RegisterForm({
               )}
             </div>
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <label
+                htmlFor="register-last-name"
+                className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+              >
                 {FIELDS.lastName.label}
               </label>
               <input
+                id="register-last-name"
                 type="text"
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                 {...register('lastName', { required: 'Required' })}
@@ -217,10 +225,14 @@ export default function RegisterForm({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <label
+                htmlFor="register-username"
+                className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+              >
                 {FIELDS.username.label}
               </label>
               <input
+                id="register-username"
                 type="text"
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                 {...register('username', { required: 'Required' })}
@@ -232,10 +244,14 @@ export default function RegisterForm({
               )}
             </div>
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <label
+                htmlFor="register-phone"
+                className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+              >
                 {FIELDS.phone.label}
               </label>
               <input
+                id="register-phone"
                 type="tel"
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                 {...register('phone', { required: 'Required' })}
@@ -249,10 +265,14 @@ export default function RegisterForm({
           </div>
 
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            <label
+              htmlFor="register-email"
+              className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+            >
               {FIELDS.email.label}
             </label>
             <input
+              id="register-email"
               type="email"
               className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
               {...register('email', {
@@ -269,11 +289,15 @@ export default function RegisterForm({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <label
+                htmlFor="register-password"
+                className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+              >
                 {FIELDS.password.label}
               </label>
               <div className="relative">
                 <input
+                  id="register-password"
                   type={showPassword ? 'text' : 'password'}
                   className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                   {...register('password', {
@@ -285,6 +309,7 @@ export default function RegisterForm({
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -296,11 +321,15 @@ export default function RegisterForm({
               )}
             </div>
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <label
+                htmlFor="register-confirm-password"
+                className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+              >
                 {FIELDS.confirmPassword.label}
               </label>
               <div className="relative">
                 <input
+                  id="register-confirm-password"
                   type={showConfirmPassword ? 'text' : 'password'}
                   className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                   {...register('confirmPassword', {
@@ -312,6 +341,9 @@ export default function RegisterForm({
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label={
+                    showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'
+                  }
                 >
                   {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -332,10 +364,14 @@ export default function RegisterForm({
           </h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <label
+                htmlFor="register-gender"
+                className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+              >
                 {FIELDS.gender.label}
               </label>
               <select
+                id="register-gender"
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                 {...register('gender', { required: 'Required' })}
               >
@@ -350,10 +386,14 @@ export default function RegisterForm({
               )}
             </div>
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <label
+                htmlFor="register-state"
+                className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+              >
                 {FIELDS.state.label}
               </label>
               <input
+                id="register-state"
                 type="text"
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                 {...register('state', { required: 'Required' })}
@@ -367,10 +407,14 @@ export default function RegisterForm({
           </div>
 
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            <label
+              htmlFor="register-address"
+              className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+            >
               {FIELDS.address.label}
             </label>
             <input
+              id="register-address"
               type="text"
               className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
               {...register('address', { required: 'Required' })}
@@ -383,10 +427,14 @@ export default function RegisterForm({
           </div>
 
           <div className="space-y-1 mt-4">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            <label
+              htmlFor="register-bank-name"
+              className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+            >
               {FIELDS.bankName.label}
             </label>
             <select
+              id="register-bank-name"
               className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
               {...register('bankName', { required: 'Required' })}
             >
@@ -408,10 +456,14 @@ export default function RegisterForm({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <label
+                htmlFor="register-account-number"
+                className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+              >
                 {FIELDS.accountNumber.label}
               </label>
               <input
+                id="register-account-number"
                 type="text"
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                 {...register('accountNumber', {
@@ -426,10 +478,14 @@ export default function RegisterForm({
               )}
             </div>
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <label
+                htmlFor="register-account-name"
+                className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+              >
                 {FIELDS.accountName.label}
               </label>
               <input
+                id="register-account-name"
                 type="text"
                 className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900"
                 {...register('accountName', { required: 'Required' })}
@@ -450,10 +506,14 @@ export default function RegisterForm({
           </h3>
 
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            <label
+              htmlFor="register-sponsor-code"
+              className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+            >
               {FIELDS.sponsorCode.label}
             </label>
             <input
+              id="register-sponsor-code"
               type="text"
               placeholder={FIELDS.sponsorCode.placeholder}
               readOnly={!!sponsorFromUrl}
@@ -473,10 +533,14 @@ export default function RegisterForm({
           </div>
 
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            <label
+              htmlFor="register-activation-code"
+              className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider"
+            >
               {FIELDS.activationCode.label}
             </label>
             <input
+              id="register-activation-code"
               type="text"
               placeholder={FIELDS.activationCode.placeholder}
               className="w-full px-3.5 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-gray-900 uppercase"
@@ -500,6 +564,7 @@ export default function RegisterForm({
           <label className="flex items-start gap-2 cursor-pointer group">
             <div className="relative flex items-center justify-center mt-0.5">
               <input
+                id="register-agree-terms"
                 type="checkbox"
                 className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/20 peer"
                 {...register('agreeTerms', { required: 'Required' })}
@@ -508,8 +573,7 @@ export default function RegisterForm({
             <span className="text-xs text-gray-600 leading-relaxed">
               I agree to the{' '}
               <a
-                href="/terms"
-                target="_blank"
+                href="mailto:info@greatmindachievers.org?subject=Great%20Mind%20Achievers%20Terms%20of%20Service%20Request"
                 className="text-indigo-600 hover:text-indigo-800 font-semibold underline decoration-indigo-600/30 underline-offset-2"
               >
                 Terms of Service

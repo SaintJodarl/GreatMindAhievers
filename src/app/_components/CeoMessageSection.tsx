@@ -75,7 +75,6 @@ export function CeoMessageSection() {
                   height={750}
                   sizes="(max-width: 768px) 100vw, 50vw"
                   className="w-full h-auto object-cover object-center"
-                  priority
                 />
                 <div
                   className="absolute inset-0 bg-black/5 pointer-events-none"

@@ -31,8 +31,9 @@ function RewardCard({
         <div className="relative aspect-video w-full overflow-hidden border-b border-border bg-muted">
           <Image
             src={imageUrl}
-            alt={title}
+            alt={`${title} compensation plan reward package`}
             fill
+            quality={72}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover object-center"
           />
@@ -111,7 +112,7 @@ export function CompensationPlanSection() {
         'Cash \u20a610,000',
       ],
       accentColor: '#10b981',
-      imageUrl: '/assets/images/Compensation Plan/EMERALD \u2013 STAGE (1).png',
+      imageUrl: '/assets/images/Compensation Plan/emerald-stage-1.jpg',
     },
     {
       title: 'Silver \u2014 Stage 2',
@@ -126,7 +127,7 @@ export function CompensationPlanSection() {
         'Healthcare products worth \u20a611,000',
       ],
       accentColor: '#94a3b8',
-      imageUrl: '/assets/images/Compensation Plan/SILVER \u2013 STAGE (2).png',
+      imageUrl: '/assets/images/Compensation Plan/silver-stage-2.jpg',
     },
     {
       title: 'Gold \u2014 Stage 3',
